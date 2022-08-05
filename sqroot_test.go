@@ -125,7 +125,6 @@ func ExampleSquareRoot() {
 	mantissa(consume2.Slice(consume2.AppendTo(&mantissaDigits), 0, 10))
 	fmt.Println(mantissaDigits)
 	fmt.Println(exp)
-
 	// Output:
 	// [1 9 3 7 0 0 8 0 0 2]
 	// 2
@@ -140,7 +139,6 @@ func ExamplePrinter() {
 	mantissa(sqroot.NewPrinter(20))
 
 	fmt.Printf(" * 10^%d\n", exp)
-
 	// Output:
 	// 0.14142135623730950488 * 10^1
 }
@@ -155,7 +153,6 @@ func ExamplePrinter_format() {
 		sqroot.DigitsPerRow(50),
 		sqroot.DigitsPerColumn(5),
 		sqroot.ShowCount(true)))
-
 	// Output:
 	// 10^1 *
 	//    0.14142 13562 37309 50488 01688 72420 96980 78569 67187 53769
