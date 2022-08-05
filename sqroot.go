@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"os"
 	"strconv"
 	"strings"
 
@@ -84,9 +85,16 @@ type Printer struct {
 	indexInRow      int
 }
 
-// NewPrinter creates a new Printer that sends digits to writer. maxDigits
+// NewPrinter creates a new Printer that sends digits to stdout. maxDigits
 // is the maximum number of digits to send.
-func NewPrinter(writer io.Writer, maxDigits int, options ...Option) *Printer {
+func NewPrinter(maxDigits int, options ...Option) *Printer {
+	return NewFilePrinter(os.Stdout, maxDigits, options...)
+}
+
+// NewFilePrinter creates a new Printer that sends digits to writer. maxDigits
+// is the maximum number of digits to send.
+func NewFilePrinter(
+	writer io.Writer, maxDigits int, options ...Option) *Printer {
 	settings := &printerSettings{}
 	for _, option := range options {
 		option.mutate(settings)

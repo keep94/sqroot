@@ -3,7 +3,6 @@ package sqroot_test
 import (
 	"fmt"
 	"math/big"
-	"os"
 	"strings"
 	"testing"
 
@@ -126,40 +125,64 @@ func ExampleSquareRoot() {
 	mantissa(consume2.Slice(consume2.AppendTo(&mantissaDigits), 0, 10))
 	fmt.Println(mantissaDigits)
 	fmt.Println(exp)
+
 	// Output:
 	// [1 9 3 7 0 0 8 0 0 2]
 	// 2
 }
 
 func ExamplePrinter() {
+
 	// Find the square root of 2.
 	mantissa, exp := sqroot.SquareRoot(big.NewInt(2), 0)
-	mantissa(sqroot.NewPrinter(os.Stdout, 10))
+
+	// Use 20 digits in mantissa
+	mantissa(sqroot.NewPrinter(20))
+
 	fmt.Printf(" * 10^%d\n", exp)
+
 	// Output:
-	// 0.1414213562 * 10^1
+	// 0.14142135623730950488 * 10^1
 }
 
 func ExamplePrinter_format() {
+
 	// Find the square root of 2.
 	mantissa, exp := sqroot.SquareRoot(big.NewInt(2), 0)
 	fmt.Printf("10^%d *\n", exp)
 	mantissa(sqroot.NewPrinter(
-		os.Stdout,
-		30,
-		sqroot.DigitsPerRow(10),
+		1000,
+		sqroot.DigitsPerRow(50),
 		sqroot.DigitsPerColumn(5),
 		sqroot.ShowCount(true)))
+
 	// Output:
 	// 10^1 *
-	//   0.14142 13562
-	// 10  37309 50488
-	// 20  01688 72420
+	//    0.14142 13562 37309 50488 01688 72420 96980 78569 67187 53769
+	//  50  48073 17667 97379 90732 47846 21070 38850 38753 43276 41572
+	// 100  73501 38462 30912 29702 49248 36055 85073 72126 44121 49709
+	// 150  99358 31413 22266 59275 05592 75579 99505 01152 78206 05714
+	// 200  70109 55997 16059 70274 53459 68620 14728 51741 86408 89198
+	// 250  60955 23292 30484 30871 43214 50839 76260 36279 95251 40798
+	// 300  96872 53396 54633 18088 29640 62061 52583 52395 05474 57502
+	// 350  87759 96172 98355 75220 33753 18570 11354 37460 34084 98847
+	// 400  16038 68999 70699 00481 50305 44027 79031 64542 47823 06849
+	// 450  29369 18621 58057 84631 11596 66871 30130 15618 56898 72372
+	// 500  35288 50926 48612 49497 71542 18334 20428 56860 60146 82472
+	// 550  07714 35854 87415 56570 69677 65372 02264 85447 01585 88016
+	// 600  20758 47492 26572 26002 08558 44665 21458 39889 39443 70926
+	// 650  59180 03113 88246 46815 70826 30100 59485 87040 03186 48034
+	// 700  21948 97278 29064 10450 72636 88131 37398 55256 11732 20402
+	// 750  45091 22770 02269 41127 57362 72804 95738 10896 75040 18369
+	// 800  86836 84507 25799 36472 90607 62996 94138 04756 54823 72899
+	// 850  71803 26802 47442 06292 69124 85905 21810 04459 84215 05911
+	// 900  20249 44134 17285 31478 10580 36033 71077 30918 28693 14710
+	// 950  17111 16839 16581 72688 94197 58716 58215 21282 29518 48847
 }
 
 func TestPrinterNoOptions(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewPrinter(&builder, 12)
+	p := sqroot.NewFilePrinter(&builder, 12)
 	for p.CanConsume() {
 		for i := 0; i < 10; i++ {
 			p.Consume(i)
@@ -171,7 +194,7 @@ func TestPrinterNoOptions(t *testing.T) {
 
 func TestPrinterColumns(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewPrinter(&builder, 12, sqroot.DigitsPerColumn(4))
+	p := sqroot.NewFilePrinter(&builder, 12, sqroot.DigitsPerColumn(4))
 	for p.CanConsume() {
 		for i := 0; i < 10; i++ {
 			p.Consume(i)
@@ -183,7 +206,7 @@ func TestPrinterColumns(t *testing.T) {
 
 func TestPrinterColumnsShow(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewPrinter(
+	p := sqroot.NewFilePrinter(
 		&builder, 12, sqroot.DigitsPerColumn(5), sqroot.ShowCount(true))
 	for p.CanConsume() {
 		for i := 0; i < 10; i++ {
@@ -196,7 +219,7 @@ func TestPrinterColumnsShow(t *testing.T) {
 
 func TestPrinterRows10(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewPrinter(&builder, 110, sqroot.DigitsPerRow(10))
+	p := sqroot.NewFilePrinter(&builder, 110, sqroot.DigitsPerRow(10))
 	for p.CanConsume() {
 		for i := 0; i < 10; i++ {
 			p.Consume(i)
@@ -218,7 +241,7 @@ func TestPrinterRows10(t *testing.T) {
 
 func TestPrinterRows10Columns(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewPrinter(
+	p := sqroot.NewFilePrinter(
 		&builder, 110, sqroot.DigitsPerRow(10), sqroot.DigitsPerColumn(10))
 	for p.CanConsume() {
 		for i := 0; i < 10; i++ {
@@ -241,7 +264,7 @@ func TestPrinterRows10Columns(t *testing.T) {
 
 func TestPrinterRows11Columns(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewPrinter(
+	p := sqroot.NewFilePrinter(
 		&builder, 110, sqroot.DigitsPerRow(11), sqroot.DigitsPerColumn(10))
 	for p.CanConsume() {
 		for i := 0; i < 10; i++ {
@@ -263,7 +286,7 @@ func TestPrinterRows11Columns(t *testing.T) {
 
 func TestPrinterRows10Show(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewPrinter(
+	p := sqroot.NewFilePrinter(
 		&builder, 110, sqroot.DigitsPerRow(10), sqroot.ShowCount(true))
 	for p.CanConsume() {
 		for i := 0; i < 10; i++ {
@@ -286,7 +309,7 @@ func TestPrinterRows10Show(t *testing.T) {
 
 func TestPrinterRows10ColumnsShow(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewPrinter(
+	p := sqroot.NewFilePrinter(
 		&builder,
 		110,
 		sqroot.DigitsPerRow(10),
@@ -313,7 +336,7 @@ func TestPrinterRows10ColumnsShow(t *testing.T) {
 
 func TestPrinterRows11ColumnsShow(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewPrinter(
+	p := sqroot.NewFilePrinter(
 		&builder,
 		110,
 		sqroot.DigitsPerRow(11),
@@ -339,7 +362,7 @@ func TestPrinterRows11ColumnsShow(t *testing.T) {
 
 func TestPrinterRows11ColumnsShow109(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewPrinter(
+	p := sqroot.NewFilePrinter(
 		&builder,
 		109,
 		sqroot.DigitsPerRow(11),
@@ -365,7 +388,7 @@ func TestPrinterRows11ColumnsShow109(t *testing.T) {
 
 func TestPrinterRows11ColumnsShow111(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewPrinter(
+	p := sqroot.NewFilePrinter(
 		&builder,
 		111,
 		sqroot.DigitsPerRow(11),
@@ -392,7 +415,7 @@ func TestPrinterRows11ColumnsShow111(t *testing.T) {
 
 func TestPrinterFewerDigits(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewPrinter(
+	p := sqroot.NewFilePrinter(
 		&builder,
 		111,
 		sqroot.DigitsPerRow(11),
@@ -407,7 +430,7 @@ func TestPrinterFewerDigits(t *testing.T) {
 
 func TestPrinterNegative(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewPrinter(
+	p := sqroot.NewFilePrinter(
 		&builder, -3, sqroot.DigitsPerRow(10), sqroot.ShowCount(true))
 	for p.CanConsume() {
 		for i := 0; i < 10; i++ {
