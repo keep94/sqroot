@@ -19,32 +19,7 @@ var (
 	ten        = big.NewInt(10)
 )
 
-// SquareRoot returns the square root of radican * 10^rexp. The return value
-// is of the form mantissa * 10^exp. mantissa is between 0.1 inclusive
-// and 1.0 exclusive. mantissa is actually a function that sends the digits
-// of the mantissa to the passed consumer. If radican is 0, SquareRoot returns
-// 0 for exp and gives a single zero digit for the mantissa.
-func SquareRoot(radican *big.Int, rexp int) (
-	mantissa func(consumer consume2.Consumer[int]), exp int) {
-	if radican.Sign() < 0 {
-		panic("radican must be non-negative")
-	}
-	if radican.Sign() == 0 {
-		return zeroDigit, 0
-	}
-	if rexp%2 != 0 {
-		radican = new(big.Int).Mul(radican, ten)
-		rexp--
-	}
-	radicanDigits, doubleZeroCount := base100(radican)
-	exp = len(radicanDigits) + doubleZeroCount + rexp/2
-	mantissa = func(consumer consume2.Consumer[int]) {
-		squareRoot(radicanDigits, consumer)
-	}
-	return
-}
-
-// Option represents a Printer option.
+// Option represents a Print Mantissa option.
 type Option interface {
 	mutate(p *printerSettings)
 }
@@ -73,8 +48,88 @@ func ShowCount(on bool) Option {
 	})
 }
 
-// Printer is a Consumer[int] that prints out the mantissa of square roots.
-type Printer struct {
+// Mantissa represents the mantissa of a square root. Mantissas are between
+// 0.1 inclusive and 1.0 exclusive. Mantissa sends the possibly infinite
+// number of digits to the right of the decimal point to consumer.
+type Mantissa func(consumer consume2.Consumer[int])
+
+// Format prints mantissas with the f verb. Format supports width, precision,
+// and the '-' flag for left justification.
+func (m Mantissa) Format(state fmt.State, verb rune) {
+	if verb != 'f' {
+		fmt.Fprintf(state, "%%!%c(mantissa)", verb)
+		return
+	}
+	precision, precisionOk := state.Precision()
+	if !precisionOk {
+		precision = 16
+	}
+	width, widthOk := state.Width()
+	if !widthOk {
+		m.printWithPrecision(state, precision, precisionOk)
+		return
+	}
+	var builder strings.Builder
+	m.printWithPrecision(&builder, precision, precisionOk)
+	field := builder.String()
+	if !state.Flag('-') && len(field) < width {
+		fmt.Fprintf(state, "%s", strings.Repeat(" ", width-len(field)))
+	}
+	fmt.Fprint(state, field)
+	if state.Flag('-') && len(field) < width {
+		fmt.Fprintf(state, "%s", strings.Repeat(" ", width-len(field)))
+	}
+}
+
+// Print prints this Mantissa to stdout. Print returns the number of bytes
+// written and any error encountered.
+func (m Mantissa) Print(maxDigits int, options ...Option) (n int, err error) {
+	return m.Fprint(os.Stdout, maxDigits, options...)
+}
+
+// Fprint prints this Mantissa to w. Fprint returns the number of bytes
+// written and any error encountered.
+func (m Mantissa) Fprint(w io.Writer, maxDigits int, options ...Option) (
+	n int, err error) {
+	p := newPrinter(w, maxDigits, options)
+	m(p)
+	return p.byteCount, p.err
+}
+
+func (m Mantissa) printWithPrecision(
+	w io.Writer, precision int, trailingZeros bool) {
+	p := newPrinter(w, precision, nil)
+	m(p)
+	if trailingZeros {
+		digitCount := p.index
+		fmt.Fprint(w, strings.Repeat("0", precision-digitCount))
+	}
+}
+
+// SquareRoot returns the square root of radican * 10^rexp. The return value
+// is of the form mantissa * 10^exp. mantissa is between 0.1 inclusive
+// and 1.0 exclusive. If radican is 0, SquareRoot returns 0 for exp and
+// gives a single zero digit for the mantissa.
+func SquareRoot(radican *big.Int, rexp int) (mantissa Mantissa, exp int) {
+	if radican.Sign() < 0 {
+		panic("radican must be non-negative")
+	}
+	if radican.Sign() == 0 {
+		return zeroDigit, 0
+	}
+	if rexp%2 != 0 {
+		radican = new(big.Int).Mul(radican, ten)
+		rexp--
+	}
+	radicanDigits, doubleZeroCount := base100(radican)
+	exp = len(radicanDigits) + doubleZeroCount + rexp/2
+	mantissa = func(consumer consume2.Consumer[int]) {
+		squareRoot(radicanDigits, consumer)
+	}
+	return
+}
+
+type printer struct {
 	writer          io.Writer
 	maxDigits       int
 	indentation     string
@@ -83,25 +138,19 @@ type Printer struct {
 	digitsPerColumn int
 	index           int
 	indexInRow      int
+	byteCount       int
+	err             error
 }
 
-// NewPrinter creates a new Printer that sends digits to stdout. maxDigits
-// is the maximum number of digits to send.
-func NewPrinter(maxDigits int, options ...Option) *Printer {
-	return NewFilePrinter(os.Stdout, maxDigits, options...)
-}
-
-// NewFilePrinter creates a new Printer that sends digits to writer. maxDigits
-// is the maximum number of digits to send.
-func NewFilePrinter(
-	writer io.Writer, maxDigits int, options ...Option) *Printer {
+func newPrinter(
+	writer io.Writer, maxDigits int, options []Option) *printer {
 	settings := &printerSettings{}
 	for _, option := range options {
 		option.mutate(settings)
 	}
 	indentation, digitCountSpec := computeIndentation(
 		settings.digitCountWidth(maxDigits))
-	return &Printer{
+	return &printer{
 		writer:          writer,
 		maxDigits:       maxDigits,
 		indentation:     indentation,
@@ -111,31 +160,53 @@ func NewFilePrinter(
 	}
 }
 
-// CanConsume returns true if this Printer can consume a digit.
-func (p *Printer) CanConsume() bool {
-	return p.index < p.maxDigits
+func (p *printer) CanConsume() bool {
+	return p.err == nil && p.index < p.maxDigits
 }
 
-// Consume sends a single digit to the underlying io.Writer of this Printer.
-func (p *Printer) Consume(digit int) {
+func (p *printer) Consume(digit int) {
 	if !p.CanConsume() {
 		return
 	}
 	if p.index == 0 {
-		fmt.Fprintf(p.writer, "%s0.", p.indentation)
-	} else if p.digitsPerRow > 0 && p.index%p.digitsPerRow == 0 {
-		fmt.Fprintln(p.writer)
-		if p.digitCountSpec != "" {
-			fmt.Fprintf(p.writer, p.digitCountSpec, p.index)
+		n, err := fmt.Fprintf(p.writer, "%s0.", p.indentation)
+		if !p.updateByteCount(n, err) {
+			return
 		}
-		fmt.Fprint(p.writer, "  ")
+	} else if p.digitsPerRow > 0 && p.index%p.digitsPerRow == 0 {
+		n, err := fmt.Fprintln(p.writer)
+		if !p.updateByteCount(n, err) {
+			return
+		}
+		if p.digitCountSpec != "" {
+			n, err := fmt.Fprintf(p.writer, p.digitCountSpec, p.index)
+			if !p.updateByteCount(n, err) {
+				return
+			}
+		}
+		n, err = fmt.Fprint(p.writer, "  ")
+		if !p.updateByteCount(n, err) {
+			return
+		}
 		p.indexInRow = 0
 	} else if p.digitsPerColumn > 0 && p.indexInRow%p.digitsPerColumn == 0 {
-		fmt.Fprint(p.writer, " ")
+		n, err := fmt.Fprint(p.writer, " ")
+		if !p.updateByteCount(n, err) {
+			return
+		}
 	}
-	fmt.Fprintf(p.writer, "%d", digit)
+	n, err := fmt.Fprintf(p.writer, "%d", digit)
+	if !p.updateByteCount(n, err) {
+		return
+	}
 	p.index++
 	p.indexInRow++
+}
+
+func (p *printer) updateByteCount(n int, err error) bool {
+	p.byteCount += n
+	p.err = err
+	return err == nil
 }
 
 func squareRoot(radicanDigits []*big.Int, consumer consume2.Consumer[int]) {

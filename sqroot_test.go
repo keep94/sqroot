@@ -1,6 +1,7 @@
 package sqroot_test
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"strings"
@@ -9,6 +10,25 @@ import (
 	"github.com/keep94/consume2"
 	"github.com/keep94/sqroot"
 	"github.com/stretchr/testify/assert"
+)
+
+var (
+	// fakeMantissa = 0.01234567890123456789...
+	fakeMantissa sqroot.Mantissa = func(consumer consume2.Consumer[int]) {
+		for consumer.CanConsume() {
+			for i := 0; i < 10; i++ {
+				consumer.Consume(i)
+			}
+		}
+	}
+
+	// fakeMantissaFiniteDigits = 0.0123456789
+	fakeMantissaFiniteDigits sqroot.Mantissa = func(
+		consumer consume2.Consumer[int]) {
+		for i := 0; i < 10; i++ {
+			consumer.Consume(i)
+		}
+	}
 )
 
 func TestMantissaReusable(t *testing.T) {
@@ -130,29 +150,40 @@ func ExampleSquareRoot() {
 	// 2
 }
 
-func ExamplePrinter() {
+func ExampleMantissa_Format() {
+
+	// Find the square root of 5.
+	mantissa, exp := sqroot.SquareRoot(big.NewInt(5), 0)
+
+	fmt.Printf("%.50f * 10^%d\n", mantissa, exp)
+	// Output:
+	// 0.22360679774997896964091736687312762354406183596115 * 10^1
+}
+
+func ExampleMantissa_Print() {
 
 	// Find the square root of 2.
 	mantissa, exp := sqroot.SquareRoot(big.NewInt(2), 0)
 
-	// Use 20 digits in mantissa
-	mantissa(sqroot.NewPrinter(20))
+	// Print first 5 digits
+	mantissa.Print(5)
 
 	fmt.Printf(" * 10^%d\n", exp)
 	// Output:
-	// 0.14142135623730950488 * 10^1
+	// 0.14142 * 10^1
 }
 
-func ExamplePrinter_format() {
+func ExampleMantissa_Print_format() {
 
 	// Find the square root of 2.
 	mantissa, exp := sqroot.SquareRoot(big.NewInt(2), 0)
+
 	fmt.Printf("10^%d *\n", exp)
-	mantissa(sqroot.NewPrinter(
+	mantissa.Print(
 		1000,
 		sqroot.DigitsPerRow(50),
 		sqroot.DigitsPerColumn(5),
-		sqroot.ShowCount(true)))
+		sqroot.ShowCount(true))
 	// Output:
 	// 10^1 *
 	//    0.14142 13562 37309 50488 01688 72420 96980 78569 67187 53769
@@ -177,51 +208,31 @@ func ExamplePrinter_format() {
 	// 950  17111 16839 16581 72688 94197 58716 58215 21282 29518 48847
 }
 
-func TestPrinterNoOptions(t *testing.T) {
+func TestPrintNoOptions(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewFilePrinter(&builder, 12)
-	for p.CanConsume() {
-		for i := 0; i < 10; i++ {
-			p.Consume(i)
-		}
-	}
+	fakeMantissa.Fprint(&builder, 12)
 	expected := `0.012345678901`
 	assert.Equal(t, expected, builder.String())
 }
 
-func TestPrinterColumns(t *testing.T) {
+func TestPrintColumns(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewFilePrinter(&builder, 12, sqroot.DigitsPerColumn(4))
-	for p.CanConsume() {
-		for i := 0; i < 10; i++ {
-			p.Consume(i)
-		}
-	}
+	fakeMantissa.Fprint(&builder, 12, sqroot.DigitsPerColumn(4))
 	expected := `0.0123 4567 8901`
 	assert.Equal(t, expected, builder.String())
 }
 
-func TestPrinterColumnsShow(t *testing.T) {
+func TestPrintColumnsShow(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewFilePrinter(
+	fakeMantissa.Fprint(
 		&builder, 12, sqroot.DigitsPerColumn(5), sqroot.ShowCount(true))
-	for p.CanConsume() {
-		for i := 0; i < 10; i++ {
-			p.Consume(i)
-		}
-	}
 	expected := `0.01234 56789 01`
 	assert.Equal(t, expected, builder.String())
 }
 
 func TestPrinterRows10(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewFilePrinter(&builder, 110, sqroot.DigitsPerRow(10))
-	for p.CanConsume() {
-		for i := 0; i < 10; i++ {
-			p.Consume(i)
-		}
-	}
+	fakeMantissa.Fprint(&builder, 110, sqroot.DigitsPerRow(10))
 	expected := `0.0123456789
   0123456789
   0123456789
@@ -238,13 +249,8 @@ func TestPrinterRows10(t *testing.T) {
 
 func TestPrinterRows10Columns(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewFilePrinter(
+	fakeMantissa.Fprint(
 		&builder, 110, sqroot.DigitsPerRow(10), sqroot.DigitsPerColumn(10))
-	for p.CanConsume() {
-		for i := 0; i < 10; i++ {
-			p.Consume(i)
-		}
-	}
 	expected := `0.0123456789
   0123456789
   0123456789
@@ -261,13 +267,8 @@ func TestPrinterRows10Columns(t *testing.T) {
 
 func TestPrinterRows11Columns(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewFilePrinter(
+	fakeMantissa.Fprint(
 		&builder, 110, sqroot.DigitsPerRow(11), sqroot.DigitsPerColumn(10))
-	for p.CanConsume() {
-		for i := 0; i < 10; i++ {
-			p.Consume(i)
-		}
-	}
 	expected := `0.0123456789 0
   1234567890 1
   2345678901 2
@@ -283,13 +284,8 @@ func TestPrinterRows11Columns(t *testing.T) {
 
 func TestPrinterRows10Show(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewFilePrinter(
+	fakeMantissa.Fprint(
 		&builder, 110, sqroot.DigitsPerRow(10), sqroot.ShowCount(true))
-	for p.CanConsume() {
-		for i := 0; i < 10; i++ {
-			p.Consume(i)
-		}
-	}
 	expected := `   0.0123456789
  10  0123456789
  20  0123456789
@@ -306,17 +302,12 @@ func TestPrinterRows10Show(t *testing.T) {
 
 func TestPrinterRows10ColumnsShow(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewFilePrinter(
+	fakeMantissa.Fprint(
 		&builder,
 		110,
 		sqroot.DigitsPerRow(10),
 		sqroot.DigitsPerColumn(10),
 		sqroot.ShowCount(true))
-	for p.CanConsume() {
-		for i := 0; i < 10; i++ {
-			p.Consume(i)
-		}
-	}
 	expected := `   0.0123456789
  10  0123456789
  20  0123456789
@@ -333,17 +324,12 @@ func TestPrinterRows10ColumnsShow(t *testing.T) {
 
 func TestPrinterRows11ColumnsShow(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewFilePrinter(
+	fakeMantissa.Fprint(
 		&builder,
 		110,
 		sqroot.DigitsPerRow(11),
 		sqroot.DigitsPerColumn(10),
 		sqroot.ShowCount(true))
-	for p.CanConsume() {
-		for i := 0; i < 10; i++ {
-			p.Consume(i)
-		}
-	}
 	expected := `  0.0123456789 0
 11  1234567890 1
 22  2345678901 2
@@ -359,17 +345,12 @@ func TestPrinterRows11ColumnsShow(t *testing.T) {
 
 func TestPrinterRows11ColumnsShow109(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewFilePrinter(
+	fakeMantissa.Fprint(
 		&builder,
 		109,
 		sqroot.DigitsPerRow(11),
 		sqroot.DigitsPerColumn(10),
 		sqroot.ShowCount(true))
-	for p.CanConsume() {
-		for i := 0; i < 10; i++ {
-			p.Consume(i)
-		}
-	}
 	expected := `  0.0123456789 0
 11  1234567890 1
 22  2345678901 2
@@ -385,17 +366,12 @@ func TestPrinterRows11ColumnsShow109(t *testing.T) {
 
 func TestPrinterRows11ColumnsShow111(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewFilePrinter(
+	fakeMantissa.Fprint(
 		&builder,
 		111,
 		sqroot.DigitsPerRow(11),
 		sqroot.DigitsPerColumn(10),
 		sqroot.ShowCount(true))
-	for p.CanConsume() {
-		for i := 0; i < 10; i++ {
-			p.Consume(i)
-		}
-	}
 	expected := `   0.0123456789 0
  11  1234567890 1
  22  2345678901 2
@@ -412,27 +388,130 @@ func TestPrinterRows11ColumnsShow111(t *testing.T) {
 
 func TestPrinterFewerDigits(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewFilePrinter(
+	fakeMantissaFiniteDigits.Fprint(
 		&builder,
 		111,
 		sqroot.DigitsPerRow(11),
 		sqroot.DigitsPerColumn(10),
 		sqroot.ShowCount(true))
-	for i := 0; i < 10; i++ {
-		p.Consume(i)
-	}
 	expected := `   0.0123456789`
 	assert.Equal(t, expected, builder.String())
 }
 
 func TestPrinterNegative(t *testing.T) {
 	var builder strings.Builder
-	p := sqroot.NewFilePrinter(
-		&builder, -3, sqroot.DigitsPerRow(10), sqroot.ShowCount(true))
-	for p.CanConsume() {
-		for i := 0; i < 10; i++ {
-			p.Consume(i)
-		}
-	}
+	fakeMantissa.Fprint(
+		&builder,
+		-3,
+		sqroot.DigitsPerRow(10),
+		sqroot.ShowCount(true))
 	assert.Empty(t, builder.String())
+}
+
+func TestPrinterCountBytes(t *testing.T) {
+	w := &maxBytesWriter{maxBytes: 10000}
+
+	// Prints 20 rows. Each row 10 columns 6 chars per column + (3+2) chars
+	// for the margin. 65*20-1=1299 bytes because last line doesn't get a
+	// line feed char.
+	n, err := fakeMantissa.Fprint(
+		w,
+		1000,
+		sqroot.DigitsPerRow(50),
+		sqroot.DigitsPerColumn(5),
+		sqroot.ShowCount(true))
+	assert.Equal(t, 1299, n)
+	assert.NoError(t, err)
+}
+
+func TestErrorAtAllStages(t *testing.T) {
+
+	// Force an error at each point of the printing
+	for i := 0; i < 1299; i++ {
+		w := &maxBytesWriter{maxBytes: i}
+		n, err := fakeMantissa.Fprint(
+			w,
+			1000,
+			sqroot.DigitsPerRow(50),
+			sqroot.DigitsPerColumn(5),
+			sqroot.ShowCount(true))
+		assert.Equal(t, i, n)
+		assert.Error(t, err)
+	}
+}
+
+func TestFormat(t *testing.T) {
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%.14f", fakeMantissa)
+	assert.Equal(t, "0.01234567890123", builder.String())
+}
+
+func TestFormatNoPrecision(t *testing.T) {
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%f", fakeMantissa)
+	assert.Equal(t, "0.0123456789012345", builder.String())
+}
+
+func TestFormatNotInfinite(t *testing.T) {
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%.14f", fakeMantissaFiniteDigits)
+	assert.Equal(t, "0.01234567890000", builder.String())
+}
+
+func TestFormatNotInfiniteNoPrecision(t *testing.T) {
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%f", fakeMantissaFiniteDigits)
+	assert.Equal(t, "0.0123456789", builder.String())
+}
+
+func TestFormatWidth(t *testing.T) {
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%20f", fakeMantissa)
+	assert.Equal(t, "  0.0123456789012345", builder.String())
+}
+
+func TestFormatShortWidth(t *testing.T) {
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%10f", fakeMantissa)
+	assert.Equal(t, "0.0123456789012345", builder.String())
+}
+
+func TestFormatWidthLeftJustify(t *testing.T) {
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%-20f", fakeMantissa)
+	assert.Equal(t, "0.0123456789012345  ", builder.String())
+}
+
+func TestFormatWidthAndPrecision(t *testing.T) {
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%-20.13f", fakeMantissa)
+	assert.Equal(t, "0.0123456789012     ", builder.String())
+}
+
+func TestFormatWidthAndPrecisionNotInfinite(t *testing.T) {
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%-20.13f", fakeMantissaFiniteDigits)
+	assert.Equal(t, "0.0123456789000     ", builder.String())
+}
+
+func TestFormatBadVerb(t *testing.T) {
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%g", fakeMantissa)
+	assert.Equal(t, "%!g(mantissa)", builder.String())
+}
+
+type maxBytesWriter struct {
+	maxBytes     int
+	bytesWritten int
+}
+
+func (m *maxBytesWriter) Write(p []byte) (n int, err error) {
+	length := len(p)
+	if length <= m.maxBytes-m.bytesWritten {
+		m.bytesWritten += length
+		return length, nil
+	}
+	diff := m.maxBytes - m.bytesWritten
+	m.bytesWritten += diff
+	return diff, errors.New("Ran out of space")
 }
