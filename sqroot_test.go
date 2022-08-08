@@ -490,8 +490,19 @@ func TestFormatWidthAndPrecision(t *testing.T) {
 
 func TestFormatWidthAndPrecisionNotInfinite(t *testing.T) {
 	var builder strings.Builder
-	fmt.Fprintf(&builder, "%-20.13f", fakeMantissaFiniteDigits)
+	n, err := fmt.Fprintf(&builder, "%-20.13f", fakeMantissaFiniteDigits)
 	assert.Equal(t, "0.0123456789000     ", builder.String())
+	assert.Equal(t, 20, n)
+	assert.NoError(t, err)
+}
+
+func TestFormatWidthAndPrecisionNotInfiniteError(t *testing.T) {
+	for i := 0; i < 20; i++ {
+		w := &maxBytesWriter{maxBytes: i}
+		n, err := fmt.Fprintf(w, "%-20.13f", fakeMantissaFiniteDigits)
+		assert.Equal(t, i, n)
+		assert.Error(t, err)
+	}
 }
 
 func TestFormatBadVerb(t *testing.T) {
