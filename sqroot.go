@@ -52,10 +52,17 @@ func ShowCount(on bool) Option {
 // between 0.1 inclusive and 1.0 exclusive. A nil Mantissa means 0.
 type Mantissa func(consumer consume2.Consumer[int])
 
-// Format prints mantissas with the f verb. Format supports width, precision,
-// and the '-' flag for left justification.
+// Format prints mantissas with the f, F, g, and G verbs. The verbs work in
+// the usual way except that they always round down. Format supports width,
+// precision, and the '-' flag for left justification.
 func (m Mantissa) Format(state fmt.State, verb rune) {
-	if verb != 'f' {
+	var gverb bool
+	switch verb {
+	case 'f', 'F':
+		gverb = false
+	case 'g', 'G':
+		gverb = true
+	default:
 		fmt.Fprintf(state, "%%!%c(mantissa)", verb)
 		return
 	}
@@ -63,13 +70,14 @@ func (m Mantissa) Format(state fmt.State, verb rune) {
 	if !precisionOk {
 		precision = 16
 	}
+	trailingZeros := !gverb || precisionOk
 	width, widthOk := state.Width()
 	if !widthOk {
-		m.printWithPrecision(state, precision)
+		m.printWithPrecision(state, precision, trailingZeros)
 		return
 	}
 	var builder strings.Builder
-	m.printWithPrecision(&builder, precision)
+	m.printWithPrecision(&builder, precision, trailingZeros)
 	field := builder.String()
 	if !state.Flag('-') && len(field) < width {
 		fmt.Fprintf(state, "%s", strings.Repeat(" ", width-len(field)))
@@ -80,8 +88,9 @@ func (m Mantissa) Format(state fmt.State, verb rune) {
 	}
 }
 
-// Send sends the digits to the right of decimal point to consumer. If this
-// Mantissa is nil, which means 0, Send sends no digits to consumer.
+// Send sends the digits to the right of decimal point of this Mantissa
+// to consumer. If this Mantissa is nil, which means 0, Send sends no digits
+// to consumer.
 func (m Mantissa) Send(consumer consume2.Consumer[int]) {
 	if m != nil {
 		m(consumer)
@@ -106,26 +115,33 @@ func (m Mantissa) Fprint(w io.Writer, maxDigits int, options ...Option) (
 	return p.byteCount, p.err
 }
 
-func (m Mantissa) printWithPrecision(w io.Writer, precision int) {
+func (m Mantissa) printWithPrecision(
+	w io.Writer, precision int, trailingZeros bool) {
 	if precision == 0 {
 		fmt.Fprint(w, "0")
 		return
 	}
 	if m == nil {
+		if !trailingZeros {
+			fmt.Fprint(w, "0")
+			return
+		}
 		fmt.Fprint(w, "0.")
 		fmt.Fprint(w, strings.Repeat("0", precision))
 		return
 	}
 	p := newPrinter(w, precision, nil)
 	m.Send(p)
-	digitCount := p.index
-	fmt.Fprint(w, strings.Repeat("0", precision-digitCount))
+	if trailingZeros {
+		digitCount := p.index
+		fmt.Fprint(w, strings.Repeat("0", precision-digitCount))
+	}
 }
 
 // SquareRoot returns the square root of radican * 10^rexp. The return value
 // is of the form mantissa * 10^exp. mantissa is between 0.1 inclusive
-// and 1.0 exclusive. If radican is 0, SquareRoot returns 0 for exp and
-// gives a single zero digit for the mantissa.
+// and 1.0 exclusive. If radican is 0, SquareRoot returns nil for mantissa
+// and 0 for exp.
 func SquareRoot(radican *big.Int, rexp int) (mantissa Mantissa, exp int) {
 	if radican.Sign() < 0 {
 		panic("radican must be non-negative")
