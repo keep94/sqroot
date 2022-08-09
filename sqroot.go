@@ -48,9 +48,8 @@ func ShowCount(on bool) Option {
 	})
 }
 
-// Mantissa represents the mantissa of a square root. Mantissas are between
-// 0.1 inclusive and 1.0 exclusive. Mantissa sends the possibly infinite
-// number of digits to the right of the decimal point to consumer.
+// Mantissa represents the mantissa of a square root. Non-nil Mantissas are
+// between 0.1 inclusive and 1.0 exclusive. A nil Mantissa means 0.
 type Mantissa func(consumer consume2.Consumer[int])
 
 // Format prints mantissas with the f verb. Format supports width, precision,
@@ -66,11 +65,11 @@ func (m Mantissa) Format(state fmt.State, verb rune) {
 	}
 	width, widthOk := state.Width()
 	if !widthOk {
-		m.printWithPrecision(state, precision, precisionOk)
+		m.printWithPrecision(state, precision)
 		return
 	}
 	var builder strings.Builder
-	m.printWithPrecision(&builder, precision, precisionOk)
+	m.printWithPrecision(&builder, precision)
 	field := builder.String()
 	if !state.Flag('-') && len(field) < width {
 		fmt.Fprintf(state, "%s", strings.Repeat(" ", width-len(field)))
@@ -78,6 +77,14 @@ func (m Mantissa) Format(state fmt.State, verb rune) {
 	fmt.Fprint(state, field)
 	if state.Flag('-') && len(field) < width {
 		fmt.Fprintf(state, "%s", strings.Repeat(" ", width-len(field)))
+	}
+}
+
+// Send sends the digits to the right of decimal point to consumer. If this
+// Mantissa is nil, which means 0, Send sends no digits to consumer.
+func (m Mantissa) Send(consumer consume2.Consumer[int]) {
+	if m != nil {
+		m(consumer)
 	}
 }
 
@@ -91,19 +98,28 @@ func (m Mantissa) Print(maxDigits int, options ...Option) (n int, err error) {
 // written and any error encountered.
 func (m Mantissa) Fprint(w io.Writer, maxDigits int, options ...Option) (
 	n int, err error) {
+	if m == nil {
+		return fmt.Fprint(w, "0")
+	}
 	p := newPrinter(w, maxDigits, options)
-	m(p)
+	m.Send(p)
 	return p.byteCount, p.err
 }
 
-func (m Mantissa) printWithPrecision(
-	w io.Writer, precision int, trailingZeros bool) {
-	p := newPrinter(w, precision, nil)
-	m(p)
-	if trailingZeros {
-		digitCount := p.index
-		fmt.Fprint(w, strings.Repeat("0", precision-digitCount))
+func (m Mantissa) printWithPrecision(w io.Writer, precision int) {
+	if precision == 0 {
+		fmt.Fprint(w, "0")
+		return
 	}
+	if m == nil {
+		fmt.Fprint(w, "0.")
+		fmt.Fprint(w, strings.Repeat("0", precision))
+		return
+	}
+	p := newPrinter(w, precision, nil)
+	m.Send(p)
+	digitCount := p.index
+	fmt.Fprint(w, strings.Repeat("0", precision-digitCount))
 }
 
 // SquareRoot returns the square root of radican * 10^rexp. The return value
@@ -115,7 +131,7 @@ func SquareRoot(radican *big.Int, rexp int) (mantissa Mantissa, exp int) {
 		panic("radican must be non-negative")
 	}
 	if radican.Sign() == 0 {
-		return zeroDigit, 0
+		return
 	}
 	if rexp%2 != 0 {
 		radican = new(big.Int).Mul(radican, ten)
@@ -246,10 +262,6 @@ func base100(radican *big.Int) (result []*big.Int, doubleZeroCount int) {
 		}
 	}
 	return
-}
-
-func zeroDigit(consumer consume2.Consumer[int]) {
-	consumer.Consume(0)
 }
 
 type optionFunc func(p *printerSettings)

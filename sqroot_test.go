@@ -13,19 +13,19 @@ import (
 )
 
 var (
-	// fakeMantissa = 0.01234567890123456789...
+	// fakeMantissa = 0.12345678901234567890...
 	fakeMantissa sqroot.Mantissa = func(consumer consume2.Consumer[int]) {
 		for consumer.CanConsume() {
-			for i := 0; i < 10; i++ {
-				consumer.Consume(i)
+			for i := 1; i <= 10; i++ {
+				consumer.Consume(i % 10)
 			}
 		}
 	}
 
-	// fakeMantissaFiniteDigits = 0.0123456789
+	// fakeMantissaFiniteDigits = 0.123456789
 	fakeMantissaFiniteDigits sqroot.Mantissa = func(
 		consumer consume2.Consumer[int]) {
-		for i := 0; i < 10; i++ {
+		for i := 1; i < 10; i++ {
 			consumer.Consume(i)
 		}
 	}
@@ -35,10 +35,10 @@ func TestMantissaReusable(t *testing.T) {
 	mantissa, exp := sqroot.SquareRoot(big.NewInt(5), 0)
 	assert.Equal(t, 1, exp)
 	var answer []int
-	mantissa(consume2.Slice(consume2.AppendTo(&answer), 0, 8))
+	mantissa.Send(consume2.Slice(consume2.AppendTo(&answer), 0, 8))
 	assert.Equal(t, []int{2, 2, 3, 6, 0, 6, 7, 9}, answer)
 	var answer2 []int
-	mantissa(consume2.Slice(consume2.AppendTo(&answer2), 0, 8))
+	mantissa.Send(consume2.Slice(consume2.AppendTo(&answer2), 0, 8))
 	assert.Equal(t, []int{2, 2, 3, 6, 0, 6, 7, 9}, answer2)
 }
 
@@ -47,7 +47,7 @@ func Test2(t *testing.T) {
 	radican := big.NewInt(2)
 	mantissa, exp := sqroot.SquareRoot(radican, 0)
 	assert.Equal(t, 1, exp)
-	mantissa(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
+	mantissa.Send(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
 	assert.Equal(t, []int{1, 4, 1, 4, 2, 1, 3, 5, 6, 2}, answer)
 	assert.Equal(t, big.NewInt(2), radican)
 }
@@ -57,7 +57,7 @@ func Test3(t *testing.T) {
 	radican := big.NewInt(3)
 	mantissa, exp := sqroot.SquareRoot(radican, 0)
 	assert.Equal(t, 1, exp)
-	mantissa(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
+	mantissa.Send(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
 	assert.Equal(t, []int{1, 7, 3, 2, 0, 5, 0, 8, 0, 7}, answer)
 	assert.Equal(t, big.NewInt(3), radican)
 }
@@ -67,8 +67,9 @@ func Test0(t *testing.T) {
 	radican := big.NewInt(0)
 	mantissa, exp := sqroot.SquareRoot(radican, 0)
 	assert.Equal(t, 0, exp)
-	mantissa(consume2.AppendTo(&answer))
-	assert.Equal(t, []int{0}, answer)
+	assert.Nil(t, mantissa)
+	mantissa.Send(consume2.AppendTo(&answer))
+	assert.Empty(t, answer)
 	assert.Equal(t, big.NewInt(0), radican)
 }
 
@@ -77,7 +78,7 @@ func Test1(t *testing.T) {
 	radican := big.NewInt(1)
 	mantissa, exp := sqroot.SquareRoot(radican, 0)
 	assert.Equal(t, 1, exp)
-	mantissa(consume2.AppendTo(&answer))
+	mantissa.Send(consume2.AppendTo(&answer))
 	assert.Equal(t, []int{1}, answer)
 	assert.Equal(t, big.NewInt(1), radican)
 }
@@ -87,7 +88,7 @@ func Test100489(t *testing.T) {
 	radican := big.NewInt(100489)
 	mantissa, exp := sqroot.SquareRoot(radican, 0)
 	assert.Equal(t, 3, exp)
-	mantissa(consume2.AppendTo(&answer))
+	mantissa.Send(consume2.AppendTo(&answer))
 	assert.Equal(t, []int{3, 1, 7}, answer)
 	assert.Equal(t, big.NewInt(100489), radican)
 }
@@ -101,7 +102,7 @@ func Test256(t *testing.T) {
 	radican := big.NewInt(2560)
 	mantissa, exp := sqroot.SquareRoot(radican, -1)
 	assert.Equal(t, 2, exp)
-	mantissa(consume2.AppendTo(&answer))
+	mantissa.Send(consume2.AppendTo(&answer))
 	assert.Equal(t, []int{1, 6}, answer)
 	assert.Equal(t, big.NewInt(2560), radican)
 }
@@ -111,7 +112,7 @@ func Test40(t *testing.T) {
 	radican := big.NewInt(4)
 	mantissa, exp := sqroot.SquareRoot(radican, 1)
 	assert.Equal(t, 1, exp)
-	mantissa(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
+	mantissa.Send(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
 	assert.Equal(t, []int{6, 3, 2, 4, 5, 5, 5, 3, 2, 0}, answer)
 	assert.Equal(t, big.NewInt(4), radican)
 }
@@ -121,7 +122,7 @@ func Test0026(t *testing.T) {
 	radican := big.NewInt(2600)
 	mantissa, exp := sqroot.SquareRoot(radican, -6)
 	assert.Equal(t, -1, exp)
-	mantissa(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
+	mantissa.Send(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
 	assert.Equal(t, []int{5, 0, 9, 9, 0, 1, 9, 5, 1, 3}, answer)
 	assert.Equal(t, big.NewInt(2600), radican)
 }
@@ -131,7 +132,7 @@ func Test026(t *testing.T) {
 	radican := big.NewInt(2600)
 	mantissa, exp := sqroot.SquareRoot(radican, -5)
 	assert.Equal(t, 0, exp)
-	mantissa(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
+	mantissa.Send(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
 	assert.Equal(t, []int{1, 6, 1, 2, 4, 5, 1, 5, 4, 9}, answer)
 	assert.Equal(t, big.NewInt(2600), radican)
 }
@@ -142,7 +143,7 @@ func ExampleSquareRoot() {
 	// Find the square root of 375.2 which is 19.37008002...
 	mantissa, exp := sqroot.SquareRoot(big.NewInt(3752), -1)
 
-	mantissa(consume2.Slice(consume2.AppendTo(&mantissaDigits), 0, 10))
+	mantissa.Send(consume2.Slice(consume2.AppendTo(&mantissaDigits), 0, 10))
 	fmt.Println(mantissaDigits)
 	fmt.Println(exp)
 	// Output:
@@ -211,14 +212,14 @@ func ExampleMantissa_Print_format() {
 func TestPrintNoOptions(t *testing.T) {
 	var builder strings.Builder
 	fakeMantissa.Fprint(&builder, 12)
-	expected := `0.012345678901`
+	expected := `0.123456789012`
 	assert.Equal(t, expected, builder.String())
 }
 
 func TestPrintColumns(t *testing.T) {
 	var builder strings.Builder
 	fakeMantissa.Fprint(&builder, 12, sqroot.DigitsPerColumn(4))
-	expected := `0.0123 4567 8901`
+	expected := `0.1234 5678 9012`
 	assert.Equal(t, expected, builder.String())
 }
 
@@ -226,24 +227,24 @@ func TestPrintColumnsShow(t *testing.T) {
 	var builder strings.Builder
 	fakeMantissa.Fprint(
 		&builder, 12, sqroot.DigitsPerColumn(5), sqroot.ShowCount(true))
-	expected := `0.01234 56789 01`
+	expected := `0.12345 67890 12`
 	assert.Equal(t, expected, builder.String())
 }
 
 func TestPrinterRows10(t *testing.T) {
 	var builder strings.Builder
 	fakeMantissa.Fprint(&builder, 110, sqroot.DigitsPerRow(10))
-	expected := `0.0123456789
-  0123456789
-  0123456789
-  0123456789
-  0123456789
-  0123456789
-  0123456789
-  0123456789
-  0123456789
-  0123456789
-  0123456789`
+	expected := `0.1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890`
 	assert.Equal(t, expected, builder.String())
 }
 
@@ -251,17 +252,17 @@ func TestPrinterRows10Columns(t *testing.T) {
 	var builder strings.Builder
 	fakeMantissa.Fprint(
 		&builder, 110, sqroot.DigitsPerRow(10), sqroot.DigitsPerColumn(10))
-	expected := `0.0123456789
-  0123456789
-  0123456789
-  0123456789
-  0123456789
-  0123456789
-  0123456789
-  0123456789
-  0123456789
-  0123456789
-  0123456789`
+	expected := `0.1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890`
 	assert.Equal(t, expected, builder.String())
 }
 
@@ -269,8 +270,7 @@ func TestPrinterRows11Columns(t *testing.T) {
 	var builder strings.Builder
 	fakeMantissa.Fprint(
 		&builder, 110, sqroot.DigitsPerRow(11), sqroot.DigitsPerColumn(10))
-	expected := `0.0123456789 0
-  1234567890 1
+	expected := `0.1234567890 1
   2345678901 2
   3456789012 3
   4567890123 4
@@ -278,7 +278,8 @@ func TestPrinterRows11Columns(t *testing.T) {
   6789012345 6
   7890123456 7
   8901234567 8
-  9012345678 9`
+  9012345678 9
+  0123456789 0`
 	assert.Equal(t, expected, builder.String())
 }
 
@@ -286,17 +287,17 @@ func TestPrinterRows10Show(t *testing.T) {
 	var builder strings.Builder
 	fakeMantissa.Fprint(
 		&builder, 110, sqroot.DigitsPerRow(10), sqroot.ShowCount(true))
-	expected := `   0.0123456789
- 10  0123456789
- 20  0123456789
- 30  0123456789
- 40  0123456789
- 50  0123456789
- 60  0123456789
- 70  0123456789
- 80  0123456789
- 90  0123456789
-100  0123456789`
+	expected := `   0.1234567890
+ 10  1234567890
+ 20  1234567890
+ 30  1234567890
+ 40  1234567890
+ 50  1234567890
+ 60  1234567890
+ 70  1234567890
+ 80  1234567890
+ 90  1234567890
+100  1234567890`
 	assert.Equal(t, expected, builder.String())
 }
 
@@ -308,17 +309,17 @@ func TestPrinterRows10ColumnsShow(t *testing.T) {
 		sqroot.DigitsPerRow(10),
 		sqroot.DigitsPerColumn(10),
 		sqroot.ShowCount(true))
-	expected := `   0.0123456789
- 10  0123456789
- 20  0123456789
- 30  0123456789
- 40  0123456789
- 50  0123456789
- 60  0123456789
- 70  0123456789
- 80  0123456789
- 90  0123456789
-100  0123456789`
+	expected := `   0.1234567890
+ 10  1234567890
+ 20  1234567890
+ 30  1234567890
+ 40  1234567890
+ 50  1234567890
+ 60  1234567890
+ 70  1234567890
+ 80  1234567890
+ 90  1234567890
+100  1234567890`
 	assert.Equal(t, expected, builder.String())
 }
 
@@ -330,16 +331,16 @@ func TestPrinterRows11ColumnsShow(t *testing.T) {
 		sqroot.DigitsPerRow(11),
 		sqroot.DigitsPerColumn(10),
 		sqroot.ShowCount(true))
-	expected := `  0.0123456789 0
-11  1234567890 1
-22  2345678901 2
-33  3456789012 3
-44  4567890123 4
-55  5678901234 5
-66  6789012345 6
-77  7890123456 7
-88  8901234567 8
-99  9012345678 9`
+	expected := `  0.1234567890 1
+11  2345678901 2
+22  3456789012 3
+33  4567890123 4
+44  5678901234 5
+55  6789012345 6
+66  7890123456 7
+77  8901234567 8
+88  9012345678 9
+99  0123456789 0`
 	assert.Equal(t, expected, builder.String())
 }
 
@@ -351,16 +352,16 @@ func TestPrinterRows11ColumnsShow109(t *testing.T) {
 		sqroot.DigitsPerRow(11),
 		sqroot.DigitsPerColumn(10),
 		sqroot.ShowCount(true))
-	expected := `  0.0123456789 0
-11  1234567890 1
-22  2345678901 2
-33  3456789012 3
-44  4567890123 4
-55  5678901234 5
-66  6789012345 6
-77  7890123456 7
-88  8901234567 8
-99  9012345678`
+	expected := `  0.1234567890 1
+11  2345678901 2
+22  3456789012 3
+33  4567890123 4
+44  5678901234 5
+55  6789012345 6
+66  7890123456 7
+77  8901234567 8
+88  9012345678 9
+99  0123456789`
 	assert.Equal(t, expected, builder.String())
 }
 
@@ -372,17 +373,17 @@ func TestPrinterRows11ColumnsShow111(t *testing.T) {
 		sqroot.DigitsPerRow(11),
 		sqroot.DigitsPerColumn(10),
 		sqroot.ShowCount(true))
-	expected := `   0.0123456789 0
- 11  1234567890 1
- 22  2345678901 2
- 33  3456789012 3
- 44  4567890123 4
- 55  5678901234 5
- 66  6789012345 6
- 77  7890123456 7
- 88  8901234567 8
- 99  9012345678 9
-110  0`
+	expected := `   0.1234567890 1
+ 11  2345678901 2
+ 22  3456789012 3
+ 33  4567890123 4
+ 44  5678901234 5
+ 55  6789012345 6
+ 66  7890123456 7
+ 77  8901234567 8
+ 88  9012345678 9
+ 99  0123456789 0
+110  1`
 	assert.Equal(t, expected, builder.String())
 }
 
@@ -394,7 +395,7 @@ func TestPrinterFewerDigits(t *testing.T) {
 		sqroot.DigitsPerRow(11),
 		sqroot.DigitsPerColumn(10),
 		sqroot.ShowCount(true))
-	expected := `   0.0123456789`
+	expected := `   0.123456789`
 	assert.Equal(t, expected, builder.String())
 }
 
@@ -443,57 +444,63 @@ func TestErrorAtAllStages(t *testing.T) {
 func TestFormat(t *testing.T) {
 	var builder strings.Builder
 	fmt.Fprintf(&builder, "%.14f", fakeMantissa)
-	assert.Equal(t, "0.01234567890123", builder.String())
+	assert.Equal(t, "0.12345678901234", builder.String())
 }
 
 func TestFormatNoPrecision(t *testing.T) {
 	var builder strings.Builder
 	fmt.Fprintf(&builder, "%f", fakeMantissa)
-	assert.Equal(t, "0.0123456789012345", builder.String())
+	assert.Equal(t, "0.1234567890123456", builder.String())
 }
 
 func TestFormatNotInfinite(t *testing.T) {
 	var builder strings.Builder
 	fmt.Fprintf(&builder, "%.14f", fakeMantissaFiniteDigits)
-	assert.Equal(t, "0.01234567890000", builder.String())
+	assert.Equal(t, "0.12345678900000", builder.String())
 }
 
 func TestFormatNotInfiniteNoPrecision(t *testing.T) {
 	var builder strings.Builder
 	fmt.Fprintf(&builder, "%f", fakeMantissaFiniteDigits)
-	assert.Equal(t, "0.0123456789", builder.String())
+	assert.Equal(t, "0.1234567890000000", builder.String())
 }
 
 func TestFormatWidth(t *testing.T) {
 	var builder strings.Builder
 	fmt.Fprintf(&builder, "%20f", fakeMantissa)
-	assert.Equal(t, "  0.0123456789012345", builder.String())
+	assert.Equal(t, "  0.1234567890123456", builder.String())
 }
 
 func TestFormatShortWidth(t *testing.T) {
 	var builder strings.Builder
 	fmt.Fprintf(&builder, "%10f", fakeMantissa)
-	assert.Equal(t, "0.0123456789012345", builder.String())
+	assert.Equal(t, "0.1234567890123456", builder.String())
 }
 
 func TestFormatWidthLeftJustify(t *testing.T) {
 	var builder strings.Builder
 	fmt.Fprintf(&builder, "%-20f", fakeMantissa)
-	assert.Equal(t, "0.0123456789012345  ", builder.String())
+	assert.Equal(t, "0.1234567890123456  ", builder.String())
 }
 
 func TestFormatWidthAndPrecision(t *testing.T) {
 	var builder strings.Builder
 	fmt.Fprintf(&builder, "%-20.13f", fakeMantissa)
-	assert.Equal(t, "0.0123456789012     ", builder.String())
+	assert.Equal(t, "0.1234567890123     ", builder.String())
 }
 
 func TestFormatWidthAndPrecisionNotInfinite(t *testing.T) {
 	var builder strings.Builder
 	n, err := fmt.Fprintf(&builder, "%-20.13f", fakeMantissaFiniteDigits)
-	assert.Equal(t, "0.0123456789000     ", builder.String())
+	assert.Equal(t, "0.1234567890000     ", builder.String())
 	assert.Equal(t, 20, n)
 	assert.NoError(t, err)
+}
+
+func TestFormatPrecisionSetToZero(t *testing.T) {
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%.0f", fakeMantissa)
+	assert.Equal(t, "0", builder.String())
 }
 
 func TestFormatWidthAndPrecisionNotInfiniteError(t *testing.T) {
@@ -503,6 +510,55 @@ func TestFormatWidthAndPrecisionNotInfiniteError(t *testing.T) {
 		assert.Equal(t, i, n)
 		assert.Error(t, err)
 	}
+}
+
+func TestPrintZero(t *testing.T) {
+	var mantissa sqroot.Mantissa
+	var builder strings.Builder
+	mantissa.Fprint(&builder, 45)
+	assert.Equal(t, "0", builder.String())
+}
+
+func TestFormatZero(t *testing.T) {
+	var mantissa sqroot.Mantissa
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%f", mantissa)
+	assert.Equal(t, "0.0000000000000000", builder.String())
+}
+
+func TestFormatZeroPrecision(t *testing.T) {
+	var mantissa sqroot.Mantissa
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%.5f", mantissa)
+	assert.Equal(t, "0.00000", builder.String())
+}
+
+func TestFormatZeroPrecisionSmallWidth(t *testing.T) {
+	var mantissa sqroot.Mantissa
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%5.5f", mantissa)
+	assert.Equal(t, "0.00000", builder.String())
+}
+
+func TestFormatZeroPrecisionWidth(t *testing.T) {
+	var mantissa sqroot.Mantissa
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%10.5f", mantissa)
+	assert.Equal(t, "   0.00000", builder.String())
+}
+
+func TestFormatZeroPrecisionWidthLeft(t *testing.T) {
+	var mantissa sqroot.Mantissa
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%-10.5f", mantissa)
+	assert.Equal(t, "0.00000   ", builder.String())
+}
+
+func TestFormatZeroWidth(t *testing.T) {
+	var mantissa sqroot.Mantissa
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%4.0f", mantissa)
+	assert.Equal(t, "   0", builder.String())
 }
 
 func TestFormatBadVerb(t *testing.T) {
