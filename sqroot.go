@@ -52,25 +52,34 @@ func ShowCount(on bool) Option {
 // between 0.1 inclusive and 1.0 exclusive. A nil Mantissa means 0.
 type Mantissa func(consumer consume2.Consumer[int])
 
-// Format prints mantissas with the f, F, g, and G verbs. The verbs work in
-// the usual way except that they always round down. Format supports width,
-// precision, and the '-' flag for left justification.
+// Format prints this Mantissa with the f, F, g, and G verbs. The verbs work
+// in the usual way except that they always round down. Because Mantissas can
+// have an infinite number of digits, g with no precision shows a max of 16
+// significant digits. Format supports width, precision, and the '-' flag
+// for left justification. The v verb is an alias for g.
 func (m Mantissa) Format(state fmt.State, verb rune) {
 	var gverb bool
 	switch verb {
 	case 'f', 'F':
 		gverb = false
-	case 'g', 'G':
+	case 'g', 'G', 'v':
 		gverb = true
 	default:
-		fmt.Fprintf(state, "%%!%c(mantissa)", verb)
+		fmt.Fprintf(state, "%%!%c(mantissa=%s)", verb, m.String())
 		return
 	}
 	precision, precisionOk := state.Precision()
 	if !precisionOk {
-		precision = 16
+		if gverb {
+			precision = 16
+		} else {
+			precision = 6
+		}
 	}
-	trailingZeros := !gverb || precisionOk
+	if precision == 0 && gverb {
+		precision = 1
+	}
+	trailingZeros := !gverb
 	width, widthOk := state.Width()
 	if !widthOk {
 		m.printWithPrecision(state, precision, trailingZeros)
@@ -80,12 +89,20 @@ func (m Mantissa) Format(state fmt.State, verb rune) {
 	m.printWithPrecision(&builder, precision, trailingZeros)
 	field := builder.String()
 	if !state.Flag('-') && len(field) < width {
-		fmt.Fprintf(state, "%s", strings.Repeat(" ", width-len(field)))
+		fmt.Fprint(state, strings.Repeat(" ", width-len(field)))
 	}
 	fmt.Fprint(state, field)
 	if state.Flag('-') && len(field) < width {
-		fmt.Fprintf(state, "%s", strings.Repeat(" ", width-len(field)))
+		fmt.Fprint(state, strings.Repeat(" ", width-len(field)))
 	}
+}
+
+// String returns this Mantissa with a maximum of 16 significant digits.
+// If this Mantissa is nil, String returns "0".
+func (m Mantissa) String() string {
+	var builder strings.Builder
+	m.Fprint(&builder, 16)
+	return builder.String()
 }
 
 // Send sends the digits to the right of decimal point of this Mantissa
@@ -227,7 +244,7 @@ func (p *printer) Consume(digit int) {
 			return
 		}
 	}
-	n, err := fmt.Fprintf(p.writer, "%d", digit)
+	n, err := fmt.Fprint(p.writer, digit)
 	if !p.updateByteCount(n, err) {
 		return
 	}

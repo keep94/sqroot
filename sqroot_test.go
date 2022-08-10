@@ -29,6 +29,14 @@ var (
 			consumer.Consume(i)
 		}
 	}
+
+	// fakeMantissaShort = 0.123
+	fakeMantissaShort sqroot.Mantissa = func(
+		consumer consume2.Consumer[int]) {
+		consumer.Consume(1)
+		consumer.Consume(2)
+		consumer.Consume(3)
+	}
 )
 
 func TestMantissaReusable(t *testing.T) {
@@ -450,13 +458,13 @@ func TestFormat(t *testing.T) {
 func TestFormatNoPrecision(t *testing.T) {
 	var builder strings.Builder
 	fmt.Fprintf(&builder, "%f", fakeMantissa)
-	assert.Equal(t, "0.1234567890123456", builder.String())
+	assert.Equal(t, "0.123456", builder.String())
 }
 
 func TestFormatNoPrecisionCapital(t *testing.T) {
 	var builder strings.Builder
 	fmt.Fprintf(&builder, "%F", fakeMantissa)
-	assert.Equal(t, "0.1234567890123456", builder.String())
+	assert.Equal(t, "0.123456", builder.String())
 }
 
 func TestFormatNotInfinite(t *testing.T) {
@@ -465,46 +473,40 @@ func TestFormatNotInfinite(t *testing.T) {
 	assert.Equal(t, "0.12345678900000", builder.String())
 }
 
-func TestFormatNotInfiniteG14(t *testing.T) {
-	var builder strings.Builder
-	fmt.Fprintf(&builder, "%.14g", fakeMantissaFiniteDigits)
-	assert.Equal(t, "0.12345678900000", builder.String())
-}
-
-func TestFormatNotInfiniteG(t *testing.T) {
-	var builder strings.Builder
-	fmt.Fprintf(&builder, "%g", fakeMantissaFiniteDigits)
-	assert.Equal(t, "0.123456789", builder.String())
-}
-
 func TestFormatNotInfiniteNoPrecision(t *testing.T) {
 	var builder strings.Builder
-	fmt.Fprintf(&builder, "%f", fakeMantissaFiniteDigits)
-	assert.Equal(t, "0.1234567890000000", builder.String())
+	fmt.Fprintf(&builder, "%f", fakeMantissaShort)
+	assert.Equal(t, "0.123000", builder.String())
 }
 
 func TestFormatWidth(t *testing.T) {
 	var builder strings.Builder
-	fmt.Fprintf(&builder, "%20f", fakeMantissa)
-	assert.Equal(t, "  0.1234567890123456", builder.String())
+	fmt.Fprintf(&builder, "%10f", fakeMantissa)
+	assert.Equal(t, "  0.123456", builder.String())
 }
 
 func TestFormatShortWidth(t *testing.T) {
 	var builder strings.Builder
-	fmt.Fprintf(&builder, "%10f", fakeMantissa)
-	assert.Equal(t, "0.1234567890123456", builder.String())
+	fmt.Fprintf(&builder, "%5f", fakeMantissa)
+	assert.Equal(t, "0.123456", builder.String())
 }
 
 func TestFormatWidthLeftJustify(t *testing.T) {
 	var builder strings.Builder
-	fmt.Fprintf(&builder, "%-20f", fakeMantissa)
-	assert.Equal(t, "0.1234567890123456  ", builder.String())
+	fmt.Fprintf(&builder, "%-10f", fakeMantissa)
+	assert.Equal(t, "0.123456  ", builder.String())
 }
 
 func TestFormatWidthAndPrecision(t *testing.T) {
 	var builder strings.Builder
 	fmt.Fprintf(&builder, "%-20.13f", fakeMantissa)
 	assert.Equal(t, "0.1234567890123     ", builder.String())
+}
+
+func TestFormatPrecisionSetToZero(t *testing.T) {
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%.0f", fakeMantissa)
+	assert.Equal(t, "0", builder.String())
 }
 
 func TestFormatWidthAndPrecisionNotInfinite(t *testing.T) {
@@ -515,12 +517,6 @@ func TestFormatWidthAndPrecisionNotInfinite(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestFormatPrecisionSetToZero(t *testing.T) {
-	var builder strings.Builder
-	fmt.Fprintf(&builder, "%.0f", fakeMantissa)
-	assert.Equal(t, "0", builder.String())
-}
-
 func TestFormatWidthAndPrecisionNotInfiniteError(t *testing.T) {
 	for i := 0; i < 20; i++ {
 		w := &maxBytesWriter{maxBytes: i}
@@ -528,6 +524,48 @@ func TestFormatWidthAndPrecisionNotInfiniteError(t *testing.T) {
 		assert.Equal(t, i, n)
 		assert.Error(t, err)
 	}
+}
+
+func TestFormatNoPrecisionG(t *testing.T) {
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%g", fakeMantissa)
+	assert.Equal(t, "0.1234567890123456", builder.String())
+}
+
+func TestFormatNoPrecisionCapitalG(t *testing.T) {
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%G", fakeMantissa)
+	assert.Equal(t, "0.1234567890123456", builder.String())
+}
+
+func TestFormatNotInfiniteG14(t *testing.T) {
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%.14g", fakeMantissaFiniteDigits)
+	assert.Equal(t, "0.123456789", builder.String())
+}
+
+func TestFormatNotInfiniteG(t *testing.T) {
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%g", fakeMantissaFiniteDigits)
+	assert.Equal(t, "0.123456789", builder.String())
+}
+
+func TestFormatG7(t *testing.T) {
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%.7g", fakeMantissa)
+	assert.Equal(t, "0.1234567", builder.String())
+}
+
+func TestFormatG0(t *testing.T) {
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%.0g", fakeMantissa)
+	assert.Equal(t, "0.1", builder.String())
+}
+
+func TestFormatV(t *testing.T) {
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%v", fakeMantissa)
+	assert.Equal(t, "0.1234567890123456", builder.String())
 }
 
 func TestPrintZero(t *testing.T) {
@@ -541,14 +579,7 @@ func TestFormatZero(t *testing.T) {
 	var mantissa sqroot.Mantissa
 	var builder strings.Builder
 	fmt.Fprintf(&builder, "%f", mantissa)
-	assert.Equal(t, "0.0000000000000000", builder.String())
-}
-
-func TestFormatZeroG(t *testing.T) {
-	var mantissa sqroot.Mantissa
-	var builder strings.Builder
-	fmt.Fprintf(&builder, "%G", mantissa)
-	assert.Equal(t, "0", builder.String())
+	assert.Equal(t, "0.000000", builder.String())
 }
 
 func TestFormatZeroPrecision(t *testing.T) {
@@ -558,34 +589,6 @@ func TestFormatZeroPrecision(t *testing.T) {
 	assert.Equal(t, "0.00000", builder.String())
 }
 
-func TestFormatZeroPrecisionG(t *testing.T) {
-	var mantissa sqroot.Mantissa
-	var builder strings.Builder
-	fmt.Fprintf(&builder, "%.5G", mantissa)
-	assert.Equal(t, "0.00000", builder.String())
-}
-
-func TestFormatZeroPrecisionSmallWidth(t *testing.T) {
-	var mantissa sqroot.Mantissa
-	var builder strings.Builder
-	fmt.Fprintf(&builder, "%5.5f", mantissa)
-	assert.Equal(t, "0.00000", builder.String())
-}
-
-func TestFormatZeroPrecisionWidth(t *testing.T) {
-	var mantissa sqroot.Mantissa
-	var builder strings.Builder
-	fmt.Fprintf(&builder, "%10.5f", mantissa)
-	assert.Equal(t, "   0.00000", builder.String())
-}
-
-func TestFormatZeroPrecisionWidthLeft(t *testing.T) {
-	var mantissa sqroot.Mantissa
-	var builder strings.Builder
-	fmt.Fprintf(&builder, "%-10.5f", mantissa)
-	assert.Equal(t, "0.00000   ", builder.String())
-}
-
 func TestFormatZeroWidth(t *testing.T) {
 	var mantissa sqroot.Mantissa
 	var builder strings.Builder
@@ -593,10 +596,51 @@ func TestFormatZeroWidth(t *testing.T) {
 	assert.Equal(t, "   0", builder.String())
 }
 
+func TestFormatZeroG(t *testing.T) {
+	var mantissa sqroot.Mantissa
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%G", mantissa)
+	assert.Equal(t, "0", builder.String())
+}
+
+func TestFormatZeroPrecisionG(t *testing.T) {
+	var mantissa sqroot.Mantissa
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%.5G", mantissa)
+	assert.Equal(t, "0", builder.String())
+}
+
+func TestFormatZeroZeroPrecisionG(t *testing.T) {
+	var mantissa sqroot.Mantissa
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%.0G", mantissa)
+	assert.Equal(t, "0", builder.String())
+}
+
+func TestFormatZeroV(t *testing.T) {
+	var mantissa sqroot.Mantissa
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%5v", mantissa)
+	assert.Equal(t, "    0", builder.String())
+}
+
 func TestFormatBadVerb(t *testing.T) {
 	var builder strings.Builder
 	fmt.Fprintf(&builder, "%h", fakeMantissa)
-	assert.Equal(t, "%!h(mantissa)", builder.String())
+	assert.Equal(t, "%!h(mantissa=0.1234567890123456)", builder.String())
+}
+
+func TestPrint(t *testing.T) {
+	var builder strings.Builder
+	fmt.Fprint(&builder, fakeMantissa)
+	assert.Equal(t, "0.1234567890123456", builder.String())
+}
+
+func TestPrintNil(t *testing.T) {
+	var builder strings.Builder
+	var mantissa sqroot.Mantissa
+	fmt.Fprint(&builder, mantissa)
+	assert.Equal(t, "0", builder.String())
 }
 
 type maxBytesWriter struct {
