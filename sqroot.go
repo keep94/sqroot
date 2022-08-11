@@ -63,35 +63,33 @@ type Mantissa func(consumer consume2.Consumer[int])
 // significant digits. Format supports width, precision, and the '-' flag
 // for left justification. The v verb is an alias for g.
 func (m Mantissa) Format(state fmt.State, verb rune) {
-	var gverb bool
+	precision, precisionOk := state.Precision()
+	var exactDigitCount bool
 	switch verb {
 	case 'f', 'F':
-		gverb = false
+		if !precisionOk {
+			precision = fPrecision
+		}
+		exactDigitCount = true
 	case 'g', 'G', 'v':
-		gverb = true
+		if !precisionOk {
+			precision = gPrecision
+		}
+		if precision == 0 {
+			precision = 1
+		}
+		exactDigitCount = false
 	default:
 		fmt.Fprintf(state, "%%!%c(mantissa=%s)", verb, m.String())
 		return
 	}
-	precision, precisionOk := state.Precision()
-	if !precisionOk {
-		if gverb {
-			precision = gPrecision
-		} else {
-			precision = fPrecision
-		}
-	}
-	if precision == 0 && gverb {
-		precision = 1
-	}
-	trailingZeros := !gverb
 	width, widthOk := state.Width()
 	if !widthOk {
-		m.printWithPrecision(state, precision, trailingZeros)
+		m.printWithPrecision(state, precision, exactDigitCount)
 		return
 	}
 	var builder strings.Builder
-	m.printWithPrecision(&builder, precision, trailingZeros)
+	m.printWithPrecision(&builder, precision, exactDigitCount)
 	field := builder.String()
 	if !state.Flag('-') && len(field) < width {
 		fmt.Fprint(state, strings.Repeat(" ", width-len(field)))
