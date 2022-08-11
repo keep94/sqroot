@@ -159,30 +159,14 @@ func ExampleSquareRoot() {
 	// 2
 }
 
-func ExampleMantissa_Format() {
-
-	// Find the square root of 5.
-	mantissa, exp := sqroot.SquareRoot(big.NewInt(5), 0)
-
-	fmt.Printf("%.50f * 10^%d\n", mantissa, exp)
+func ExampleCompute() {
+	// Print the square root of 5050.5 with 50 significant digits.
+	fmt.Printf("%.50g", sqroot.Compute(big.NewInt(50505), -1))
 	// Output:
-	// 0.22360679774997896964091736687312762354406183596115 * 10^1
+	// 71.066869918408535463450359603433796752662170140402
 }
 
 func ExampleMantissa_Print() {
-
-	// Find the square root of 2.
-	mantissa, exp := sqroot.SquareRoot(big.NewInt(2), 0)
-
-	// Print first 5 digits
-	mantissa.Print(5)
-
-	fmt.Printf(" * 10^%d\n", exp)
-	// Output:
-	// 0.14142 * 10^1
-}
-
-func ExampleMantissa_Print_format() {
 
 	// Find the square root of 2.
 	mantissa, exp := sqroot.SquareRoot(big.NewInt(2), 0)
@@ -594,6 +578,208 @@ func TestPrintNil(t *testing.T) {
 	var mantissa sqroot.Mantissa
 	actual := fmt.Sprint(mantissa)
 	assert.Equal(t, "0", actual)
+}
+
+func TestComputeZero(t *testing.T) {
+	number := sqroot.Compute(big.NewInt(0), 0)
+	assert.Zero(t, number)
+}
+
+func TestComputeFixed(t *testing.T) {
+	number := sqroot.Compute(big.NewInt(10), 0)
+	actual := fmt.Sprintf("%f", number)
+	assert.Equal(t, "3.162277", actual)
+}
+
+func TestCompute(t *testing.T) {
+	number := sqroot.Compute(big.NewInt(10), 0)
+	assert.Equal(t, "3.162277660168379", number.String())
+}
+
+func TestNumberZeroValueString(t *testing.T) {
+	var number sqroot.Number
+	assert.Equal(t, "0", number.String())
+}
+
+func TestNumberFPositiveExponent(t *testing.T) {
+	number := sqroot.Number{Mantissa: fakeMantissa, Exponent: 5}
+	actual := fmt.Sprintf("%f", number)
+	assert.Equal(t, "12345.678901", actual)
+	actual = fmt.Sprintf("%.1f", number)
+	assert.Equal(t, "12345.6", actual)
+	actual = fmt.Sprintf("%.0f", number)
+	assert.Equal(t, "12345", actual)
+}
+
+func TestNumberFPositiveExponentFiniteDigits(t *testing.T) {
+	number := sqroot.Number{Mantissa: fakeMantissaFiniteDigits, Exponent: 5}
+	actual := fmt.Sprintf("%F", number)
+	assert.Equal(t, "12345.678900", actual)
+}
+
+func TestNumberFNegExponent(t *testing.T) {
+	number := sqroot.Number{Mantissa: fakeMantissa, Exponent: -5}
+	actual := fmt.Sprintf("%f", number)
+	assert.Equal(t, "0.000001", actual)
+	actual = fmt.Sprintf("%.10f", number)
+	assert.Equal(t, "0.0000012345", actual)
+	actual = fmt.Sprintf("%.5f", number)
+	assert.Equal(t, "0.00000", actual)
+	actual = fmt.Sprintf("%.1f", number)
+	assert.Equal(t, "0.0", actual)
+	actual = fmt.Sprintf("%.0f", number)
+	assert.Equal(t, "0", actual)
+}
+
+func TestNumberFZero(t *testing.T) {
+	number := sqroot.Number{Exponent: 4}
+	actual := fmt.Sprintf("%f", number)
+	assert.Equal(t, "0.000000", actual)
+	actual = fmt.Sprintf("%.3f", number)
+	assert.Equal(t, "0.000", actual)
+	actual = fmt.Sprintf("%.1f", number)
+	assert.Equal(t, "0.0", actual)
+	actual = fmt.Sprintf("%.0f", number)
+	assert.Equal(t, "0", actual)
+}
+
+func TestNumberGPositiveExponent(t *testing.T) {
+	number := sqroot.Number{Mantissa: fakeMantissa, Exponent: 5}
+	actual := fmt.Sprintf("%g", number)
+	assert.Equal(t, "12345.67890123456", actual)
+	actual = fmt.Sprintf("%.8g", number)
+	assert.Equal(t, "12345.678", actual)
+	actual = fmt.Sprintf("%.5g", number)
+	assert.Equal(t, "12345", actual)
+	actual = fmt.Sprintf("%.4g", number)
+	assert.Equal(t, "0.1234e5", actual)
+	actual = fmt.Sprintf("%.0G", number)
+	assert.Equal(t, "0.1E5", actual)
+}
+
+func TestNumberGPositiveExponentFiniteDigits(t *testing.T) {
+	number := sqroot.Number{Mantissa: fakeMantissaFiniteDigits, Exponent: 5}
+	actual := fmt.Sprintf("%G", number)
+	assert.Equal(t, "12345.6789", actual)
+}
+
+func TestNumberGNegExponent(t *testing.T) {
+	number := sqroot.Number{Mantissa: fakeMantissa, Exponent: -3}
+	actual := fmt.Sprintf("%g", number)
+	assert.Equal(t, "0.0001234567890123456", actual)
+	actual = fmt.Sprintf("%.8g", number)
+	assert.Equal(t, "0.00012345678", actual)
+	actual = fmt.Sprintf("%.0g", number)
+	assert.Equal(t, "0.0001", actual)
+}
+
+func TestNumberGZero(t *testing.T) {
+	var number sqroot.Number
+	actual := fmt.Sprintf("%G", number)
+	assert.Equal(t, "0", actual)
+	actual = fmt.Sprintf("%.0g", number)
+	assert.Equal(t, "0", actual)
+}
+
+func TestNumberGLargePosExponent(t *testing.T) {
+	number := sqroot.Number{Mantissa: fakeMantissa, Exponent: 11}
+	actual := fmt.Sprintf("%G", number)
+	assert.Equal(t, "0.1234567890123456E11", actual)
+	actual = fmt.Sprintf("%.8g", number)
+	assert.Equal(t, "0.12345678e11", actual)
+	actual = fmt.Sprintf("%.0g", number)
+	assert.Equal(t, "0.1e11", actual)
+	number = sqroot.Number{Mantissa: fakeMantissa, Exponent: 10}
+	actual = fmt.Sprintf("%.10g", number)
+	assert.Equal(t, "1234567890", actual)
+}
+
+func TestNumberGLargePosExponentFiniteDigits(t *testing.T) {
+	number := sqroot.Number{
+		Mantissa: fakeMantissaFiniteDigits, Exponent: 11}
+	actual := fmt.Sprintf("%g", number)
+	assert.Equal(t, "0.123456789e11", actual)
+}
+
+func TestNumberGLargeNegExponent(t *testing.T) {
+	number := sqroot.Number{Mantissa: fakeMantissa, Exponent: -4}
+	actual := fmt.Sprintf("%G", number)
+	assert.Equal(t, "0.1234567890123456E-4", actual)
+}
+
+func TestNumberEPositiveExponent(t *testing.T) {
+	number := sqroot.Number{Mantissa: fakeMantissa, Exponent: 5}
+	actual := fmt.Sprintf("%e", number)
+	assert.Equal(t, "0.123456e5", actual)
+	actual = fmt.Sprintf("%.1E", number)
+	assert.Equal(t, "0.1E5", actual)
+	actual = fmt.Sprintf("%.0e", number)
+	assert.Equal(t, "0e5", actual)
+}
+
+func TestNumberEPositiveExponentFiniteDigits(t *testing.T) {
+	number := sqroot.Number{Mantissa: fakeMantissaFiniteDigits, Exponent: 5}
+	actual := fmt.Sprintf("%.14e", number)
+	assert.Equal(t, "0.12345678900000e5", actual)
+}
+
+func TestNumberENegExponent(t *testing.T) {
+	number := sqroot.Number{Mantissa: fakeMantissa, Exponent: -5}
+	actual := fmt.Sprintf("%e", number)
+	assert.Equal(t, "0.123456e-5", actual)
+	actual = fmt.Sprintf("%.1E", number)
+	assert.Equal(t, "0.1E-5", actual)
+	actual = fmt.Sprintf("%.0e", number)
+	assert.Equal(t, "0e-5", actual)
+}
+
+func TestNumberEZero(t *testing.T) {
+	var number sqroot.Number
+	actual := fmt.Sprintf("%E", number)
+	assert.Equal(t, "0.000000E0", actual)
+	actual = fmt.Sprintf("%.1e", number)
+	assert.Equal(t, "0.0e0", actual)
+	actual = fmt.Sprintf("%.0e", number)
+	assert.Equal(t, "0e0", actual)
+}
+
+func TestNumberWidth(t *testing.T) {
+	number := sqroot.Number{Mantissa: fakeMantissa, Exponent: 5}
+	actual := fmt.Sprintf("%20v", number)
+	assert.Equal(t, "   12345.67890123456", actual)
+	actual = fmt.Sprintf("%16v", number)
+	assert.Equal(t, "12345.67890123456", actual)
+	actual = fmt.Sprintf("%-20v", number)
+	assert.Equal(t, "12345.67890123456   ", actual)
+	actual = fmt.Sprintf("%-16v", number)
+	assert.Equal(t, "12345.67890123456", actual)
+	actual = fmt.Sprintf("%6.5v", number)
+	assert.Equal(t, " 12345", actual)
+}
+
+func TestNumberString(t *testing.T) {
+	number := sqroot.Number{Mantissa: fakeMantissaFiniteDigits, Exponent: 5}
+	assert.Equal(t, "12345.6789", number.String())
+	number = sqroot.Number{Mantissa: fakeMantissa, Exponent: 5}
+	assert.Equal(t, "12345.67890123456", number.String())
+	number = sqroot.Number{Mantissa: fakeMantissa, Exponent: 10}
+	assert.Equal(t, "1234567890.123456", number.String())
+	number = sqroot.Number{Mantissa: fakeMantissa, Exponent: 11}
+	assert.Equal(t, "0.1234567890123456e11", number.String())
+	number = sqroot.Number{Mantissa: fakeMantissa, Exponent: -3}
+	assert.Equal(t, "0.0001234567890123456", number.String())
+	number = sqroot.Number{Mantissa: fakeMantissa, Exponent: -4}
+	assert.Equal(t, "0.1234567890123456e-4", number.String())
+	number = sqroot.Number{Exponent: -4}
+	assert.Equal(t, "0", number.String())
+	number = sqroot.Number{Exponent: 4}
+	assert.Equal(t, "0", number.String())
+}
+
+func TestNumberBadVerb(t *testing.T) {
+	number := sqroot.Number{Mantissa: fakeMantissaFiniteDigits, Exponent: 5}
+	actual := fmt.Sprintf("%h", number)
+	assert.Equal(t, "%!h(number=12345.6789)", actual)
 }
 
 type maxBytesWriter struct {
