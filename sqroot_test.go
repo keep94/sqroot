@@ -1,4 +1,4 @@
-package sqroot_test
+package sqroot
 
 import (
 	"errors"
@@ -8,54 +8,57 @@ import (
 	"testing"
 
 	"github.com/keep94/consume2"
-	"github.com/keep94/sqroot"
 	"github.com/stretchr/testify/assert"
 )
 
 var (
 	// fakeMantissa = 0.12345678901234567890...
-	fakeMantissa sqroot.Mantissa = func(consumer consume2.Consumer[int]) {
-		for consumer.CanConsume() {
-			for i := 1; i <= 10; i++ {
-				consumer.Consume(i % 10)
+	fakeMantissa = Mantissa{
+		generator: func(consumer consume2.Consumer[int]) {
+			for consumer.CanConsume() {
+				for i := 1; i <= 10; i++ {
+					consumer.Consume(i % 10)
+				}
 			}
-		}
+		},
 	}
 
 	// fakeMantissaFiniteDigits = 0.123456789
-	fakeMantissaFiniteDigits sqroot.Mantissa = func(
-		consumer consume2.Consumer[int]) {
-		for i := 1; i < 10; i++ {
-			consumer.Consume(i)
-		}
+	fakeMantissaFiniteDigits = Mantissa{
+		generator: func(consumer consume2.Consumer[int]) {
+			for i := 1; i < 10; i++ {
+				consumer.Consume(i)
+			}
+		},
 	}
 
 	// fakeMantissaShort = 0.123
-	fakeMantissaShort sqroot.Mantissa = func(
-		consumer consume2.Consumer[int]) {
-		consumer.Consume(1)
-		consumer.Consume(2)
-		consumer.Consume(3)
+	fakeMantissaShort = Mantissa{
+		generator: func(consumer consume2.Consumer[int]) {
+			consumer.Consume(1)
+			consumer.Consume(2)
+			consumer.Consume(3)
+		},
 	}
 )
 
 func TestMantissaReusable(t *testing.T) {
-	mantissa, exp := sqroot.SquareRoot(big.NewInt(5), 0)
-	assert.Equal(t, 1, exp)
+	n := SquareRoot(big.NewInt(5), 0)
+	assert.Equal(t, 1, n.Exponent())
 	var answer []int
-	mantissa.Send(consume2.Slice(consume2.AppendTo(&answer), 0, 8))
+	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer), 0, 8))
 	assert.Equal(t, []int{2, 2, 3, 6, 0, 6, 7, 9}, answer)
 	var answer2 []int
-	mantissa.Send(consume2.Slice(consume2.AppendTo(&answer2), 0, 8))
+	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer2), 0, 8))
 	assert.Equal(t, []int{2, 2, 3, 6, 0, 6, 7, 9}, answer2)
 }
 
 func Test2(t *testing.T) {
 	var answer []int
 	radican := big.NewInt(2)
-	mantissa, exp := sqroot.SquareRoot(radican, 0)
-	assert.Equal(t, 1, exp)
-	mantissa.Send(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
+	n := SquareRoot(radican, 0)
+	assert.Equal(t, 1, n.Exponent())
+	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
 	assert.Equal(t, []int{1, 4, 1, 4, 2, 1, 3, 5, 6, 2}, answer)
 	assert.Equal(t, big.NewInt(2), radican)
 }
@@ -63,9 +66,9 @@ func Test2(t *testing.T) {
 func Test3(t *testing.T) {
 	var answer []int
 	radican := big.NewInt(3)
-	mantissa, exp := sqroot.SquareRoot(radican, 0)
-	assert.Equal(t, 1, exp)
-	mantissa.Send(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
+	n := SquareRoot(radican, 0)
+	assert.Equal(t, 1, n.Exponent())
+	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
 	assert.Equal(t, []int{1, 7, 3, 2, 0, 5, 0, 8, 0, 7}, answer)
 	assert.Equal(t, big.NewInt(3), radican)
 }
@@ -73,10 +76,9 @@ func Test3(t *testing.T) {
 func Test0(t *testing.T) {
 	var answer []int
 	radican := big.NewInt(0)
-	mantissa, exp := sqroot.SquareRoot(radican, 0)
-	assert.Equal(t, 0, exp)
-	assert.Nil(t, mantissa)
-	mantissa.Send(consume2.AppendTo(&answer))
+	n := SquareRoot(radican, 0)
+	assert.Zero(t, n)
+	n.Mantissa().Send(consume2.AppendTo(&answer))
 	assert.Empty(t, answer)
 	assert.Equal(t, big.NewInt(0), radican)
 }
@@ -84,9 +86,9 @@ func Test0(t *testing.T) {
 func Test1(t *testing.T) {
 	var answer []int
 	radican := big.NewInt(1)
-	mantissa, exp := sqroot.SquareRoot(radican, 0)
-	assert.Equal(t, 1, exp)
-	mantissa.Send(consume2.AppendTo(&answer))
+	n := SquareRoot(radican, 0)
+	assert.Equal(t, 1, n.Exponent())
+	n.Mantissa().Send(consume2.AppendTo(&answer))
 	assert.Equal(t, []int{1}, answer)
 	assert.Equal(t, big.NewInt(1), radican)
 }
@@ -94,23 +96,23 @@ func Test1(t *testing.T) {
 func Test100489(t *testing.T) {
 	var answer []int
 	radican := big.NewInt(100489)
-	mantissa, exp := sqroot.SquareRoot(radican, 0)
-	assert.Equal(t, 3, exp)
-	mantissa.Send(consume2.AppendTo(&answer))
+	n := SquareRoot(radican, 0)
+	assert.Equal(t, 3, n.Exponent())
+	n.Mantissa().Send(consume2.AppendTo(&answer))
 	assert.Equal(t, []int{3, 1, 7}, answer)
 	assert.Equal(t, big.NewInt(100489), radican)
 }
 
 func TestNegative(t *testing.T) {
-	assert.Panics(t, func() { sqroot.SquareRoot(big.NewInt(-1), 0) })
+	assert.Panics(t, func() { SquareRoot(big.NewInt(-1), 0) })
 }
 
 func Test256(t *testing.T) {
 	var answer []int
 	radican := big.NewInt(2560)
-	mantissa, exp := sqroot.SquareRoot(radican, -1)
-	assert.Equal(t, 2, exp)
-	mantissa.Send(consume2.AppendTo(&answer))
+	n := SquareRoot(radican, -1)
+	assert.Equal(t, 2, n.Exponent())
+	n.Mantissa().Send(consume2.AppendTo(&answer))
 	assert.Equal(t, []int{1, 6}, answer)
 	assert.Equal(t, big.NewInt(2560), radican)
 }
@@ -118,9 +120,9 @@ func Test256(t *testing.T) {
 func Test40(t *testing.T) {
 	var answer []int
 	radican := big.NewInt(4)
-	mantissa, exp := sqroot.SquareRoot(radican, 1)
-	assert.Equal(t, 1, exp)
-	mantissa.Send(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
+	n := SquareRoot(radican, 1)
+	assert.Equal(t, 1, n.Exponent())
+	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
 	assert.Equal(t, []int{6, 3, 2, 4, 5, 5, 5, 3, 2, 0}, answer)
 	assert.Equal(t, big.NewInt(4), radican)
 }
@@ -128,9 +130,9 @@ func Test40(t *testing.T) {
 func Test0026(t *testing.T) {
 	var answer []int
 	radican := big.NewInt(2600)
-	mantissa, exp := sqroot.SquareRoot(radican, -6)
-	assert.Equal(t, -1, exp)
-	mantissa.Send(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
+	n := SquareRoot(radican, -6)
+	assert.Equal(t, -1, n.Exponent())
+	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
 	assert.Equal(t, []int{5, 0, 9, 9, 0, 1, 9, 5, 1, 3}, answer)
 	assert.Equal(t, big.NewInt(2600), radican)
 }
@@ -138,9 +140,9 @@ func Test0026(t *testing.T) {
 func Test026(t *testing.T) {
 	var answer []int
 	radican := big.NewInt(2600)
-	mantissa, exp := sqroot.SquareRoot(radican, -5)
-	assert.Equal(t, 0, exp)
-	mantissa.Send(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
+	n := SquareRoot(radican, -5)
+	assert.Equal(t, 0, n.Exponent())
+	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
 	assert.Equal(t, []int{1, 6, 1, 2, 4, 5, 1, 5, 4, 9}, answer)
 	assert.Equal(t, big.NewInt(2600), radican)
 }
@@ -149,19 +151,19 @@ func ExampleSquareRoot() {
 	var mantissaDigits []int
 
 	// Find the square root of 375.2 which is 19.37008002...
-	mantissa, exp := sqroot.SquareRoot(big.NewInt(3752), -1)
+	n := SquareRoot(big.NewInt(3752), -1)
 
-	mantissa.Send(consume2.Slice(consume2.AppendTo(&mantissaDigits), 0, 10))
+	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&mantissaDigits), 0, 10))
 	fmt.Println(mantissaDigits)
-	fmt.Println(exp)
+	fmt.Println(n.Exponent())
 	// Output:
 	// [1 9 3 7 0 0 8 0 0 2]
 	// 2
 }
 
-func ExampleCompute() {
+func ExampleSquareRoot_format() {
 	// Print the square root of 5050.5 with 50 significant digits.
-	fmt.Printf("%.50g", sqroot.Compute(big.NewInt(50505), -1))
+	fmt.Printf("%.50g", SquareRoot(big.NewInt(50505), -1))
 	// Output:
 	// 71.066869918408535463450359603433796752662170140402
 }
@@ -169,14 +171,11 @@ func ExampleCompute() {
 func ExampleMantissa_Print() {
 
 	// Find the square root of 2.
-	mantissa, exp := sqroot.SquareRoot(big.NewInt(2), 0)
+	n := SquareRoot(big.NewInt(2), 0)
 
-	fmt.Printf("10^%d *\n", exp)
-	mantissa.Print(
-		1000,
-		sqroot.DigitsPerRow(50),
-		sqroot.DigitsPerColumn(5),
-		sqroot.ShowCount(true))
+	fmt.Printf("10^%d *\n", n.Exponent())
+	n.Mantissa().Print(
+		1000, DigitsPerRow(50), DigitsPerColumn(5), ShowCount(true))
 	// Output:
 	// 10^1 *
 	//    0.14142 13562 37309 50488 01688 72420 96980 78569 67187 53769
@@ -208,20 +207,20 @@ func TestPrintNoOptions(t *testing.T) {
 }
 
 func TestPrintColumns(t *testing.T) {
-	actual := fakeMantissa.Sprint(12, sqroot.DigitsPerColumn(4))
+	actual := fakeMantissa.Sprint(12, DigitsPerColumn(4))
 	expected := `0.1234 5678 9012`
 	assert.Equal(t, expected, actual)
 }
 
 func TestPrintColumnsShow(t *testing.T) {
 	actual := fakeMantissa.Sprint(
-		12, sqroot.DigitsPerColumn(5), sqroot.ShowCount(true))
+		12, DigitsPerColumn(5), ShowCount(true))
 	expected := `0.12345 67890 12`
 	assert.Equal(t, expected, actual)
 }
 
 func TestPrinterRows10(t *testing.T) {
-	actual := fakeMantissa.Sprint(110, sqroot.DigitsPerRow(10))
+	actual := fakeMantissa.Sprint(110, DigitsPerRow(10))
 	expected := `0.1234567890
   1234567890
   1234567890
@@ -238,7 +237,7 @@ func TestPrinterRows10(t *testing.T) {
 
 func TestPrinterRows10Columns(t *testing.T) {
 	actual := fakeMantissa.Sprint(
-		110, sqroot.DigitsPerRow(10), sqroot.DigitsPerColumn(10))
+		110, DigitsPerRow(10), DigitsPerColumn(10))
 	expected := `0.1234567890
   1234567890
   1234567890
@@ -255,7 +254,7 @@ func TestPrinterRows10Columns(t *testing.T) {
 
 func TestPrinterRows11Columns(t *testing.T) {
 	actual := fakeMantissa.Sprint(
-		110, sqroot.DigitsPerRow(11), sqroot.DigitsPerColumn(10))
+		110, DigitsPerRow(11), DigitsPerColumn(10))
 	expected := `0.1234567890 1
   2345678901 2
   3456789012 3
@@ -271,7 +270,7 @@ func TestPrinterRows11Columns(t *testing.T) {
 
 func TestPrinterRows10Show(t *testing.T) {
 	actual := fakeMantissa.Sprint(
-		110, sqroot.DigitsPerRow(10), sqroot.ShowCount(true))
+		110, DigitsPerRow(10), ShowCount(true))
 	expected := `   0.1234567890
  10  1234567890
  20  1234567890
@@ -288,10 +287,7 @@ func TestPrinterRows10Show(t *testing.T) {
 
 func TestPrinterRows10ColumnsShow(t *testing.T) {
 	actual := fakeMantissa.Sprint(
-		110,
-		sqroot.DigitsPerRow(10),
-		sqroot.DigitsPerColumn(10),
-		sqroot.ShowCount(true))
+		110, DigitsPerRow(10), DigitsPerColumn(10), ShowCount(true))
 	expected := `   0.1234567890
  10  1234567890
  20  1234567890
@@ -308,10 +304,7 @@ func TestPrinterRows10ColumnsShow(t *testing.T) {
 
 func TestPrinterRows11ColumnsShow(t *testing.T) {
 	actual := fakeMantissa.Sprint(
-		110,
-		sqroot.DigitsPerRow(11),
-		sqroot.DigitsPerColumn(10),
-		sqroot.ShowCount(true))
+		110, DigitsPerRow(11), DigitsPerColumn(10), ShowCount(true))
 	expected := `  0.1234567890 1
 11  2345678901 2
 22  3456789012 3
@@ -327,10 +320,7 @@ func TestPrinterRows11ColumnsShow(t *testing.T) {
 
 func TestPrinterRows11ColumnsShow109(t *testing.T) {
 	actual := fakeMantissa.Sprint(
-		109,
-		sqroot.DigitsPerRow(11),
-		sqroot.DigitsPerColumn(10),
-		sqroot.ShowCount(true))
+		109, DigitsPerRow(11), DigitsPerColumn(10), ShowCount(true))
 	expected := `  0.1234567890 1
 11  2345678901 2
 22  3456789012 3
@@ -346,10 +336,7 @@ func TestPrinterRows11ColumnsShow109(t *testing.T) {
 
 func TestPrinterRows11ColumnsShow111(t *testing.T) {
 	actual := fakeMantissa.Sprint(
-		111,
-		sqroot.DigitsPerRow(11),
-		sqroot.DigitsPerColumn(10),
-		sqroot.ShowCount(true))
+		111, DigitsPerRow(11), DigitsPerColumn(10), ShowCount(true))
 	expected := `   0.1234567890 1
  11  2345678901 2
  22  3456789012 3
@@ -366,19 +353,14 @@ func TestPrinterRows11ColumnsShow111(t *testing.T) {
 
 func TestPrinterFewerDigits(t *testing.T) {
 	actual := fakeMantissaFiniteDigits.Sprint(
-		111,
-		sqroot.DigitsPerRow(11),
-		sqroot.DigitsPerColumn(10),
-		sqroot.ShowCount(true))
+		111, DigitsPerRow(11), DigitsPerColumn(10), ShowCount(true))
 	expected := `   0.123456789`
 	assert.Equal(t, expected, actual)
 }
 
 func TestPrinterNegative(t *testing.T) {
 	actual := fakeMantissa.Sprint(
-		-3,
-		sqroot.DigitsPerRow(10),
-		sqroot.ShowCount(true))
+		-3, DigitsPerRow(10), ShowCount(true))
 	assert.Empty(t, actual)
 }
 
@@ -389,11 +371,7 @@ func TestPrinterCountBytes(t *testing.T) {
 	// for the margin. 65*20-1=1299 bytes because last line doesn't get a
 	// line feed char.
 	n, err := fakeMantissa.Fprint(
-		w,
-		1000,
-		sqroot.DigitsPerRow(50),
-		sqroot.DigitsPerColumn(5),
-		sqroot.ShowCount(true))
+		w, 1000, DigitsPerRow(50), DigitsPerColumn(5), ShowCount(true))
 	assert.Equal(t, 1299, n)
 	assert.NoError(t, err)
 }
@@ -404,11 +382,7 @@ func TestErrorAtAllStages(t *testing.T) {
 	for i := 0; i < 1299; i++ {
 		w := &maxBytesWriter{maxBytes: i}
 		n, err := fakeMantissa.Fprint(
-			w,
-			1000,
-			sqroot.DigitsPerRow(50),
-			sqroot.DigitsPerColumn(5),
-			sqroot.ShowCount(true))
+			w, 1000, DigitsPerRow(50), DigitsPerColumn(5), ShowCount(true))
 		assert.Equal(t, i, n)
 		assert.Error(t, err)
 	}
@@ -517,49 +491,49 @@ func TestFormatV(t *testing.T) {
 }
 
 func TestPrintZero(t *testing.T) {
-	var mantissa sqroot.Mantissa
+	var mantissa Mantissa
 	actual := mantissa.Sprint(45)
 	assert.Equal(t, "0", actual)
 }
 
 func TestFormatZero(t *testing.T) {
-	var mantissa sqroot.Mantissa
+	var mantissa Mantissa
 	actual := fmt.Sprintf("%f", mantissa)
 	assert.Equal(t, "0.000000", actual)
 }
 
 func TestFormatZeroPrecision(t *testing.T) {
-	var mantissa sqroot.Mantissa
+	var mantissa Mantissa
 	actual := fmt.Sprintf("%.5f", mantissa)
 	assert.Equal(t, "0.00000", actual)
 }
 
 func TestFormatZeroWidth(t *testing.T) {
-	var mantissa sqroot.Mantissa
+	var mantissa Mantissa
 	actual := fmt.Sprintf("%4.0f", mantissa)
 	assert.Equal(t, "   0", actual)
 }
 
 func TestFormatZeroG(t *testing.T) {
-	var mantissa sqroot.Mantissa
+	var mantissa Mantissa
 	actual := fmt.Sprintf("%G", mantissa)
 	assert.Equal(t, "0", actual)
 }
 
 func TestFormatZeroPrecisionG(t *testing.T) {
-	var mantissa sqroot.Mantissa
+	var mantissa Mantissa
 	actual := fmt.Sprintf("%.5G", mantissa)
 	assert.Equal(t, "0", actual)
 }
 
 func TestFormatZeroZeroPrecisionG(t *testing.T) {
-	var mantissa sqroot.Mantissa
+	var mantissa Mantissa
 	actual := fmt.Sprintf("%.0G", mantissa)
 	assert.Equal(t, "0", actual)
 }
 
 func TestFormatZeroV(t *testing.T) {
-	var mantissa sqroot.Mantissa
+	var mantissa Mantissa
 	actual := fmt.Sprintf("%5v", mantissa)
 	assert.Equal(t, "    0", actual)
 }
@@ -575,34 +549,29 @@ func TestPrint(t *testing.T) {
 }
 
 func TestPrintNil(t *testing.T) {
-	var mantissa sqroot.Mantissa
+	var mantissa Mantissa
 	actual := fmt.Sprint(mantissa)
 	assert.Equal(t, "0", actual)
 }
 
-func TestComputeZero(t *testing.T) {
-	number := sqroot.Compute(big.NewInt(0), 0)
-	assert.Zero(t, number)
-}
-
-func TestComputeFixed(t *testing.T) {
-	number := sqroot.Compute(big.NewInt(10), 0)
+func TestSquareRootFixed(t *testing.T) {
+	number := SquareRoot(big.NewInt(10), 0)
 	actual := fmt.Sprintf("%f", number)
 	assert.Equal(t, "3.162277", actual)
 }
 
-func TestCompute(t *testing.T) {
-	number := sqroot.Compute(big.NewInt(10), 0)
+func TestSquareRootString(t *testing.T) {
+	number := SquareRoot(big.NewInt(10), 0)
 	assert.Equal(t, "3.162277660168379", number.String())
 }
 
 func TestNumberZeroValueString(t *testing.T) {
-	var number sqroot.Number
+	var number Number
 	assert.Equal(t, "0", number.String())
 }
 
 func TestNumberFPositiveExponent(t *testing.T) {
-	number := sqroot.Number{Mantissa: fakeMantissa, Exponent: 5}
+	number := Number{mantissa: fakeMantissa, exponent: 5}
 	actual := fmt.Sprintf("%f", number)
 	assert.Equal(t, "12345.678901", actual)
 	actual = fmt.Sprintf("%.1f", number)
@@ -612,13 +581,13 @@ func TestNumberFPositiveExponent(t *testing.T) {
 }
 
 func TestNumberFPositiveExponentFiniteDigits(t *testing.T) {
-	number := sqroot.Number{Mantissa: fakeMantissaFiniteDigits, Exponent: 5}
+	number := Number{mantissa: fakeMantissaFiniteDigits, exponent: 5}
 	actual := fmt.Sprintf("%F", number)
 	assert.Equal(t, "12345.678900", actual)
 }
 
 func TestNumberFNegExponent(t *testing.T) {
-	number := sqroot.Number{Mantissa: fakeMantissa, Exponent: -5}
+	number := Number{mantissa: fakeMantissa, exponent: -5}
 	actual := fmt.Sprintf("%f", number)
 	assert.Equal(t, "0.000001", actual)
 	actual = fmt.Sprintf("%.10f", number)
@@ -632,7 +601,7 @@ func TestNumberFNegExponent(t *testing.T) {
 }
 
 func TestNumberFZero(t *testing.T) {
-	number := sqroot.Number{Exponent: 4}
+	var number Number
 	actual := fmt.Sprintf("%f", number)
 	assert.Equal(t, "0.000000", actual)
 	actual = fmt.Sprintf("%.3f", number)
@@ -644,7 +613,7 @@ func TestNumberFZero(t *testing.T) {
 }
 
 func TestNumberGPositiveExponent(t *testing.T) {
-	number := sqroot.Number{Mantissa: fakeMantissa, Exponent: 5}
+	number := Number{mantissa: fakeMantissa, exponent: 5}
 	actual := fmt.Sprintf("%g", number)
 	assert.Equal(t, "12345.67890123456", actual)
 	actual = fmt.Sprintf("%.8g", number)
@@ -658,13 +627,13 @@ func TestNumberGPositiveExponent(t *testing.T) {
 }
 
 func TestNumberGPositiveExponentFiniteDigits(t *testing.T) {
-	number := sqroot.Number{Mantissa: fakeMantissaFiniteDigits, Exponent: 5}
+	number := Number{mantissa: fakeMantissaFiniteDigits, exponent: 5}
 	actual := fmt.Sprintf("%G", number)
 	assert.Equal(t, "12345.6789", actual)
 }
 
 func TestNumberGNegExponent(t *testing.T) {
-	number := sqroot.Number{Mantissa: fakeMantissa, Exponent: -3}
+	number := Number{mantissa: fakeMantissa, exponent: -3}
 	actual := fmt.Sprintf("%g", number)
 	assert.Equal(t, "0.0001234567890123456", actual)
 	actual = fmt.Sprintf("%.8g", number)
@@ -674,7 +643,7 @@ func TestNumberGNegExponent(t *testing.T) {
 }
 
 func TestNumberGZero(t *testing.T) {
-	var number sqroot.Number
+	var number Number
 	actual := fmt.Sprintf("%G", number)
 	assert.Equal(t, "0", actual)
 	actual = fmt.Sprintf("%.0g", number)
@@ -682,33 +651,33 @@ func TestNumberGZero(t *testing.T) {
 }
 
 func TestNumberGLargePosExponent(t *testing.T) {
-	number := sqroot.Number{Mantissa: fakeMantissa, Exponent: 11}
+	number := Number{mantissa: fakeMantissa, exponent: 11}
 	actual := fmt.Sprintf("%G", number)
 	assert.Equal(t, "0.1234567890123456E11", actual)
 	actual = fmt.Sprintf("%.8g", number)
 	assert.Equal(t, "0.12345678e11", actual)
 	actual = fmt.Sprintf("%.0g", number)
 	assert.Equal(t, "0.1e11", actual)
-	number = sqroot.Number{Mantissa: fakeMantissa, Exponent: 10}
+	number = Number{mantissa: fakeMantissa, exponent: 10}
 	actual = fmt.Sprintf("%.10g", number)
 	assert.Equal(t, "1234567890", actual)
 }
 
 func TestNumberGLargePosExponentFiniteDigits(t *testing.T) {
-	number := sqroot.Number{
-		Mantissa: fakeMantissaFiniteDigits, Exponent: 11}
+	number := Number{
+		mantissa: fakeMantissaFiniteDigits, exponent: 11}
 	actual := fmt.Sprintf("%g", number)
 	assert.Equal(t, "0.123456789e11", actual)
 }
 
 func TestNumberGLargeNegExponent(t *testing.T) {
-	number := sqroot.Number{Mantissa: fakeMantissa, Exponent: -4}
+	number := Number{mantissa: fakeMantissa, exponent: -4}
 	actual := fmt.Sprintf("%G", number)
 	assert.Equal(t, "0.1234567890123456E-4", actual)
 }
 
 func TestNumberEPositiveExponent(t *testing.T) {
-	number := sqroot.Number{Mantissa: fakeMantissa, Exponent: 5}
+	number := Number{mantissa: fakeMantissa, exponent: 5}
 	actual := fmt.Sprintf("%e", number)
 	assert.Equal(t, "0.123456e5", actual)
 	actual = fmt.Sprintf("%.1E", number)
@@ -718,13 +687,13 @@ func TestNumberEPositiveExponent(t *testing.T) {
 }
 
 func TestNumberEPositiveExponentFiniteDigits(t *testing.T) {
-	number := sqroot.Number{Mantissa: fakeMantissaFiniteDigits, Exponent: 5}
+	number := Number{mantissa: fakeMantissaFiniteDigits, exponent: 5}
 	actual := fmt.Sprintf("%.14e", number)
 	assert.Equal(t, "0.12345678900000e5", actual)
 }
 
 func TestNumberENegExponent(t *testing.T) {
-	number := sqroot.Number{Mantissa: fakeMantissa, Exponent: -5}
+	number := Number{mantissa: fakeMantissa, exponent: -5}
 	actual := fmt.Sprintf("%e", number)
 	assert.Equal(t, "0.123456e-5", actual)
 	actual = fmt.Sprintf("%.1E", number)
@@ -734,7 +703,7 @@ func TestNumberENegExponent(t *testing.T) {
 }
 
 func TestNumberEZero(t *testing.T) {
-	var number sqroot.Number
+	var number Number
 	actual := fmt.Sprintf("%E", number)
 	assert.Equal(t, "0.000000E0", actual)
 	actual = fmt.Sprintf("%.1e", number)
@@ -744,7 +713,7 @@ func TestNumberEZero(t *testing.T) {
 }
 
 func TestNumberWidth(t *testing.T) {
-	number := sqroot.Number{Mantissa: fakeMantissa, Exponent: 5}
+	number := Number{mantissa: fakeMantissa, exponent: 5}
 	actual := fmt.Sprintf("%20v", number)
 	assert.Equal(t, "   12345.67890123456", actual)
 	actual = fmt.Sprintf("%16v", number)
@@ -758,26 +727,24 @@ func TestNumberWidth(t *testing.T) {
 }
 
 func TestNumberString(t *testing.T) {
-	number := sqroot.Number{Mantissa: fakeMantissaFiniteDigits, Exponent: 5}
+	number := Number{mantissa: fakeMantissaFiniteDigits, exponent: 5}
 	assert.Equal(t, "12345.6789", number.String())
-	number = sqroot.Number{Mantissa: fakeMantissa, Exponent: 5}
+	number = Number{mantissa: fakeMantissa, exponent: 5}
 	assert.Equal(t, "12345.67890123456", number.String())
-	number = sqroot.Number{Mantissa: fakeMantissa, Exponent: 10}
+	number = Number{mantissa: fakeMantissa, exponent: 10}
 	assert.Equal(t, "1234567890.123456", number.String())
-	number = sqroot.Number{Mantissa: fakeMantissa, Exponent: 11}
+	number = Number{mantissa: fakeMantissa, exponent: 11}
 	assert.Equal(t, "0.1234567890123456e11", number.String())
-	number = sqroot.Number{Mantissa: fakeMantissa, Exponent: -3}
+	number = Number{mantissa: fakeMantissa, exponent: -3}
 	assert.Equal(t, "0.0001234567890123456", number.String())
-	number = sqroot.Number{Mantissa: fakeMantissa, Exponent: -4}
+	number = Number{mantissa: fakeMantissa, exponent: -4}
 	assert.Equal(t, "0.1234567890123456e-4", number.String())
-	number = sqroot.Number{Exponent: -4}
-	assert.Equal(t, "0", number.String())
-	number = sqroot.Number{Exponent: 4}
+	number = Number{}
 	assert.Equal(t, "0", number.String())
 }
 
 func TestNumberBadVerb(t *testing.T) {
-	number := sqroot.Number{Mantissa: fakeMantissaFiniteDigits, Exponent: 5}
+	number := Number{mantissa: fakeMantissaFiniteDigits, exponent: 5}
 	actual := fmt.Sprintf("%h", number)
 	assert.Equal(t, "%!h(number=12345.6789)", actual)
 }

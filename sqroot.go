@@ -24,7 +24,8 @@ var (
 	ten        = big.NewInt(10)
 )
 
-// Option represents a Print Mantissa option.
+// Option represents an option for the Print, Fprint, and Sprint methods of
+// Mantissa.
 type Option interface {
 	mutate(p *printerSettings)
 }
@@ -53,9 +54,12 @@ func ShowCount(on bool) Option {
 	})
 }
 
-// Mantissa represents the mantissa of a square root. Non-nil Mantissas are
-// between 0.1 inclusive and 1.0 exclusive. A nil Mantissa means 0.
-type Mantissa func(consumer consume2.Consumer[int])
+// Mantissa represents the mantissa of a square root. Non zero Mantissas are
+// between 0.1 inclusive and 1.0 exclusive. The number of digits of a
+// Mantissa can be infinite. The zero value for a Mantissa corresponds to 0.
+type Mantissa struct {
+	generator func(consumer consume2.Consumer[int])
+}
 
 // Format prints this Mantissa with the f, F, g, and G verbs. The verbs work
 // in the usual way except that they always round down. Because Mantissas can
@@ -106,11 +110,11 @@ func (m Mantissa) String() string {
 }
 
 // Send sends the digits to the right of decimal point of this Mantissa
-// to consumer. If this Mantissa is nil, which means 0, Send sends no digits
+// to consumer. If this Mantissa is zero, Send sends no digits
 // to consumer.
 func (m Mantissa) Send(consumer consume2.Consumer[int]) {
-	if m != nil {
-		m(consumer)
+	if m.generator != nil {
+		m.generator(consumer)
 	}
 }
 
@@ -131,7 +135,7 @@ func (m Mantissa) Sprint(maxDigits int, options ...Option) string {
 // written and any error encountered.
 func (m Mantissa) Fprint(w io.Writer, maxDigits int, options ...Option) (
 	n int, err error) {
-	if m == nil {
+	if m.generator == nil {
 		return fmt.Fprint(w, "0")
 	}
 	p := newPrinter(w, maxDigits, options)
@@ -146,10 +150,23 @@ func (m Mantissa) printWithPrecision(
 	f.Finish()
 }
 
-// Number represents a square root value. The zero value of Number is 0.
+// Number represents a square root value. The zero value for Number
+// corresponds to 0. A Number is of the form mantissa * 10^exponent where
+// mantissa is between 0.1 inclusive and 1.0 exclusive. Like Mantissa, a
+// Number instance can represent an infinite number of digits.
 type Number struct {
-	Mantissa Mantissa
-	Exponent int
+	mantissa Mantissa
+	exponent int
+}
+
+// Mantissa returns the Mantissa of this Number.
+func (n Number) Mantissa() Mantissa {
+	return n.mantissa
+}
+
+// Exponent returns the exponent of this Number.
+func (n Number) Exponent() int {
+	return n.exponent
 }
 
 // Format prints this Number with the f, F, g, G, e, E verbs. The verbs work
@@ -158,9 +175,6 @@ type Number struct {
 // significant digits. Format supports width, precision, and the '-' flag
 // for left justification. The v verb is an alias for g.
 func (n Number) Format(state fmt.State, verb rune) {
-	if n.Mantissa == nil {
-		n.Exponent = 0
-	}
 	precision, precisionOk := state.Precision()
 	var sigDigits int
 	var exactDigitCount bool
@@ -170,7 +184,7 @@ func (n Number) Format(state fmt.State, verb rune) {
 		if !precisionOk {
 			precision = fPrecision
 		}
-		sigDigits = precision + n.Exponent
+		sigDigits = precision + n.exponent
 		exactDigitCount = true
 		sci = false
 	case 'g', 'G', 'v':
@@ -182,7 +196,7 @@ func (n Number) Format(state fmt.State, verb rune) {
 			sigDigits = 1
 		}
 		exactDigitCount = false
-		sci = sigDigits < n.Exponent || n.bigExponent()
+		sci = sigDigits < n.exponent || n.bigExponent()
 	case 'e', 'E':
 		if !precisionOk {
 			precision = fPrecision
@@ -214,16 +228,13 @@ func (n Number) Format(state fmt.State, verb rune) {
 
 // String returns the decimal representation of n using %g.
 func (n Number) String() string {
-	if n.Mantissa == nil {
-		n.Exponent = 0
-	}
 	var builder strings.Builder
 	n.printNumber(&builder, gPrecision, false, n.bigExponent(), false)
 	return builder.String()
 }
 
 func (n Number) bigExponent() bool {
-	return n.Exponent < -3 || n.Exponent > 10
+	return n.exponent < -3 || n.exponent > 10
 }
 
 func (n Number) printNumber(
@@ -235,14 +246,14 @@ func (n Number) printNumber(
 		}
 		n.printSci(w, sigDigits, exactDigitCount, sep)
 	} else {
-		n.printFixed(w, sigDigits, n.Exponent, exactDigitCount)
+		n.printFixed(w, sigDigits, n.exponent, exactDigitCount)
 	}
 }
 
 func (n Number) printFixed(
 	w io.Writer, sigDigits, exponent int, exactDigitCount bool) {
 	f := newFormatter(w, sigDigits, exponent, exactDigitCount)
-	n.Mantissa.Send(f)
+	n.mantissa.Send(f)
 	f.Finish()
 }
 
@@ -250,37 +261,27 @@ func (n Number) printSci(
 	w io.Writer, sigDigits int, exactDigitCount bool, sep string) {
 	n.printFixed(w, sigDigits, 0, exactDigitCount)
 	fmt.Fprint(w, sep)
-	fmt.Fprint(w, n.Exponent)
+	fmt.Fprint(w, n.exponent)
 }
 
-// Compute returns the square root of radican * 10^rexp.
-// If radican is 0, Compute returns the zero value of Number.
-func Compute(radican *big.Int, rexp int) Number {
-	m, e := SquareRoot(radican, rexp)
-	return Number{Mantissa: m, Exponent: e}
-}
-
-// SquareRoot returns the square root of radican * 10^rexp. The return value
-// is of the form mantissa * 10^exp. mantissa is between 0.1 inclusive
-// and 1.0 exclusive. If radican is 0, SquareRoot returns nil for mantissa
-// and 0 for exp.
-func SquareRoot(radican *big.Int, rexp int) (mantissa Mantissa, exp int) {
+// SquareRoot returns the square root of radican * 10^rexp.
+func SquareRoot(radican *big.Int, rexp int) Number {
 	if radican.Sign() < 0 {
 		panic("radican must be non-negative")
 	}
 	if radican.Sign() == 0 {
-		return
+		return Number{}
 	}
 	if rexp%2 != 0 {
 		radican = new(big.Int).Mul(radican, ten)
 		rexp--
 	}
 	radicanDigits, doubleZeroCount := base100(radican)
-	exp = len(radicanDigits) + doubleZeroCount + rexp/2
-	mantissa = func(consumer consume2.Consumer[int]) {
+	exp := len(radicanDigits) + doubleZeroCount + rexp/2
+	generator := func(consumer consume2.Consumer[int]) {
 		squareRoot(radicanDigits, consumer)
 	}
-	return
+	return Number{exponent: exp, mantissa: Mantissa{generator: generator}}
 }
 
 type printer struct {
