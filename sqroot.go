@@ -261,7 +261,7 @@ func (n Number) printSci(
 	w io.Writer, sigDigits int, exactDigitCount bool, sep string) {
 	n.printFixed(w, sigDigits, 0, exactDigitCount)
 	fmt.Fprint(w, sep)
-	fmt.Fprint(w, n.exponent)
+	fmt.Fprintf(w, "%+03d", n.exponent)
 }
 
 // SquareRoot returns the square root of radican * 10^rexp.
