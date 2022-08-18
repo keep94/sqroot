@@ -490,5 +490,5 @@ func computeIndentation(width int) (
 }
 
 func bigExponent(exponent int) bool {
-	return exponent < -3 || exponent > 10
+	return exponent < -3 || exponent > 6
 }

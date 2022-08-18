@@ -609,23 +609,26 @@ func TestNumberGZero(t *testing.T) {
 }
 
 func TestNumberGLargePosExponent(t *testing.T) {
-	number := Number{mantissa: fakeMantissa, exponent: 11}
+	number := Number{mantissa: fakeMantissa, exponent: 7}
 	actual := fmt.Sprintf("%G", number)
-	assert.Equal(t, "0.1234567890123456E+11", actual)
+	assert.Equal(t, "0.1234567890123456E+07", actual)
 	actual = fmt.Sprintf("%.8g", number)
-	assert.Equal(t, "0.12345678e+11", actual)
+	assert.Equal(t, "0.12345678e+07", actual)
 	actual = fmt.Sprintf("%.0g", number)
-	assert.Equal(t, "0.1e+11", actual)
+	assert.Equal(t, "0.1e+07", actual)
+	number = Number{mantissa: fakeMantissa, exponent: 6}
+	actual = fmt.Sprintf("%.6g", number)
+	assert.Equal(t, "123456", actual)
 	number = Number{mantissa: fakeMantissa, exponent: 10}
 	actual = fmt.Sprintf("%.10g", number)
-	assert.Equal(t, "1234567890", actual)
+	assert.Equal(t, "0.1234567890e+10", actual)
 }
 
 func TestNumberGLargePosExponentFiniteDigits(t *testing.T) {
 	number := Number{
-		mantissa: fakeMantissaFiniteDigits, exponent: 11}
+		mantissa: fakeMantissaFiniteDigits, exponent: 7}
 	actual := fmt.Sprintf("%g", number)
-	assert.Equal(t, "0.123456789e+11", actual)
+	assert.Equal(t, "0.123456789e+07", actual)
 }
 
 func TestNumberGLargeNegExponent(t *testing.T) {
@@ -685,12 +688,12 @@ func TestNumberWidth(t *testing.T) {
 }
 
 func TestNumberString(t *testing.T) {
-	number := Number{mantissa: fakeMantissaFiniteDigits, exponent: 5}
-	assert.Equal(t, "12345.6789", number.String())
-	number = Number{mantissa: fakeMantissa, exponent: 5}
-	assert.Equal(t, "12345.67890123456", number.String())
-	number = Number{mantissa: fakeMantissa, exponent: 10}
-	assert.Equal(t, "1234567890.123456", number.String())
+	number := Number{mantissa: fakeMantissaFiniteDigits, exponent: 6}
+	assert.Equal(t, "123456.789", number.String())
+	number = Number{mantissa: fakeMantissa, exponent: 6}
+	assert.Equal(t, "123456.7890123456", number.String())
+	number = Number{mantissa: fakeMantissa, exponent: 7}
+	assert.Equal(t, "0.1234567890123456e+07", number.String())
 	number = Number{mantissa: fakeMantissa, exponent: 11}
 	assert.Equal(t, "0.1234567890123456e+11", number.String())
 	number = Number{mantissa: fakeMantissa, exponent: -3}
