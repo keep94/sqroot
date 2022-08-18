@@ -584,6 +584,16 @@ func TestNumberGPositiveExponent(t *testing.T) {
 	assert.Equal(t, "0.1E+05", actual)
 }
 
+func TestNumberGPositiveExponentShort(t *testing.T) {
+	number := Number{mantissa: fakeMantissaShort, exponent: 5}
+	actual := fmt.Sprintf("%g", number)
+	assert.Equal(t, "12300", actual)
+	actual = fmt.Sprintf("%.5g", number)
+	assert.Equal(t, "12300", actual)
+	actual = fmt.Sprintf("%.4g", number)
+	assert.Equal(t, "0.123e+05", actual)
+}
+
 func TestNumberGPositiveExponentFiniteDigits(t *testing.T) {
 	number := Number{mantissa: fakeMantissaFiniteDigits, exponent: 5}
 	actual := fmt.Sprintf("%G", number)
