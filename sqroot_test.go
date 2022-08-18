@@ -437,6 +437,11 @@ func TestFormatV(t *testing.T) {
 	assert.Equal(t, "0.1234567890123456", actual)
 }
 
+func TestFormatE(t *testing.T) {
+	actual := fmt.Sprintf("%e", fakeMantissa)
+	assert.Equal(t, "0.123456e+00", actual)
+}
+
 func TestPrintZero(t *testing.T) {
 	var mantissa Mantissa
 	actual := mantissa.Sprint(45)
@@ -483,6 +488,12 @@ func TestFormatZeroV(t *testing.T) {
 	var mantissa Mantissa
 	actual := fmt.Sprintf("%5v", mantissa)
 	assert.Equal(t, "    0", actual)
+}
+
+func TestFormatZeroE(t *testing.T) {
+	var mantissa Mantissa
+	actual := fmt.Sprintf("%.5E", mantissa)
+	assert.Equal(t, "0.00000E+00", actual)
 }
 
 func TestFormatBadVerb(t *testing.T) {
