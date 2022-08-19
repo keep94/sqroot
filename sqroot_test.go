@@ -147,8 +147,19 @@ func Test026(t *testing.T) {
 	assert.Equal(t, big.NewInt(2600), radican)
 }
 
+func TestPrintZeroDigits(t *testing.T) {
+	assert.Equal(t, "0", fakeMantissa.Sprint(0))
+	assert.Equal(t, "0", fakeMantissa.Sprint(-1))
+}
+
 func TestPrintNoOptions(t *testing.T) {
 	actual := fakeMantissa.Sprint(12)
+	expected := `0.123456789012`
+	assert.Equal(t, expected, actual)
+}
+
+func TestPrintLessThanOneRow(t *testing.T) {
+	actual := fakeMantissa.Sprint(12, ShowCount(true), DigitsPerRow(12))
 	expected := `0.123456789012`
 	assert.Equal(t, expected, actual)
 }
@@ -308,7 +319,7 @@ func TestPrinterFewerDigits(t *testing.T) {
 func TestPrinterNegative(t *testing.T) {
 	actual := fakeMantissa.Sprint(
 		-3, DigitsPerRow(10), ShowCount(true))
-	assert.Empty(t, actual)
+	assert.Equal(t, "0", actual)
 }
 
 func TestPrinterCountBytes(t *testing.T) {

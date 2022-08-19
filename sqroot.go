@@ -106,7 +106,7 @@ func (m Mantissa) Sprint(maxDigits int, options ...Option) string {
 // written and any error encountered.
 func (m Mantissa) Fprint(w io.Writer, maxDigits int, options ...Option) (
 	n int, err error) {
-	if m.generator == nil {
+	if m.generator == nil || maxDigits <= 0 {
 		return fmt.Fprint(w, "0")
 	}
 	p := newPrinter(w, maxDigits, options)
