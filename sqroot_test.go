@@ -43,11 +43,13 @@ var (
 )
 
 func TestMantissaReusable(t *testing.T) {
-	n := SquareRoot(big.NewInt(5), 0)
+	radican := big.NewInt(5)
+	n := SquareRoot(radican, 0)
 	assert.Equal(t, 1, n.Exponent())
 	var answer []int
 	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer), 0, 8))
 	assert.Equal(t, []int{2, 2, 3, 6, 0, 6, 7, 9}, answer)
+	radican.Set(big.NewInt(7))
 	var answer2 []int
 	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer2), 0, 8))
 	assert.Equal(t, []int{2, 2, 3, 6, 0, 6, 7, 9}, answer2)
