@@ -8,23 +8,23 @@ import (
 	"github.com/keep94/sqroot"
 )
 
-func ExampleSquareRoot() {
+func ExampleSqrt() {
 	var mantissaDigits []int
 
-	// Find the square root of 375.2 which is 19.37008002...
-	n := sqroot.SquareRoot(big.NewInt(3752), -1)
+	// Find the square root of 1000 / 3 which is 18.25741858...
+	n := sqroot.Sqrt(big.NewRat(1000, 3))
 
 	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&mantissaDigits), 0, 10))
 	fmt.Println(mantissaDigits)
 	fmt.Println(n.Exponent())
 	// Output:
-	// [1 9 3 7 0 0 8 0 0 2]
+	// [1 8 2 5 7 4 1 8 5 8]
 	// 2
 }
 
-func ExampleSquareRoot_format() {
+func ExampleSqrt_format() {
 	// Print the square root of 5050.5 with 50 significant digits.
-	fmt.Printf("%.50g", sqroot.SquareRoot(big.NewInt(50505), -1))
+	fmt.Printf("%.50g", sqroot.Sqrt(big.NewRat(10101, 2)))
 	// Output:
 	// 71.066869918408535463450359603433796752662170140402
 }
@@ -32,7 +32,7 @@ func ExampleSquareRoot_format() {
 func ExampleMantissa_Print() {
 
 	// Find the square root of 2.
-	n := sqroot.SquareRoot(big.NewInt(2), 0)
+	n := sqroot.Sqrt(big.NewRat(2, 1))
 
 	fmt.Printf("10^%d *\n", n.Exponent())
 	n.Mantissa().Print(

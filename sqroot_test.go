@@ -149,6 +149,48 @@ func Test026(t *testing.T) {
 	assert.Equal(t, big.NewInt(2600), radican)
 }
 
+func Test2401Over400(t *testing.T) {
+	var answer []int
+	radican := big.NewRat(2401, 4)
+	n := Sqrt(radican)
+	assert.Equal(t, 2, n.Exponent())
+	n.Mantissa().Send(consume2.AppendTo(&answer))
+	assert.Equal(t, []int{2, 4, 5}, answer)
+	assert.Equal(t, big.NewRat(2401, 4), radican)
+}
+
+func Test3Over7Reusable(t *testing.T) {
+	var answer []int
+	radican := big.NewRat(3, 7)
+	n := Sqrt(radican)
+	assert.Equal(t, 0, n.Exponent())
+	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer), 0, 14))
+	assert.Equal(t, []int{6, 5, 4, 6, 5, 3, 6, 7, 0, 7, 0, 7, 9, 7}, answer)
+	assert.Equal(t, big.NewRat(3, 7), radican)
+	radican.SetFrac64(5, 8)
+	var answer2 []int
+	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer2), 0, 14))
+	assert.Equal(t, []int{6, 5, 4, 6, 5, 3, 6, 7, 0, 7, 0, 7, 9, 7}, answer2)
+	assert.Equal(t, big.NewRat(5, 8), radican)
+}
+
+func Test3Over70000(t *testing.T) {
+	var answer []int
+	radican := big.NewRat(3, 70000)
+	n := Sqrt(radican)
+	assert.Equal(t, -2, n.Exponent())
+	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer), 0, 14))
+	assert.Equal(t, []int{6, 5, 4, 6, 5, 3, 6, 7, 0, 7, 0, 7, 9, 7}, answer)
+	assert.Equal(t, big.NewRat(3, 70000), radican)
+}
+
+func TestNegDenom(t *testing.T) {
+	radican := big.NewRat(1, 700)
+	radican.Denom().SetInt64(-500)
+	radican.Num().SetInt64(3)
+	assert.Panics(t, func() { Sqrt(radican) })
+}
+
 func TestPrintZeroDigits(t *testing.T) {
 	assert.Equal(t, "0", fakeMantissa.Sprint(0))
 	assert.Equal(t, "0", fakeMantissa.Sprint(-1))

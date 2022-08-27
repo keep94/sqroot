@@ -155,24 +155,66 @@ func (n Number) String() string {
 	return builder.String()
 }
 
-// SquareRoot returns the square root of radican * 10^rexp.
+// SquareRoot returns the square root of radican * 10^rexp. SquareRoot panics
+// if radican is negative.
 func SquareRoot(radican *big.Int, rexp int) Number {
-	if radican.Sign() < 0 {
-		panic("radican must be non-negative")
-	}
-	if radican.Sign() == 0 {
-		return Number{}
-	}
-	if rexp%2 != 0 {
-		radican = new(big.Int).Mul(radican, ten)
+	num := new(big.Int).Set(radican)
+	denom := big.NewInt(1)
+	for rexp > 0 {
+		num.Mul(num, ten)
 		rexp--
 	}
-	radicanDigits, doubleZeroCount := base100(radican)
-	exp := len(radicanDigits) + doubleZeroCount + rexp/2
+	for rexp < 0 {
+		denom.Mul(denom, ten)
+		rexp++
+	}
+	return Sqrt(new(big.Rat).SetFrac(num, denom))
+}
+
+// Sqrt returns the square root of radican. The denominator of radican must
+// be positive, and the numerator must be non-negative or else Sqrt panics.
+func Sqrt(radican *big.Rat) Number {
+	denom := new(big.Int).Set(radican.Denom())
+	num := new(big.Int).Set(radican.Num())
+	if denom.Sign() <= 0 {
+		panic("Denominator must be positive")
+	}
+	if num.Sign() < 0 {
+		panic("Numerator must be non-negative")
+	}
+	if num.Sign() == 0 {
+		return Number{}
+	}
+	exp := 0
+	for num.Cmp(denom) < 0 {
+		exp--
+		num.Mul(num, oneHundred)
+	}
+	if exp < 0 {
+		exp++
+		num.Div(num, oneHundred)
+	}
+	for num.Cmp(denom) >= 0 {
+		exp++
+		denom.Mul(denom, oneHundred)
+	}
 	generator := func(consumer consume2.Consumer[int]) {
-		squareRoot(radicanDigits, consumer)
+		squareRoot(generateQuotientBase100(num, denom), consumer)
 	}
 	return Number{exponent: exp, mantissa: Mantissa{generator: generator}}
+}
+
+func generateQuotientBase100(num, denom *big.Int) func() *big.Int {
+	num = new(big.Int).Set(num)
+	denom = new(big.Int).Set(denom)
+	return func() *big.Int {
+		if num.Sign() == 0 {
+			return nil
+		}
+		num.Mul(num, oneHundred)
+		group, _ := new(big.Int).DivMod(num, denom, num)
+		return group
+	}
 }
 
 type printer struct {
@@ -417,18 +459,18 @@ func (f *formatter) addLeadingZeros(count int) {
 	fmt.Fprint(f.writer, strings.Repeat("0", count))
 }
 
-func squareRoot(radicanDigits []*big.Int, consumer consume2.Consumer[int]) {
-	radicanDigitsIdx := len(radicanDigits)
+func squareRoot(
+	radicanGroups func() *big.Int, consumer consume2.Consumer[int]) {
 	incr := big.NewInt(1)
 	remainder := big.NewInt(0)
 	for consumer.CanConsume() {
-		if radicanDigitsIdx == 0 && remainder.Sign() == 0 {
+		nextGroup := radicanGroups()
+		if nextGroup == nil && remainder.Sign() == 0 {
 			return
 		}
 		remainder.Mul(remainder, oneHundred)
-		if radicanDigitsIdx > 0 {
-			radicanDigitsIdx--
-			remainder.Add(remainder, radicanDigits[radicanDigitsIdx])
+		if nextGroup != nil {
+			remainder.Add(remainder, nextGroup)
 		}
 		digit := 0
 		for remainder.Cmp(incr) >= 0 {
@@ -439,21 +481,6 @@ func squareRoot(radicanDigits []*big.Int, consumer consume2.Consumer[int]) {
 		consumer.Consume(digit)
 		incr.Sub(incr, one).Mul(incr, ten).Add(incr, one)
 	}
-}
-
-func base100(radican *big.Int) (result []*big.Int, doubleZeroCount int) {
-	radican = new(big.Int).Set(radican)
-	trailingZeros := true
-	for radican.Sign() > 0 {
-		_, m := radican.DivMod(radican, oneHundred, new(big.Int))
-		if trailingZeros && m.Sign() == 0 {
-			doubleZeroCount++
-		} else {
-			result = append(result, m)
-			trailingZeros = false
-		}
-	}
-	return
 }
 
 type optionFunc func(p *printerSettings)
