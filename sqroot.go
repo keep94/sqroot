@@ -168,14 +168,18 @@ func SquareRoot(radican *big.Int, rexp int) Number {
 		denom.Mul(denom, ten)
 		rexp++
 	}
-	return Sqrt(new(big.Rat).SetFrac(num, denom))
+	return sqrtFrac(num, denom)
 }
 
 // Sqrt returns the square root of radican. The denominator of radican must
 // be positive, and the numerator must be non-negative or else Sqrt panics.
 func Sqrt(radican *big.Rat) Number {
-	denom := new(big.Int).Set(radican.Denom())
-	num := new(big.Int).Set(radican.Num())
+	return sqrtFrac(radican.Num(), radican.Denom())
+}
+
+func sqrtFrac(num, denom *big.Int) Number {
+	num = new(big.Int).Set(num)
+	denom = new(big.Int).Set(denom)
 	if denom.Sign() <= 0 {
 		panic("Denominator must be positive")
 	}
