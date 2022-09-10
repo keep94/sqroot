@@ -114,6 +114,44 @@ func (m Mantissa) Fprint(w io.Writer, maxDigits int, options ...Option) (
 	return p.byteCount, p.err
 }
 
+// FindFirst finds the zero based index of the first match of pattern in
+// this Mantissa. FindFirst returns -1 if pattern is not found only if this
+// Mantissa has a finite number of digits. If this Mantissa has an infinite
+// number of digits and pattern is not found, FindFirst will run forever.
+// pattern is a sequence of digits between 0 and 9.
+func (m Mantissa) FindFirst(pattern []int) int {
+	result := make([]int, 0, 1)
+	m.FindAll(pattern, consume2.Slice(consume2.AppendTo(&result), 0, 1))
+	if len(result) == 0 {
+		return -1
+	}
+	return result[0]
+}
+
+// FindFirstN works like FindFirst but it finds the first n matches and
+// returns the zero based index of each match. If this Mantissa has a finite
+// number of digits, FindFirstN may return fewer than n matches.
+// Like FindFirst, FindFirstN may run forever if this Mantissa has an infinite
+// number of digits, and there are not n matches available.
+// pattern is a sequence of digits between 0 and 9.
+func (m Mantissa) FindFirstN(pattern []int, n int) []int {
+	result := make([]int, 0, n)
+	m.FindAll(pattern, consume2.Slice(consume2.AppendTo(&result), 0, n))
+	return result
+}
+
+// FindAll finds all the matches of pattern in this Mantissa. The zero based
+// index of the matches are emitted to indexSink.
+// pattern is a sequence of digits between 0 and 9.
+func (m Mantissa) FindAll(pattern []int, indexSink consume2.Consumer[int]) {
+	if len(pattern) == 0 {
+		m.Send(&zeroPattern{Consumer: indexSink})
+		return
+	}
+	k := &kmp{Consumer: indexSink, pattern: pattern, table: ttable(pattern)}
+	m.Send(k)
+}
+
 // Number represents a square root value. The zero value for Number
 // corresponds to 0. A Number is of the form mantissa * 10^exponent where
 // mantissa is between 0.1 inclusive and 1.0 exclusive. Like Mantissa, a

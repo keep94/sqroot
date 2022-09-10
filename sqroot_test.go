@@ -775,6 +775,84 @@ func TestNumberBadVerb(t *testing.T) {
 	assert.Equal(t, "%!h(number=12345.6789)", actual)
 }
 
+func TestFindFirstN(t *testing.T) {
+	number := Sqrt(big.NewRat(2, 1))
+	hits := number.Mantissa().FindFirstN([]int{1, 4}, 3)
+	assert.Equal(t, []int{0, 2, 144}, hits)
+}
+
+func TestFindFirstNSingle(t *testing.T) {
+	number := Sqrt(big.NewRat(11, 1))
+	hits := number.Mantissa().FindFirstN([]int{3}, 4)
+	assert.Equal(t, []int{0, 1, 10, 13}, hits)
+}
+
+func TestFindFirst(t *testing.T) {
+	number := Sqrt(big.NewRat(2, 1))
+	assert.Equal(t, 1, number.Mantissa().FindFirst([]int{4, 1, 4}))
+}
+
+func TestFindFirstNotThere(t *testing.T) {
+	number := Sqrt(big.NewRat(100489, 1))
+	assert.Equal(t, -1, number.Mantissa().FindFirst([]int{5}))
+}
+
+func TestFindEmptyPattern(t *testing.T) {
+	number := Sqrt(big.NewRat(2, 1))
+	hits := number.Mantissa().FindFirstN(nil, 4)
+	assert.Equal(t, []int{0, 1, 2, 3}, hits)
+	assert.Equal(t, 0, number.Mantissa().FindFirst(nil))
+}
+
+func TestFindFirstNTrickyPattern(t *testing.T) {
+	// 12212212122122121221221 ** 2
+	radican, ok := new(big.Int).SetString(
+		"149138124915706483400311993274596508420730841", 10)
+	assert.True(t, ok)
+	number := SquareRoot(radican, 0)
+	hits := number.Mantissa().FindFirstN(
+		[]int{1, 2, 2, 1, 2, 1, 2, 2, 1, 2, 2, 1}, 3)
+	assert.Equal(t, []int{3, 11}, hits)
+}
+
+func TestFindAll(t *testing.T) {
+	var indexes []int
+
+	// Find all 000's in sqrt(2). Stop when we find 4 or more zeros in a row
+	consumer := consume2.TakeWhile(
+		consume2.AppendTo(&indexes),
+		func(index int) bool {
+			length := len(indexes)
+			return !(length >= 2 && (indexes[length-1] == indexes[length-2]+1) && (index > indexes[length-1]+1))
+		},
+	)
+	number := Sqrt(big.NewRat(2, 1))
+	number.Mantissa().FindAll([]int{0, 0, 0}, consumer)
+	assert.Equal(t, []int{
+		1879,
+		8189,
+		8937,
+		9025,
+		9221,
+		10762,
+		10801,
+		11460,
+		12378,
+		12413,
+		12561,
+		12655,
+		12656,
+	}, indexes)
+}
+
+func TestFindZeroMantissa(t *testing.T) {
+	var m Mantissa
+	assert.Equal(t, -1, m.FindFirst([]int{5}))
+	assert.Equal(t, -1, m.FindFirst(nil))
+	assert.Empty(t, m.FindFirstN([]int{5}, 3))
+	assert.Empty(t, m.FindFirstN(nil, 3))
+}
+
 type maxBytesWriter struct {
 	maxBytes     int
 	bytesWritten int

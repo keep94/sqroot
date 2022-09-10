@@ -63,3 +63,14 @@ func ExampleMantissa_Print() {
 	// 900  20249 44134 17285 31478 10580 36033 71077 30918 28693 14710
 	// 950  17111 16839 16581 72688 94197 58716 58215 21282 29518 48847
 }
+
+func ExampleMantissa_FindFirst() {
+	n := sqroot.Sqrt(big.NewRat(3, 1))
+
+	// sqrt(3) = 1.732050807... so returned index is 4
+	index := n.Mantissa().FindFirst([]int{0, 5, 0, 8})
+
+	fmt.Println(index)
+	// Output:
+	// 4
+}
