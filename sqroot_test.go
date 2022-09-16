@@ -13,33 +13,40 @@ import (
 
 var (
 	// fakeMantissa = 0.12345678901234567890...
-	fakeMantissa = Mantissa{
-		generator: func(consumer consume2.Consumer[int]) {
-			for consumer.CanConsume() {
-				for i := 1; i <= 10; i++ {
-					consumer.Consume(i % 10)
-				}
+	fakeMantissa = Mantissa{spec: funcMantissaSpec(
+		func() func() int {
+			i := 0
+			return func() int {
+				i++
+				return i % 10
 			}
-		},
-	}
+		})}
 
 	// fakeMantissaFiniteDigits = 0.123456789
-	fakeMantissaFiniteDigits = Mantissa{
-		generator: func(consumer consume2.Consumer[int]) {
-			for i := 1; i < 10; i++ {
-				consumer.Consume(i)
+	fakeMantissaFiniteDigits = Mantissa{spec: funcMantissaSpec(
+		func() func() int {
+			i := 0
+			return func() int {
+				if i == 9 {
+					return -1
+				}
+				i++
+				return i
 			}
-		},
-	}
+		})}
 
 	// fakeMantissaShort = 0.123
-	fakeMantissaShort = Mantissa{
-		generator: func(consumer consume2.Consumer[int]) {
-			consumer.Consume(1)
-			consumer.Consume(2)
-			consumer.Consume(3)
-		},
-	}
+	fakeMantissaShort = Mantissa{spec: funcMantissaSpec(
+		func() func() int {
+			i := 0
+			return func() int {
+				if i == 3 {
+					return -1
+				}
+				i++
+				return i
+			}
+		})}
 )
 
 func TestMantissaReusable(t *testing.T) {
@@ -103,6 +110,36 @@ func Test100489(t *testing.T) {
 	n.Mantissa().Send(consume2.AppendTo(&answer))
 	assert.Equal(t, []int{3, 1, 7}, answer)
 	assert.Equal(t, big.NewInt(100489), radican)
+}
+
+func Test100489Iterator(t *testing.T) {
+	radican := big.NewInt(100489)
+	n := SquareRoot(radican, 0)
+	assert.Equal(t, 3, n.Exponent())
+	iter := n.Mantissa().Iterator()
+	assert.Equal(t, 3, iter())
+	assert.Equal(t, 1, iter())
+	assert.Equal(t, 7, iter())
+	assert.Equal(t, -1, iter())
+	assert.Equal(t, -1, iter())
+	iter = n.Mantissa().Iterator()
+	assert.Equal(t, 3, iter())
+	assert.Equal(t, 1, iter())
+	assert.Equal(t, 7, iter())
+	assert.Equal(t, -1, iter())
+	assert.Equal(t, -1, iter())
+	assert.Equal(t, big.NewInt(100489), radican)
+}
+
+func TestIteratorPersistence(t *testing.T) {
+	n := SquareRoot(big.NewInt(7), 0)
+	m := n.Mantissa()
+	iter := m.Iterator()
+	m = SquareRoot(big.NewInt(11), 0).Mantissa()
+	assert.Equal(t, 2, iter())
+	assert.Equal(t, 6, iter())
+	assert.Equal(t, 4, iter())
+	assert.Equal(t, 5, iter())
 }
 
 func TestNegative(t *testing.T) {
@@ -781,6 +818,17 @@ func TestFindFirstN(t *testing.T) {
 	assert.Equal(t, []int{0, 2, 144}, hits)
 }
 
+func TestFind(t *testing.T) {
+	number := Sqrt(big.NewRat(2, 1))
+	pattern := []int{1, 4}
+	matches := number.Mantissa().Find(pattern)
+	pattern[0] = 2
+	pattern[1] = 3
+	assert.Equal(t, 0, matches())
+	assert.Equal(t, 2, matches())
+	assert.Equal(t, 144, matches())
+}
+
 func TestFindFirstNSingle(t *testing.T) {
 	number := Sqrt(big.NewRat(11, 1))
 	hits := number.Mantissa().FindFirstN([]int{3}, 4)
@@ -867,4 +915,10 @@ func (m *maxBytesWriter) Write(p []byte) (n int, err error) {
 	diff := m.maxBytes - m.bytesWritten
 	m.bytesWritten += diff
 	return diff, errors.New("Ran out of space")
+}
+
+type funcMantissaSpec func() func() int
+
+func (f funcMantissaSpec) Iterator() func() int {
+	return f()
 }

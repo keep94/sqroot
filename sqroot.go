@@ -58,7 +58,7 @@ func ShowCount(on bool) Option {
 // between 0.1 inclusive and 1.0 exclusive. The number of digits of a
 // Mantissa can be infinite. The zero value for a Mantissa corresponds to 0.
 type Mantissa struct {
-	generator func(consumer consume2.Consumer[int])
+	spec mantissaSpec
 }
 
 // Format prints this Mantissa with the f, F, g, G, e, E verbs. The verbs work
@@ -84,9 +84,26 @@ func (m Mantissa) String() string {
 // to consumer. If this Mantissa is zero, Send sends no digits
 // to consumer.
 func (m Mantissa) Send(consumer consume2.Consumer[int]) {
-	if m.generator != nil {
-		m.generator(consumer)
+	iter := m.Iterator()
+	for consumer.CanConsume() {
+		digit := iter()
+		if digit == -1 {
+			return
+		}
+		consumer.Consume(digit)
 	}
+}
+
+// Iterator returns the digits of this Mantissa as a function. The
+// first call to returned function returns the first digit of Mantissa;
+// the second call returns the second digit and so forth. If returned
+// function runs out of Mantissa digits, it returns -1. If this
+// Mantissa is zero, the returned function always returns -1.
+func (m Mantissa) Iterator() func() int {
+	if m.spec == nil {
+		return func() int { return -1 }
+	}
+	return m.spec.Iterator()
 }
 
 // Print prints this Mantissa to stdout. Print returns the number of bytes
@@ -106,12 +123,23 @@ func (m Mantissa) Sprint(maxDigits int, options ...Option) string {
 // written and any error encountered.
 func (m Mantissa) Fprint(w io.Writer, maxDigits int, options ...Option) (
 	n int, err error) {
-	if m.generator == nil || maxDigits <= 0 {
+	if m.spec == nil || maxDigits <= 0 {
 		return fmt.Fprint(w, "0")
 	}
 	p := newPrinter(w, maxDigits, options)
 	m.Send(p)
 	return p.byteCount, p.err
+}
+
+// Find returns a function that returns the next zero based index of the
+// match for pattern in this Mantissa. If this mantissa has a finite number
+// of digits and there are no more matches for pattern, the returned function
+// returns -1.
+func (m Mantissa) Find(pattern []int) func() int {
+	if len(pattern) == 0 {
+		return zeroPattern(m.Iterator())
+	}
+	return kmp(m.Iterator(), pattern)
 }
 
 // FindFirst finds the zero based index of the first match of pattern in
@@ -120,12 +148,8 @@ func (m Mantissa) Fprint(w io.Writer, maxDigits int, options ...Option) (
 // number of digits and pattern is not found, FindFirst will run forever.
 // pattern is a sequence of digits between 0 and 9.
 func (m Mantissa) FindFirst(pattern []int) int {
-	result := make([]int, 0, 1)
-	m.FindAll(pattern, consume2.Slice(consume2.AppendTo(&result), 0, 1))
-	if len(result) == 0 {
-		return -1
-	}
-	return result[0]
+	iter := m.Find(pattern)
+	return iter()
 }
 
 // FindFirstN works like FindFirst but it finds the first n matches and
@@ -144,12 +168,14 @@ func (m Mantissa) FindFirstN(pattern []int, n int) []int {
 // index of the matches are emitted to indexSink.
 // pattern is a sequence of digits between 0 and 9.
 func (m Mantissa) FindAll(pattern []int, indexSink consume2.Consumer[int]) {
-	if len(pattern) == 0 {
-		m.Send(&zeroPattern{Consumer: indexSink})
-		return
+	iter := m.Find(pattern)
+	for indexSink.CanConsume() {
+		index := iter()
+		if index == -1 {
+			return
+		}
+		indexSink.Consume(index)
 	}
-	k := &kmp{Consumer: indexSink, pattern: pattern, table: ttable(pattern)}
-	m.Send(k)
 }
 
 // Number represents a square root value. The zero value for Number
@@ -240,10 +266,10 @@ func sqrtFrac(num, denom *big.Int) Number {
 		exp++
 		denom.Mul(denom, oneHundred)
 	}
-	generator := func(consumer consume2.Consumer[int]) {
-		squareRoot(generateQuotientBase100(num, denom), consumer)
-	}
-	return Number{exponent: exp, mantissa: Mantissa{generator: generator}}
+	spec := &sqrtSpec{}
+	spec.num.Set(num)
+	spec.denom.Set(denom)
+	return Number{exponent: exp, mantissa: Mantissa{spec: spec}}
 }
 
 func generateQuotientBase100(num, denom *big.Int) func() *big.Int {
@@ -256,6 +282,40 @@ func generateQuotientBase100(num, denom *big.Int) func() *big.Int {
 		num.Mul(num, oneHundred)
 		group, _ := new(big.Int).DivMod(num, denom, num)
 		return group
+	}
+}
+
+type mantissaSpec interface {
+	Iterator() func() int
+}
+
+type sqrtSpec struct {
+	num   big.Int
+	denom big.Int
+}
+
+func (s *sqrtSpec) Iterator() func() int {
+	incr := big.NewInt(1)
+	remainder := big.NewInt(0)
+	radicanGroups := generateQuotientBase100(&s.num, &s.denom)
+
+	return func() int {
+		nextGroup := radicanGroups()
+		if nextGroup == nil && remainder.Sign() == 0 {
+			return -1
+		}
+		remainder.Mul(remainder, oneHundred)
+		if nextGroup != nil {
+			remainder.Add(remainder, nextGroup)
+		}
+		digit := 0
+		for remainder.Cmp(incr) >= 0 {
+			remainder.Sub(remainder, incr)
+			digit++
+			incr.Add(incr, two)
+		}
+		incr.Sub(incr, one).Mul(incr, ten).Add(incr, one)
+		return digit
 	}
 }
 
@@ -499,30 +559,6 @@ func (f *formatter) addLeadingZeros(count int) {
 	}
 	fmt.Fprint(f.writer, ".")
 	fmt.Fprint(f.writer, strings.Repeat("0", count))
-}
-
-func squareRoot(
-	radicanGroups func() *big.Int, consumer consume2.Consumer[int]) {
-	incr := big.NewInt(1)
-	remainder := big.NewInt(0)
-	for consumer.CanConsume() {
-		nextGroup := radicanGroups()
-		if nextGroup == nil && remainder.Sign() == 0 {
-			return
-		}
-		remainder.Mul(remainder, oneHundred)
-		if nextGroup != nil {
-			remainder.Add(remainder, nextGroup)
-		}
-		digit := 0
-		for remainder.Cmp(incr) >= 0 {
-			remainder.Sub(remainder, incr)
-			digit++
-			incr.Add(incr, two)
-		}
-		consumer.Consume(digit)
-		incr.Sub(incr, one).Mul(incr, ten).Add(incr, one)
-	}
 }
 
 type optionFunc func(p *printerSettings)

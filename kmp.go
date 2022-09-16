@@ -1,9 +1,5 @@
 package sqroot
 
-import (
-	"github.com/keep94/consume2"
-)
-
 // pattern must be non-empty
 func ttable(pattern []int) []int {
 	result := make([]int, len(pattern)+1)
@@ -20,37 +16,45 @@ func ttable(pattern []int) []int {
 	return result
 }
 
-type zeroPattern struct {
-	consume2.Consumer[int]
-	textIndex int
-}
-
-func (z *zeroPattern) Consume(x int) {
-	z.Consumer.Consume(z.textIndex)
-	z.textIndex++
-}
-
-type kmp struct {
-	consume2.Consumer[int]
-	pattern      []int
-	table        []int
-	textIndex    int
-	patternIndex int
-}
-
-func (k *kmp) Consume(x int) {
-	if x == k.pattern[k.patternIndex] {
-		k.textIndex++
-		k.patternIndex++
-		if k.patternIndex == len(k.pattern) {
-			k.Consumer.Consume(k.textIndex - k.patternIndex)
-			k.patternIndex = k.table[k.patternIndex]
+func zeroPattern(f func() int) func() int {
+	textIndex := 0
+	return func() int {
+		digit := f()
+		if digit == -1 {
+			return -1
 		}
-		return
+		textIndex++
+		return textIndex - 1
 	}
-	for k.patternIndex != -1 && k.pattern[k.patternIndex] != x {
-		k.patternIndex = k.table[k.patternIndex]
+}
+
+func kmp(f func() int, p []int) func() int {
+	pattern := make([]int, len(p))
+	copy(pattern, p)
+	table := ttable(pattern)
+	textIndex := 0
+	patternIndex := 0
+	return func() int {
+		for {
+			digit := f()
+			if digit == -1 {
+				return -1
+			}
+			if digit == pattern[patternIndex] {
+				textIndex++
+				patternIndex++
+				if patternIndex == len(pattern) {
+					result := textIndex - patternIndex
+					patternIndex = table[patternIndex]
+					return result
+				}
+				continue
+			}
+			for patternIndex != -1 && pattern[patternIndex] != digit {
+				patternIndex = table[patternIndex]
+			}
+			patternIndex++
+			textIndex++
+		}
 	}
-	k.patternIndex++
-	k.textIndex++
 }

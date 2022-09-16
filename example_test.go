@@ -9,24 +9,43 @@ import (
 )
 
 func ExampleSqrt() {
-	var mantissaDigits []int
 
-	// Find the square root of 1000 / 3 which is 18.25741858...
-	n := sqroot.Sqrt(big.NewRat(1000, 3))
-
-	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&mantissaDigits), 0, 10))
-	fmt.Println(mantissaDigits)
-	fmt.Println(n.Exponent())
-	// Output:
-	// [1 8 2 5 7 4 1 8 5 8]
-	// 2
-}
-
-func ExampleSqrt_format() {
 	// Print the square root of 5050.5 with 50 significant digits.
 	fmt.Printf("%.50g", sqroot.Sqrt(big.NewRat(10101, 2)))
 	// Output:
 	// 71.066869918408535463450359603433796752662170140402
+}
+
+func ExampleMantissa_FindFirst() {
+
+	// sqrt(3) = 0.1732050807... * 10^1
+	n := sqroot.Sqrt(big.NewRat(3, 1))
+
+	fmt.Println(n.Mantissa().FindFirst([]int{0, 5, 0, 8}))
+	// Output:
+	// 4
+}
+
+func ExampleMantissa_Iterator() {
+
+	// sqrt(7) = 0.264575... * 10^1
+	n := sqroot.Sqrt(big.NewRat(7, 1))
+
+	iter := n.Mantissa().Iterator()
+
+	fmt.Println(iter())
+	fmt.Println(iter())
+	fmt.Println(iter())
+	fmt.Println(iter())
+	fmt.Println(iter())
+	fmt.Println(iter())
+	// Output:
+	// 2
+	// 6
+	// 4
+	// 5
+	// 7
+	// 5
 }
 
 func ExampleMantissa_Print() {
@@ -64,13 +83,16 @@ func ExampleMantissa_Print() {
 	// 950  17111 16839 16581 72688 94197 58716 58215 21282 29518 48847
 }
 
-func ExampleMantissa_FindFirst() {
-	n := sqroot.Sqrt(big.NewRat(3, 1))
+func ExampleMantissa_Send() {
+	var mantissaDigits []int
 
-	// sqrt(3) = 1.732050807... so returned index is 4
-	index := n.Mantissa().FindFirst([]int{0, 5, 0, 8})
+	// sqrt(1000 / 3) = 0.1825741858...*10^2
+	n := sqroot.Sqrt(big.NewRat(1000, 3))
 
-	fmt.Println(index)
+	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&mantissaDigits), 0, 10))
+	fmt.Println(mantissaDigits)
+	fmt.Println(n.Exponent())
 	// Output:
-	// 4
+	// [1 8 2 5 7 4 1 8 5 8]
+	// 2
 }
