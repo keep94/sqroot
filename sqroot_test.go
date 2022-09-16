@@ -51,70 +51,61 @@ var (
 
 func TestMantissaReusable(t *testing.T) {
 	radican := big.NewInt(5)
-	n := SquareRoot(radican, 0)
+	n := SqrtBigInt(radican)
 	assert.Equal(t, 1, n.Exponent())
 	var answer []int
 	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer), 0, 8))
 	assert.Equal(t, []int{2, 2, 3, 6, 0, 6, 7, 9}, answer)
-	radican.Set(big.NewInt(7))
+	assert.Equal(t, big.NewInt(5), radican)
+	radican.SetInt64(7)
 	var answer2 []int
 	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer2), 0, 8))
 	assert.Equal(t, []int{2, 2, 3, 6, 0, 6, 7, 9}, answer2)
+	assert.Equal(t, big.NewInt(7), radican)
 }
 
 func Test2(t *testing.T) {
 	var answer []int
-	radican := big.NewInt(2)
-	n := SquareRoot(radican, 0)
+	n := Sqrt(2)
 	assert.Equal(t, 1, n.Exponent())
 	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
 	assert.Equal(t, []int{1, 4, 1, 4, 2, 1, 3, 5, 6, 2}, answer)
-	assert.Equal(t, big.NewInt(2), radican)
 }
 
 func Test3(t *testing.T) {
 	var answer []int
-	radican := big.NewInt(3)
-	n := SquareRoot(radican, 0)
+	n := Sqrt(3)
 	assert.Equal(t, 1, n.Exponent())
 	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
 	assert.Equal(t, []int{1, 7, 3, 2, 0, 5, 0, 8, 0, 7}, answer)
-	assert.Equal(t, big.NewInt(3), radican)
 }
 
 func Test0(t *testing.T) {
 	var answer []int
-	radican := big.NewInt(0)
-	n := SquareRoot(radican, 0)
+	n := Sqrt(0)
 	assert.Zero(t, n)
 	n.Mantissa().Send(consume2.AppendTo(&answer))
 	assert.Empty(t, answer)
-	assert.Equal(t, big.NewInt(0), radican)
 }
 
 func Test1(t *testing.T) {
 	var answer []int
-	radican := big.NewInt(1)
-	n := SquareRoot(radican, 0)
+	n := Sqrt(1)
 	assert.Equal(t, 1, n.Exponent())
 	n.Mantissa().Send(consume2.AppendTo(&answer))
 	assert.Equal(t, []int{1}, answer)
-	assert.Equal(t, big.NewInt(1), radican)
 }
 
 func Test100489(t *testing.T) {
 	var answer []int
-	radican := big.NewInt(100489)
-	n := SquareRoot(radican, 0)
+	n := Sqrt(100489)
 	assert.Equal(t, 3, n.Exponent())
 	n.Mantissa().Send(consume2.AppendTo(&answer))
 	assert.Equal(t, []int{3, 1, 7}, answer)
-	assert.Equal(t, big.NewInt(100489), radican)
 }
 
 func Test100489Iterator(t *testing.T) {
-	radican := big.NewInt(100489)
-	n := SquareRoot(radican, 0)
+	n := Sqrt(100489)
 	assert.Equal(t, 3, n.Exponent())
 	iter := n.Mantissa().Iterator()
 	assert.Equal(t, 3, iter())
@@ -128,14 +119,13 @@ func Test100489Iterator(t *testing.T) {
 	assert.Equal(t, 7, iter())
 	assert.Equal(t, -1, iter())
 	assert.Equal(t, -1, iter())
-	assert.Equal(t, big.NewInt(100489), radican)
 }
 
 func TestIteratorPersistence(t *testing.T) {
-	n := SquareRoot(big.NewInt(7), 0)
+	n := Sqrt(7)
 	m := n.Mantissa()
 	iter := m.Iterator()
-	m = SquareRoot(big.NewInt(11), 0).Mantissa()
+	m = Sqrt(11).Mantissa()
 	assert.Equal(t, 2, iter())
 	assert.Equal(t, 6, iter())
 	assert.Equal(t, 4, iter())
@@ -143,89 +133,79 @@ func TestIteratorPersistence(t *testing.T) {
 }
 
 func TestNegative(t *testing.T) {
-	assert.Panics(t, func() { SquareRoot(big.NewInt(-1), 0) })
+	assert.Panics(t, func() { Sqrt(-1) })
 }
 
 func Test256(t *testing.T) {
 	var answer []int
-	radican := big.NewInt(2560)
-	n := SquareRoot(radican, -1)
+	n := Sqrt(256)
 	assert.Equal(t, 2, n.Exponent())
 	n.Mantissa().Send(consume2.AppendTo(&answer))
 	assert.Equal(t, []int{1, 6}, answer)
-	assert.Equal(t, big.NewInt(2560), radican)
 }
 
 func Test40(t *testing.T) {
 	var answer []int
-	radican := big.NewInt(4)
-	n := SquareRoot(radican, 1)
+	n := Sqrt(40)
 	assert.Equal(t, 1, n.Exponent())
 	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
 	assert.Equal(t, []int{6, 3, 2, 4, 5, 5, 5, 3, 2, 0}, answer)
-	assert.Equal(t, big.NewInt(4), radican)
 }
 
 func Test0026(t *testing.T) {
 	var answer []int
-	radican := big.NewInt(2600)
-	n := SquareRoot(radican, -6)
+	n := SqrtRat(2600, 1000000)
 	assert.Equal(t, -1, n.Exponent())
 	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
 	assert.Equal(t, []int{5, 0, 9, 9, 0, 1, 9, 5, 1, 3}, answer)
-	assert.Equal(t, big.NewInt(2600), radican)
 }
 
 func Test026(t *testing.T) {
 	var answer []int
-	radican := big.NewInt(2600)
-	n := SquareRoot(radican, -5)
+	n := SqrtRat(26, 1000)
 	assert.Equal(t, 0, n.Exponent())
 	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
 	assert.Equal(t, []int{1, 6, 1, 2, 4, 5, 1, 5, 4, 9}, answer)
-	assert.Equal(t, big.NewInt(2600), radican)
 }
 
 func Test2401Over400(t *testing.T) {
 	var answer []int
-	radican := big.NewRat(2401, 4)
-	n := Sqrt(radican)
+	n := SqrtRat(2401, 4)
 	assert.Equal(t, 2, n.Exponent())
 	n.Mantissa().Send(consume2.AppendTo(&answer))
 	assert.Equal(t, []int{2, 4, 5}, answer)
-	assert.Equal(t, big.NewRat(2401, 4), radican)
 }
 
-func Test3Over7Reusable(t *testing.T) {
+func Test3Over7(t *testing.T) {
 	var answer []int
-	radican := big.NewRat(3, 7)
-	n := Sqrt(radican)
+	n := SqrtRat(3, 7)
 	assert.Equal(t, 0, n.Exponent())
 	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer), 0, 14))
 	assert.Equal(t, []int{6, 5, 4, 6, 5, 3, 6, 7, 0, 7, 0, 7, 9, 7}, answer)
-	assert.Equal(t, big.NewRat(3, 7), radican)
-	radican.SetFrac64(5, 8)
-	var answer2 []int
-	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer2), 0, 14))
-	assert.Equal(t, []int{6, 5, 4, 6, 5, 3, 6, 7, 0, 7, 0, 7, 9, 7}, answer2)
-	assert.Equal(t, big.NewRat(5, 8), radican)
 }
 
-func Test3Over70000(t *testing.T) {
+func Test3Over70000Reusable(t *testing.T) {
 	var answer []int
 	radican := big.NewRat(3, 70000)
-	n := Sqrt(radican)
+	n := SqrtBigRat(radican)
 	assert.Equal(t, -2, n.Exponent())
 	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer), 0, 14))
 	assert.Equal(t, []int{6, 5, 4, 6, 5, 3, 6, 7, 0, 7, 0, 7, 9, 7}, answer)
 	assert.Equal(t, big.NewRat(3, 70000), radican)
+	radican.Num().SetInt64(5)
+	radican.Denom().SetInt64(80000)
+	var answer2 []int
+	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer2), 0, 14))
+	assert.Equal(t, []int{6, 5, 4, 6, 5, 3, 6, 7, 0, 7, 0, 7, 9, 7}, answer2)
+	assert.Equal(t, big.NewInt(5), radican.Num())
+	assert.Equal(t, big.NewInt(80000), radican.Denom())
 }
 
 func TestNegDenom(t *testing.T) {
 	radican := big.NewRat(1, 700)
 	radican.Denom().SetInt64(-500)
 	radican.Num().SetInt64(3)
-	assert.Panics(t, func() { Sqrt(radican) })
+	assert.Panics(t, func() { SqrtBigRat(radican) })
 }
 
 func TestPrintZeroDigits(t *testing.T) {
@@ -605,13 +585,13 @@ func TestPrintNil(t *testing.T) {
 }
 
 func TestSquareRootFixed(t *testing.T) {
-	number := SquareRoot(big.NewInt(10), 0)
+	number := Sqrt(10)
 	actual := fmt.Sprintf("%f", number)
 	assert.Equal(t, "3.162277", actual)
 }
 
 func TestSquareRootString(t *testing.T) {
-	number := SquareRoot(big.NewInt(10), 0)
+	number := Sqrt(10)
 	assert.Equal(t, "3.162277660168379", number.String())
 }
 
@@ -813,13 +793,13 @@ func TestNumberBadVerb(t *testing.T) {
 }
 
 func TestFindFirstN(t *testing.T) {
-	number := Sqrt(big.NewRat(2, 1))
+	number := Sqrt(2)
 	hits := number.Mantissa().FindFirstN([]int{1, 4}, 3)
 	assert.Equal(t, []int{0, 2, 144}, hits)
 }
 
 func TestFind(t *testing.T) {
-	number := Sqrt(big.NewRat(2, 1))
+	number := Sqrt(2)
 	pattern := []int{1, 4}
 	matches := number.Mantissa().Find(pattern)
 	pattern[0] = 2
@@ -830,23 +810,23 @@ func TestFind(t *testing.T) {
 }
 
 func TestFindFirstNSingle(t *testing.T) {
-	number := Sqrt(big.NewRat(11, 1))
+	number := Sqrt(11)
 	hits := number.Mantissa().FindFirstN([]int{3}, 4)
 	assert.Equal(t, []int{0, 1, 10, 13}, hits)
 }
 
 func TestFindFirst(t *testing.T) {
-	number := Sqrt(big.NewRat(2, 1))
+	number := Sqrt(2)
 	assert.Equal(t, 1, number.Mantissa().FindFirst([]int{4, 1, 4}))
 }
 
 func TestFindFirstNotThere(t *testing.T) {
-	number := Sqrt(big.NewRat(100489, 1))
+	number := Sqrt(100489)
 	assert.Equal(t, -1, number.Mantissa().FindFirst([]int{5}))
 }
 
 func TestFindEmptyPattern(t *testing.T) {
-	number := Sqrt(big.NewRat(2, 1))
+	number := Sqrt(2)
 	hits := number.Mantissa().FindFirstN(nil, 4)
 	assert.Equal(t, []int{0, 1, 2, 3}, hits)
 	assert.Equal(t, 0, number.Mantissa().FindFirst(nil))
@@ -857,7 +837,7 @@ func TestFindFirstNTrickyPattern(t *testing.T) {
 	radican, ok := new(big.Int).SetString(
 		"149138124915706483400311993274596508420730841", 10)
 	assert.True(t, ok)
-	number := SquareRoot(radican, 0)
+	number := SqrtBigInt(radican)
 	hits := number.Mantissa().FindFirstN(
 		[]int{1, 2, 2, 1, 2, 1, 2, 2, 1, 2, 2, 1}, 3)
 	assert.Equal(t, []int{3, 11}, hits)
@@ -874,7 +854,7 @@ func TestFindAll(t *testing.T) {
 			return !(length >= 2 && (indexes[length-1] == indexes[length-2]+1) && (index > indexes[length-1]+1))
 		},
 	)
-	number := Sqrt(big.NewRat(2, 1))
+	number := Sqrt(2)
 	number.Mantissa().FindAll([]int{0, 0, 0}, consumer)
 	assert.Equal(t, []int{
 		1879,

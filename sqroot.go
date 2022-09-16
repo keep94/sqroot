@@ -219,25 +219,28 @@ func (n Number) String() string {
 	return builder.String()
 }
 
-// SquareRoot returns the square root of radican * 10^rexp. SquareRoot panics
-// if radican is negative.
-func SquareRoot(radican *big.Int, rexp int) Number {
-	num := new(big.Int).Set(radican)
-	denom := big.NewInt(1)
-	for rexp > 0 {
-		num.Mul(num, ten)
-		rexp--
-	}
-	for rexp < 0 {
-		denom.Mul(denom, ten)
-		rexp++
-	}
-	return sqrtFrac(num, denom)
+// Sqrt returns the square root of radican. Sqrt panics if radican is
+// negative.
+func Sqrt(radican int64) Number {
+	return sqrtFrac(big.NewInt(radican), one)
 }
 
-// Sqrt returns the square root of radican. The denominator of radican must
-// be positive, and the numerator must be non-negative or else Sqrt panics.
-func Sqrt(radican *big.Rat) Number {
+// SqrtRat returns the square root of num / denom. denom must be positive,
+// and num must be non-negative or else SqrtRat panics.
+func SqrtRat(num, denom int64) Number {
+	return sqrtFrac(big.NewInt(num), big.NewInt(denom))
+}
+
+// SqrtBigInt returns the square root of radican. SqrtBigInt panics if
+// radican is negative.
+func SqrtBigInt(radican *big.Int) Number {
+	return sqrtFrac(radican, one)
+}
+
+// SqrtBigRat returns the square root of radican. The denominator of radican
+// must be positive, and the numerator must be non-negative or else SqrtBigRat
+// panics.
+func SqrtBigRat(radican *big.Rat) Number {
 	return sqrtFrac(radican.Num(), radican.Denom())
 }
 
@@ -298,7 +301,6 @@ func (s *sqrtSpec) Iterator() func() int {
 	incr := big.NewInt(1)
 	remainder := big.NewInt(0)
 	radicanGroups := generateQuotientBase100(&s.num, &s.denom)
-
 	return func() int {
 		nextGroup := radicanGroups()
 		if nextGroup == nil && remainder.Sign() == 0 {
