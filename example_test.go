@@ -15,6 +15,36 @@ func ExampleSqrtRat() {
 	// 71.066869918408535463450359603433796752662170140402
 }
 
+func ExampleMantissa_Find() {
+
+	// sqrt(2) = 0.14142135... * 10^1
+	n := sqroot.Sqrt(2)
+
+	// '14' matches at index 0, 2, 144, ...
+	matches := n.Mantissa().Find([]int{1, 4})
+
+	fmt.Println(matches())
+	fmt.Println(matches())
+	fmt.Println(matches())
+	// Output:
+	// 0
+	// 2
+	// 144
+}
+
+func ExampleMantissa_FindAll() {
+
+	// sqrt(2) = 0.14142135... * 10^1
+	n := sqroot.Sqrt(2)
+
+	var matches []int
+	n.Mantissa().FindAll(
+		[]int{1, 4}, consume2.Slice(consume2.AppendTo(&matches), 0, 3))
+	fmt.Println(matches)
+	// Output:
+	// [0 2 144]
+}
+
 func ExampleMantissa_FindFirst() {
 
 	// sqrt(3) = 0.1732050807... * 10^1
@@ -23,6 +53,16 @@ func ExampleMantissa_FindFirst() {
 	fmt.Println(n.Mantissa().FindFirst([]int{0, 5, 0, 8}))
 	// Output:
 	// 4
+}
+
+func ExampleMantissa_FindFirstN() {
+
+	// sqrt(2) = 0.14142135... * 10^1
+	n := sqroot.Sqrt(2)
+
+	fmt.Println(n.Mantissa().FindFirstN([]int{1, 4}, 3))
+	// Output:
+	// [0 2 144]
 }
 
 func ExampleMantissa_Iterator() {
