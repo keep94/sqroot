@@ -137,7 +137,7 @@ func (m Mantissa) Fprint(w io.Writer, maxDigits int, options ...Option) (
 // Find returns a function that returns the next zero based index of the
 // match for pattern in this Mantissa. If this mantissa has a finite number
 // of digits and there are no more matches for pattern, the returned function
-// returns -1.
+// returns -1. Pattern is a sequence of digits between 0 and 9.
 func (m Mantissa) Find(pattern []int) func() int {
 	if len(pattern) == 0 {
 		return zeroPattern(m.Iterator())
