@@ -53,6 +53,13 @@ type Mantissa struct {
 	spec mantissaSpec
 }
 
+// WithSignificant returns a new Mantissa like this one that has no more
+// than limit significant digits. WithSignificant rounds the returned
+// Mantissa down toward zero when necessary.
+func (m Mantissa) WithSignificant(limit int) Mantissa {
+	return Mantissa{spec: withLimit(m.spec, limit)}
+}
+
 // Format prints this Mantissa with the f, F, g, G, e, E verbs. The verbs work
 // in the usual way except that they always round down. Because Mantissas can
 // have an infinite number of digits, g with no precision shows a max of 16
@@ -181,6 +188,20 @@ func (m Mantissa) FindAll(pattern []int, indexSink consume2.Consumer[int]) {
 type Number struct {
 	mantissa Mantissa
 	exponent int
+}
+
+// WithSignificant returns a Number like this one that has no more than
+// limit significant digits. WithSignificant rounds the returned Number
+// down toward zero when necessary.
+func (n Number) WithSignificant(limit int) Number {
+	m := n.mantissa.WithSignificant(limit)
+	if m.spec == nil {
+		return Number{}
+	}
+	return Number{
+		mantissa: m,
+		exponent: n.exponent,
+	}
 }
 
 // Mantissa returns the Mantissa of this Number.

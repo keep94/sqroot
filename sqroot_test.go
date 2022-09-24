@@ -881,6 +881,28 @@ func TestFindZeroMantissa(t *testing.T) {
 	assert.Empty(t, m.FindFirstN(nil, 3))
 }
 
+func TestWithSignificant(t *testing.T) {
+	// Resolves to 6 significant digits
+	n := Sqrt(2).WithSignificant(9).WithSignificant(6).WithSignificant(10)
+	assert.Equal(t, "1.41421", n.String())
+}
+
+func TestWithSignificantPanics(t *testing.T) {
+	var n Number
+	assert.Panics(t, func() { n.WithSignificant(-1) })
+}
+
+func TestWithSignificantZero(t *testing.T) {
+	var n Number
+	n2 := n.WithSignificant(5)
+	assert.Zero(t, n2)
+}
+
+func TestWithSignificantToZero(t *testing.T) {
+	n := Sqrt(2).WithSignificant(0)
+	assert.Zero(t, n)
+}
+
 type maxBytesWriter struct {
 	maxBytes     int
 	bytesWritten int

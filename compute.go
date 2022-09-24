@@ -44,6 +44,40 @@ func (s *sqrtSpec) Iterator() func() int {
 	}
 }
 
+type limitSpec struct {
+	delegate mantissaSpec
+	limit    int
+}
+
+func withLimit(spec mantissaSpec, limit int) mantissaSpec {
+	if limit < 0 {
+		panic("limit must be non-negative")
+	}
+	if limit == 0 || spec == nil {
+		return nil
+	}
+	ls, ok := spec.(*limitSpec)
+	if ok {
+		if limit >= ls.limit {
+			return spec
+		}
+		return &limitSpec{delegate: ls.delegate, limit: limit}
+	}
+	return &limitSpec{delegate: spec, limit: limit}
+}
+
+func (l *limitSpec) Iterator() func() int {
+	count := 0
+	iter := l.delegate.Iterator()
+	return func() int {
+		if count == l.limit {
+			return -1
+		}
+		count++
+		return iter()
+	}
+}
+
 func generateQuotientBase100(num, denom *big.Int) func() *big.Int {
 	num = new(big.Int).Set(num)
 	denom = new(big.Int).Set(denom)
