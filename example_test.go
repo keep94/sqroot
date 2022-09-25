@@ -7,12 +7,12 @@ import (
 	"github.com/keep94/sqroot"
 )
 
-func ExampleSqrtRat() {
+func ExampleSqrt() {
 
-	// Print the square root of 5050.5 with 50 significant digits.
-	fmt.Printf("%.50g", sqroot.SqrtRat(10101, 2))
+	// Print the square root of 13 with 50 significant digits.
+	fmt.Printf("%.50g", sqroot.Sqrt(13))
 	// Output:
-	// 71.066869918408535463450359603433796752662170140402
+	// 3.6055512754639892931192212674704959462512965738452
 }
 
 func ExampleMantissa_Find() {
@@ -134,4 +134,15 @@ func ExampleMantissa_Send() {
 	// Output:
 	// [1 8 2 5 7 4 1 8 5 8]
 	// 2
+}
+
+func ExampleNumber_WithSignificant() {
+
+	// n is 1.42857142857... but truncated to 10000 significant digits
+	n := sqroot.SqrtRat(100, 49).WithSignificant(10000)
+
+	// Instead of running forever, FindFirst returns -1 because n is truncated.
+	fmt.Println(n.Mantissa().FindFirst([]int{1, 1, 2}))
+	// Output:
+	// -1
 }
