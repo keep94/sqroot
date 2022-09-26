@@ -793,20 +793,26 @@ func TestNumberBadVerb(t *testing.T) {
 }
 
 func TestFindFirstN(t *testing.T) {
-	number := Sqrt(2)
-	hits := number.Mantissa().FindFirstN([]int{1, 4}, 3)
-	assert.Equal(t, []int{0, 2, 144}, hits)
+	number := Sqrt(5)
+	hits := number.Mantissa().FindFirstN([]int{9, 7}, 3)
+	assert.Equal(t, []int{7, 12, 59}, hits)
+}
+
+func TestFindAllSlice(t *testing.T) {
+	number := Sqrt(5).WithSignificant(100)
+	hits := number.Mantissa().FindAllSlice([]int{9, 7})
+	assert.Equal(t, []int{7, 12, 59}, hits)
 }
 
 func TestFind(t *testing.T) {
-	number := Sqrt(2)
-	pattern := []int{1, 4}
+	number := Sqrt(5)
+	pattern := []int{9, 7}
 	matches := number.Mantissa().Find(pattern)
 	pattern[0] = 2
 	pattern[1] = 3
-	assert.Equal(t, 0, matches())
-	assert.Equal(t, 2, matches())
-	assert.Equal(t, 144, matches())
+	assert.Equal(t, 7, matches())
+	assert.Equal(t, 12, matches())
+	assert.Equal(t, 59, matches())
 }
 
 func TestFindFirstNSingle(t *testing.T) {

@@ -167,6 +167,16 @@ func (m Mantissa) FindFirstN(pattern []int, n int) []int {
 	return result
 }
 
+// FindAllSlice finds all the matches of pattern in this Mantissa and returns
+// the zero based index of each match. If this Mantissa has an infinite
+// number of digits, FindAllSlice will run forever. pattern is a sequence
+// of digits between 0 and 9.
+func (m Mantissa) FindAllSlice(pattern []int) []int {
+	var result []int
+	m.FindAll(pattern, consume2.AppendTo(&result))
+	return result
+}
+
 // FindAll finds all the matches of pattern in this Mantissa. The zero based
 // index of the matches are emitted to indexSink.
 // pattern is a sequence of digits between 0 and 9.

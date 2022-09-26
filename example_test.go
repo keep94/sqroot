@@ -45,6 +45,17 @@ func ExampleMantissa_FindAll() {
 	// [0 2 144]
 }
 
+func ExampleMantissa_FindAllSlice() {
+
+	// sqrt(2) = 0.14142135... * 10^1
+	// We truncate significant digits to 146 so that FindAllSlice terminates
+	n := sqroot.Sqrt(2).WithSignificant(146)
+
+	fmt.Println(n.Mantissa().FindAllSlice([]int{1, 4}))
+	// Output:
+	// [0 2 144]
+}
+
 func ExampleMantissa_FindFirst() {
 
 	// sqrt(3) = 0.1732050807... * 10^1
