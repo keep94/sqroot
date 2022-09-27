@@ -147,6 +147,27 @@ func ExampleMantissa_Send() {
 	// 2
 }
 
+func ExampleMantissa_DigitAt() {
+
+	// sqrt(7) = 0.264575131106459...*10^1
+	n := sqroot.Sqrt(7)
+
+	fmt.Println(n.Mantissa().DigitAt(0))
+	// Output:
+	// 2
+}
+
+func ExampleMantissa_DigitsAt() {
+
+	// sqrt(7) = 0.264575131106459...*10^1
+	n := sqroot.Sqrt(7)
+
+	digits := n.Mantissa().DigitsAt([]int{0, 1, 2, 4, 10})
+	fmt.Println(digits)
+	// Output:
+	// [2 6 4 7 0]
+}
+
 func ExampleNumber_WithSignificant() {
 
 	// n is 1.42857142857... but truncated to 10000 significant digits

@@ -909,6 +909,39 @@ func TestWithSignificantToZero(t *testing.T) {
 	assert.Zero(t, n)
 }
 
+func TestDigitAt(t *testing.T) {
+	m := Sqrt(2).Mantissa()
+	assert.Equal(t, 5, m.DigitAt(15))
+	assert.Equal(t, 7, m.DigitAt(25))
+}
+
+func TestDigitAtFinite(t *testing.T) {
+	m := Sqrt(100489).Mantissa()
+	assert.Equal(t, 3, m.DigitAt(0))
+	assert.Equal(t, 7, m.DigitAt(2))
+	assert.Equal(t, -1, m.DigitAt(3))
+}
+
+func TestDigitsAt(t *testing.T) {
+	m := Sqrt(2).Mantissa()
+	assert.Equal(t, []int{7, 5, 4}, m.DigitsAt([]int{25, 15, 50}))
+}
+
+func TestDigitsAtFinite(t *testing.T) {
+	m := Sqrt(2).WithSignificant(50).Mantissa()
+	assert.Equal(t, []int{7, 5, -1}, m.DigitsAt([]int{25, 15, 50}))
+}
+
+func TestDigitsAtNone(t *testing.T) {
+	m := Sqrt(2).Mantissa()
+	assert.Empty(t, m.DigitsAt(nil))
+}
+
+func TestDigitsAtPanic(t *testing.T) {
+	var m Mantissa
+	assert.Panics(t, func() { m.DigitsAt([]int{2, -1, 4}) })
+}
+
 type maxBytesWriter struct {
 	maxBytes     int
 	bytesWritten int

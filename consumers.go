@@ -179,3 +179,36 @@ func (f *formatter) addLeadingZeros(count int) {
 	fmt.Fprint(f.writer, ".")
 	fmt.Fprint(f.writer, strings.Repeat("0", count))
 }
+
+type digitAt struct {
+	limit  int
+	posit  int
+	result map[int]int
+}
+
+func newDigitAt(posits []int) *digitAt {
+	limit := 0
+	result := make(map[int]int)
+	for _, posit := range posits {
+		if posit < 0 {
+			panic("posits elements must be non-negative")
+		}
+		result[posit] = -1
+		if posit >= limit {
+			limit = posit + 1
+		}
+	}
+	return &digitAt{limit: limit, result: result}
+}
+
+func (d *digitAt) CanConsume() bool {
+	return d.posit < d.limit
+}
+
+func (d *digitAt) Consume(x int) {
+	_, ok := d.result[d.posit]
+	if ok {
+		d.result[d.posit] = x
+	}
+	d.posit++
+}

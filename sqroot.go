@@ -191,6 +191,29 @@ func (m Mantissa) FindAll(pattern []int, indexSink consume2.Consumer[int]) {
 	}
 }
 
+// DigitAt returns the digit at the given 0 based position in this
+// Mantissa. If this Mantissa has posit or fewer digits, DigitAt returns
+// -1. DigitAt panics if posit is negative.
+func (m Mantissa) DigitAt(posit int) int {
+	digits := m.DigitsAt([]int{posit})
+	return digits[0]
+}
+
+// DigitsAt returns the digits found at the zero based positions in posits
+// in this Mantissa. The returned slice is always the same length as posits.
+// A -1 in returned slice means that no digit was found at the corresponding
+// position because this Mantissa has too few digits. DigitsAt panics if any
+// of the posits are negative.
+func (m Mantissa) DigitsAt(posits []int) []int {
+	consumer := newDigitAt(posits)
+	m.Send(consumer)
+	result := make([]int, len(posits))
+	for i, posit := range posits {
+		result[i] = consumer.result[posit]
+	}
+	return result
+}
+
 // Number represents a square root value. The zero value for Number
 // corresponds to 0. A Number is of the form mantissa * 10^exponent where
 // mantissa is between 0.1 inclusive and 1.0 exclusive. Like Mantissa, a
