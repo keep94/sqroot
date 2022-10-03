@@ -168,6 +168,25 @@ func ExampleMantissa_DigitsAt() {
 	// [2 6 4 7 0]
 }
 
+func ExampleMantissa_DigitsAtP() {
+
+	// sqrt(7) = 0.264575131106459...*10^1
+	n := sqroot.Sqrt(7)
+
+	positions := sqroot.NewPositions().AddRange(0, 3).Add(4).Add(10)
+	digits := n.Mantissa().DigitsAtP(positions)
+	iter := digits.Iterator()
+	for posit := iter(); posit != -1; posit = iter() {
+		fmt.Printf("Position: %d; Digit: %d\n", posit, digits.At(posit))
+	}
+	// Output:
+	// Position: 0; Digit: 2
+	// Position: 1; Digit: 6
+	// Position: 2; Digit: 4
+	// Position: 4; Digit: 7
+	// Position: 10; Digit: 0
+}
+
 func ExampleNumber_WithSignificant() {
 
 	// n is 1.42857142857... but truncated to 10000 significant digits

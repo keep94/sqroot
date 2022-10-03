@@ -46,6 +46,84 @@ func ShowCount(on bool) Option {
 	})
 }
 
+// Positions represents a set of zero based positions for which to fetch
+// digits.
+type Positions struct {
+	ranges map[int]int
+	limit  int
+}
+
+// NewPositions returns a new, empty Positions instance.
+func NewPositions() *Positions {
+	return &Positions{ranges: make(map[int]int)}
+}
+
+// Add adds a posit to this instance and returns this instance for chaining.
+// Add panics if posit is negative.
+func (p *Positions) Add(posit int) *Positions {
+	return p.AddRange(posit, posit+1)
+}
+
+// AddRange adds a range of positions to this instance and returns this
+// instance for chaining. The range is between start inclusive and end
+// exclusive. If end <= start, AddRange is a no-op. AddRange panics if
+// start is negative.
+func (p *Positions) AddRange(start, end int) *Positions {
+	if start < 0 {
+		panic("start must be non-negative")
+	}
+	oldValue := p.ranges[start]
+	if end-start <= oldValue {
+		return p
+	}
+	p.ranges[start] = end - start
+	if end > p.limit {
+		p.limit = end
+	}
+	return p
+}
+
+// Copy returns a new instance that is a copy of this instance.
+func (p *Positions) Copy() *Positions {
+	result := make(map[int]int, len(p.ranges))
+	for k, v := range p.ranges {
+		result[k] = v
+	}
+	return &Positions{ranges: result, limit: p.limit}
+}
+
+// Digits represents the digits found at selected positions of a Mantissa.
+// The zero value is no digits and no positions.
+type Digits struct {
+	digits map[int]int
+	posits []int
+}
+
+// At returns the digit between 0 and 9 at the given zero based position.
+// If the digit at posit is unknown, At returns -1.
+func (d Digits) At(posit int) int {
+	digit, ok := d.digits[posit]
+	if !ok {
+		return -1
+	}
+	return digit
+}
+
+// Iterator returns a function that generates all the zero based positions
+// in this instance from lowest to highest. When there are no more positions,
+// the returned function returns -1.
+func (d Digits) Iterator() func() int {
+	index := 0
+	return func() int {
+		if index == len(d.posits) {
+			return -1
+		}
+		result := d.posits[index]
+		index++
+		return result
+	}
+}
+
 // Mantissa represents the mantissa of a square root. Non zero Mantissas are
 // between 0.1 inclusive and 1.0 exclusive. The number of digits of a
 // Mantissa can be infinite. The zero value for a Mantissa corresponds to 0.
@@ -195,8 +273,8 @@ func (m Mantissa) FindAll(pattern []int, indexSink consume2.Consumer[int]) {
 // Mantissa. If this Mantissa has posit or fewer digits, DigitAt returns
 // -1. DigitAt panics if posit is negative.
 func (m Mantissa) DigitAt(posit int) int {
-	digits := m.DigitsAt([]int{posit})
-	return digits[0]
+	digits := m.DigitsAtP(NewPositions().Add(posit))
+	return digits.At(posit)
 }
 
 // DigitsAt returns the digits found at the zero based positions in posits
@@ -205,13 +283,24 @@ func (m Mantissa) DigitAt(posit int) int {
 // position because this Mantissa has too few digits. DigitsAt panics if any
 // of the posits are negative.
 func (m Mantissa) DigitsAt(posits []int) []int {
-	consumer := newDigitAt(posits)
-	m.Send(consumer)
+	p := NewPositions()
+	for _, posit := range posits {
+		p.Add(posit)
+	}
+	digits := m.DigitsAtP(p)
 	result := make([]int, len(posits))
 	for i, posit := range posits {
-		result[i] = consumer.result[posit]
+		result[i] = digits.At(posit)
 	}
 	return result
+}
+
+// DigitsAtP returns the digits found at the zero based positions in posits
+// in this Mantissa.
+func (m Mantissa) DigitsAtP(posits *Positions) Digits {
+	consumer := newDigitAt(posits.ranges, posits.limit)
+	m.Send(consumer)
+	return Digits{digits: consumer.digits, posits: consumer.posits}
 }
 
 // Number represents a square root value. The zero value for Number

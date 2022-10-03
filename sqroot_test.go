@@ -923,23 +923,85 @@ func TestDigitAtFinite(t *testing.T) {
 }
 
 func TestDigitsAt(t *testing.T) {
-	m := Sqrt(2).Mantissa()
-	assert.Equal(t, []int{7, 5, 4}, m.DigitsAt([]int{25, 15, 50}))
-}
-
-func TestDigitsAtFinite(t *testing.T) {
 	m := Sqrt(2).WithSignificant(50).Mantissa()
 	assert.Equal(t, []int{7, 5, -1}, m.DigitsAt([]int{25, 15, 50}))
 }
 
-func TestDigitsAtNone(t *testing.T) {
+func TestDigitsAtP(t *testing.T) {
 	m := Sqrt(2).Mantissa()
-	assert.Empty(t, m.DigitsAt(nil))
+	positions := NewPositions().Add(25).Add(15).Add(50)
+	digits := m.DigitsAtP(positions)
+	assert.Equal(t, 5, digits.At(15))
+	assert.Equal(t, 7, digits.At(25))
+	assert.Equal(t, 4, digits.At(50))
+	iter := digits.Iterator()
+	assert.Equal(t, 15, iter())
+	assert.Equal(t, 25, iter())
+	assert.Equal(t, 50, iter())
+	assert.Equal(t, -1, iter())
 }
 
-func TestDigitsAtPanic(t *testing.T) {
-	var m Mantissa
-	assert.Panics(t, func() { m.DigitsAt([]int{2, -1, 4}) })
+func TestDigitsAtPFinite(t *testing.T) {
+	m := Sqrt(2).WithSignificant(50).Mantissa()
+	positions := NewPositions().Add(25).Add(15).Add(50)
+	digits := m.DigitsAtP(positions)
+	assert.Equal(t, 5, digits.At(15))
+	assert.Equal(t, 7, digits.At(25))
+	assert.Equal(t, -1, digits.At(50))
+	iter := digits.Iterator()
+	assert.Equal(t, 15, iter())
+	assert.Equal(t, 25, iter())
+	assert.Equal(t, -1, iter())
+}
+
+func TestDigitsAtPNone(t *testing.T) {
+	m := Sqrt(2).Mantissa()
+	digits := m.DigitsAtP(NewPositions())
+	iter := digits.Iterator()
+	assert.Equal(t, -1, iter())
+	assert.Equal(t, -1, digits.At(0))
+}
+
+func TestDigitsZero(t *testing.T) {
+	var digits Digits
+	iter := digits.Iterator()
+	assert.Equal(t, -1, iter())
+	assert.Equal(t, -1, digits.At(0))
+}
+
+func TestPositions(t *testing.T) {
+	p := NewPositions().AddRange(0, 3).Add(4).Add(10)
+	p.Add(0)
+	q := p.Copy()
+	q.AddRange(13, 15)
+	assert.Equal(t, map[int]int{0: 3, 4: 1, 10: 1}, p.ranges)
+	assert.Equal(t, 11, p.limit)
+	assert.Equal(t, map[int]int{0: 3, 4: 1, 10: 1, 13: 2}, q.ranges)
+	assert.Equal(t, 15, q.limit)
+}
+
+func TestPositionsPanic(t *testing.T) {
+	assert.Panics(t, func() { NewPositions().Add(-1) })
+}
+
+func TestDigitLookup(t *testing.T) {
+	n := Sqrt(11).WithSignificant(10000)
+	pattern := []int{4, 5, 7}
+	finds := n.Mantissa().FindAllSlice(pattern)
+	assert.Len(t, finds, 7)
+	p := NewPositions()
+	for _, find := range finds {
+		p.AddRange(find, find+3)
+	}
+	digits := n.Mantissa().DigitsAtP(p)
+	iter := digits.Iterator()
+	count := 0
+	for posit := iter(); posit != -1; posit = iter() {
+		assert.Equal(t, pattern[count%3], digits.At(posit))
+		assert.Equal(t, finds[count/3]+count%3, posit)
+		count++
+	}
+	assert.Equal(t, 7*3, count)
 }
 
 type maxBytesWriter struct {
