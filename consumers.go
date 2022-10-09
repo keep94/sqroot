@@ -181,38 +181,24 @@ func (f *formatter) addLeadingZeros(count int) {
 }
 
 type digitAt struct {
-	ranges     map[int]int
-	limit      int
-	digits     map[int]int
-	posits     []int
-	localLimit int
-	posit      int
+	digits map[int]int
+	posits []int
 }
 
-func newDigitAt(ranges map[int]int, limit int) *digitAt {
-	return &digitAt{
-		ranges: ranges,
-		limit:  limit,
-		digits: make(map[int]int),
-	}
+func newDigitAt() *digitAt {
+	return &digitAt{digits: make(map[int]int)}
 }
 
 func (d *digitAt) CanConsume() bool {
-	return d.posit < d.limit
+	return true
 }
 
-func (d *digitAt) Consume(x int) {
-	d.updateLocalLimit()
-	if d.posit < d.localLimit {
-		d.digits[d.posit] = x
-		d.posits = append(d.posits, d.posit)
-	}
-	d.posit++
+func (d *digitAt) Consume(pd positDigit) {
+	d.digits[pd.Posit] = pd.Digit
+	d.posits = append(d.posits, pd.Posit)
 }
 
-func (d *digitAt) updateLocalLimit() {
-	candidateLimit := d.posit + d.ranges[d.posit]
-	if candidateLimit > d.localLimit {
-		d.localLimit = candidateLimit
-	}
+type positDigit struct {
+	Posit int
+	Digit int
 }

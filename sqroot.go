@@ -300,8 +300,8 @@ func (m Mantissa) DigitsAt(posits []int) []int {
 // DigitsAtP returns the digits found at the zero based positions in posits
 // in this Mantissa.
 func (m Mantissa) DigitsAtP(posits *Positions) Digits {
-	consumer := newDigitAt(posits.ranges, posits.limit)
-	m.Send(consumer)
+	consumer := newDigitAt()
+	m.positSend(posits, consumer)
 	return Digits{digits: consumer.digits, posits: consumer.posits}
 }
 
@@ -310,6 +310,25 @@ func (m Mantissa) find(pattern []int) func() int {
 		return zeroPattern(m.Iterator())
 	}
 	return kmp(m.Iterator(), pattern)
+}
+
+func (m Mantissa) positSend(
+	p *Positions, consumer consume2.Consumer[positDigit]) {
+	iter := m.Iterator()
+	digit := iter()
+	posit := 0
+	localLimit := 0
+	for consumer.CanConsume() && digit != -1 && posit < p.limit {
+		candidateLimit := posit + p.ranges[posit]
+		if candidateLimit > localLimit {
+			localLimit = candidateLimit
+		}
+		if posit < localLimit {
+			consumer.Consume(positDigit{Posit: posit, Digit: digit})
+		}
+		posit++
+		digit = iter()
+	}
 }
 
 // Number represents a square root value. The zero value for Number
