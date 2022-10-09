@@ -838,6 +838,16 @@ func TestFindEmptyPattern(t *testing.T) {
 	assert.Equal(t, 0, number.Mantissa().FindFirst(nil))
 }
 
+func TestFindEmptyPatternIterator(t *testing.T) {
+	number := Sqrt(2).WithSignificant(4)
+	iter := number.Mantissa().Find(nil)
+	assert.Equal(t, 0, iter())
+	assert.Equal(t, 1, iter())
+	assert.Equal(t, 2, iter())
+	assert.Equal(t, 3, iter())
+	assert.Equal(t, -1, iter())
+}
+
 func TestFindFirstNTrickyPattern(t *testing.T) {
 	// 12212212122122121221221 ** 2
 	radican, ok := new(big.Int).SetString(

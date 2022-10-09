@@ -220,7 +220,9 @@ func (m Mantissa) Find(pattern []int) func() int {
 	if len(pattern) == 0 {
 		return zeroPattern(m.Iterator())
 	}
-	return kmp(m.Iterator(), pattern)
+	patternCopy := make([]int, len(pattern))
+	copy(patternCopy, pattern)
+	return kmp(m.Iterator(), patternCopy)
 }
 
 // FindFirst finds the zero based index of the first match of pattern in
@@ -229,7 +231,7 @@ func (m Mantissa) Find(pattern []int) func() int {
 // number of digits and pattern is not found, FindFirst will run forever.
 // pattern is a sequence of digits between 0 and 9.
 func (m Mantissa) FindFirst(pattern []int) int {
-	iter := m.Find(pattern)
+	iter := m.find(pattern)
 	return iter()
 }
 
@@ -259,7 +261,7 @@ func (m Mantissa) FindAllSlice(pattern []int) []int {
 // index of the matches are emitted to indexSink.
 // pattern is a sequence of digits between 0 and 9.
 func (m Mantissa) FindAll(pattern []int, indexSink consume2.Consumer[int]) {
-	iter := m.Find(pattern)
+	iter := m.find(pattern)
 	for indexSink.CanConsume() {
 		index := iter()
 		if index == -1 {
@@ -301,6 +303,13 @@ func (m Mantissa) DigitsAtP(posits *Positions) Digits {
 	consumer := newDigitAt(posits.ranges, posits.limit)
 	m.Send(consumer)
 	return Digits{digits: consumer.digits, posits: consumer.posits}
+}
+
+func (m Mantissa) find(pattern []int) func() int {
+	if len(pattern) == 0 {
+		return zeroPattern(m.Iterator())
+	}
+	return kmp(m.Iterator(), pattern)
 }
 
 // Number represents a square root value. The zero value for Number

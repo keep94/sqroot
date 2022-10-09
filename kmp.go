@@ -28,9 +28,7 @@ func zeroPattern(f func() int) func() int {
 	}
 }
 
-func kmp(f func() int, p []int) func() int {
-	pattern := make([]int, len(p))
-	copy(pattern, p)
+func kmp(f func() int, pattern []int) func() int {
 	table := ttable(pattern)
 	textIndex := 0
 	patternIndex := 0
