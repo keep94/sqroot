@@ -16,29 +16,31 @@ func ttable(pattern []int) []int {
 	return result
 }
 
-func zeroPattern(f func() int) func() int {
-	textIndex := 0
+func zeroPattern(f func() positDigit) func() int {
 	return func() int {
-		digit := f()
-		if digit == -1 {
+		pd := f()
+		if !pd.Valid() {
 			return -1
 		}
-		textIndex++
-		return textIndex - 1
+		return pd.Posit
 	}
 }
 
-func kmp(f func() int, pattern []int) func() int {
+func kmp(f func() positDigit, pattern []int) func() int {
 	table := ttable(pattern)
 	textIndex := 0
 	patternIndex := 0
 	return func() int {
 		for {
-			digit := f()
-			if digit == -1 {
+			pd := f()
+			if !pd.Valid() {
 				return -1
 			}
-			if digit == pattern[patternIndex] {
+			if pd.Posit > textIndex {
+				patternIndex = 0
+				textIndex = pd.Posit
+			}
+			if pd.Digit == pattern[patternIndex] {
 				textIndex++
 				patternIndex++
 				if patternIndex == len(pattern) {
@@ -48,7 +50,7 @@ func kmp(f func() int, pattern []int) func() int {
 				}
 				continue
 			}
-			for patternIndex != -1 && pattern[patternIndex] != digit {
+			for patternIndex != -1 && pattern[patternIndex] != pd.Digit {
 				patternIndex = table[patternIndex]
 			}
 			patternIndex++

@@ -3,7 +3,6 @@ package sqroot_test
 import (
 	"fmt"
 
-	"github.com/keep94/consume2"
 	"github.com/keep94/sqroot"
 )
 
@@ -15,13 +14,13 @@ func ExampleSqrt() {
 	// 3.6055512754639892931192212674704959462512965738452
 }
 
-func ExampleMantissa_Find() {
+func ExampleFind() {
 
 	// sqrt(2) = 0.14142135... * 10^1
 	n := sqroot.Sqrt(2)
 
 	// '14' matches at index 0, 2, 144, ...
-	matches := n.Mantissa().Find([]int{1, 4})
+	matches := sqroot.Find(n.Mantissa(), []int{1, 4})
 
 	fmt.Println(matches())
 	fmt.Println(matches())
@@ -32,46 +31,33 @@ func ExampleMantissa_Find() {
 	// 144
 }
 
-func ExampleMantissa_FindAll() {
+func ExampleFindAll() {
 
 	// sqrt(2) = 0.14142135... * 10^1
-	n := sqroot.Sqrt(2)
-
-	var matches []int
-	n.Mantissa().FindAll(
-		[]int{1, 4}, consume2.Slice(consume2.AppendTo(&matches), 0, 3))
-	fmt.Println(matches)
-	// Output:
-	// [0 2 144]
-}
-
-func ExampleMantissa_FindAllSlice() {
-
-	// sqrt(2) = 0.14142135... * 10^1
-	// We truncate significant digits to 146 so that FindAllSlice terminates
+	// We truncate significant digits to 146 so that FindAll terminates
 	n := sqroot.Sqrt(2).WithSignificant(146)
 
-	fmt.Println(n.Mantissa().FindAllSlice([]int{1, 4}))
+	fmt.Println(sqroot.FindAll(n.Mantissa(), []int{1, 4}))
 	// Output:
 	// [0 2 144]
 }
 
-func ExampleMantissa_FindFirst() {
+func ExampleFindFirst() {
 
 	// sqrt(3) = 0.1732050807... * 10^1
 	n := sqroot.Sqrt(3)
 
-	fmt.Println(n.Mantissa().FindFirst([]int{0, 5, 0, 8}))
+	fmt.Println(sqroot.FindFirst(n.Mantissa(), []int{0, 5, 0, 8}))
 	// Output:
 	// 4
 }
 
-func ExampleMantissa_FindFirstN() {
+func ExampleFindFirstN() {
 
 	// sqrt(2) = 0.14142135... * 10^1
 	n := sqroot.Sqrt(2)
 
-	fmt.Println(n.Mantissa().FindFirstN([]int{1, 4}, 3))
+	fmt.Println(sqroot.FindFirstN(n.Mantissa(), []int{1, 4}, 3))
 	// Output:
 	// [0 2 144]
 }
@@ -133,48 +119,39 @@ func ExampleMantissa_Print() {
 	// 950  17111 16839 16581 72688 94197 58716 58215 21282 29518 48847
 }
 
-func ExampleMantissa_Send() {
-	var mantissaDigits []int
+func ExampleDigits_Print() {
 
-	// sqrt(1000 / 3) = 0.1825741858...*10^2
-	n := sqroot.SqrtRat(1000, 3)
+	// Find the square root of 2.
+	n := sqroot.Sqrt(2)
 
-	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&mantissaDigits), 0, 10))
-	fmt.Println(mantissaDigits)
-	fmt.Println(n.Exponent())
+	var p sqroot.Positions
+	p.AddRange(200, 210).AddRange(500, 510).AddRange(1000, 1010)
+	digits := n.Mantissa().Digits(&p)
+	digits.Print(sqroot.DigitsPerRow(10))
 	// Output:
-	// [1 8 2 5 7 4 1 8 5 8]
+	//  200  70109 55997
+	//  500  35288 50926
+	// 1000  20896 94633
+}
+
+func ExampleMantissa_At() {
+
+	// sqrt(7) = 0.264575131106459...*10^1
+	n := sqroot.Sqrt(7)
+
+	fmt.Println(n.Mantissa().At(0))
+	// Output:
 	// 2
 }
 
-func ExampleMantissa_DigitAt() {
+func ExampleMantissa_Digits() {
 
 	// sqrt(7) = 0.264575131106459...*10^1
 	n := sqroot.Sqrt(7)
 
-	fmt.Println(n.Mantissa().DigitAt(0))
-	// Output:
-	// 2
-}
-
-func ExampleMantissa_DigitsAt() {
-
-	// sqrt(7) = 0.264575131106459...*10^1
-	n := sqroot.Sqrt(7)
-
-	digits := n.Mantissa().DigitsAt([]int{0, 1, 2, 4, 10})
-	fmt.Println(digits)
-	// Output:
-	// [2 6 4 7 0]
-}
-
-func ExampleMantissa_DigitsAtP() {
-
-	// sqrt(7) = 0.264575131106459...*10^1
-	n := sqroot.Sqrt(7)
-
-	positions := sqroot.NewPositions().AddRange(0, 3).Add(4).Add(10)
-	digits := n.Mantissa().DigitsAtP(positions)
+	var positions sqroot.Positions
+	positions.AddRange(0, 3).Add(4).Add(10)
+	digits := n.Mantissa().Digits(&positions)
 	iter := digits.Iterator()
 	for posit := iter(); posit != -1; posit = iter() {
 		fmt.Printf("Position: %d; Digit: %d\n", posit, digits.At(posit))
@@ -193,7 +170,7 @@ func ExampleNumber_WithSignificant() {
 	n := sqroot.SqrtRat(100, 49).WithSignificant(10000)
 
 	// Instead of running forever, FindFirst returns -1 because n is truncated.
-	fmt.Println(n.Mantissa().FindFirst([]int{1, 1, 2}))
+	fmt.Println(sqroot.FindFirst(n.Mantissa(), []int{1, 1, 2}))
 	// Output:
 	// -1
 }

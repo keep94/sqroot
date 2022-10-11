@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/keep94/consume2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -53,55 +52,42 @@ func TestMantissaReusable(t *testing.T) {
 	radican := big.NewInt(5)
 	n := SqrtBigInt(radican)
 	assert.Equal(t, 1, n.Exponent())
-	var answer []int
-	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer), 0, 8))
-	assert.Equal(t, []int{2, 2, 3, 6, 0, 6, 7, 9}, answer)
+	assert.Equal(t, "0.22360679", n.Mantissa().Sprint(8))
 	assert.Equal(t, big.NewInt(5), radican)
 	radican.SetInt64(7)
-	var answer2 []int
-	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer2), 0, 8))
-	assert.Equal(t, []int{2, 2, 3, 6, 0, 6, 7, 9}, answer2)
+	assert.Equal(t, "0.22360679", n.Mantissa().Sprint(8))
 	assert.Equal(t, big.NewInt(7), radican)
 }
 
 func Test2(t *testing.T) {
-	var answer []int
 	n := Sqrt(2)
 	assert.Equal(t, 1, n.Exponent())
-	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
-	assert.Equal(t, []int{1, 4, 1, 4, 2, 1, 3, 5, 6, 2}, answer)
+	assert.Equal(t, "0.1414213562", n.Mantissa().Sprint(10))
 }
 
 func Test3(t *testing.T) {
-	var answer []int
 	n := Sqrt(3)
 	assert.Equal(t, 1, n.Exponent())
-	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
-	assert.Equal(t, []int{1, 7, 3, 2, 0, 5, 0, 8, 0, 7}, answer)
+	assert.Equal(t, "0.1732050807", n.Mantissa().Sprint(10))
 }
 
 func Test0(t *testing.T) {
-	var answer []int
 	n := Sqrt(0)
 	assert.Zero(t, n)
-	n.Mantissa().Send(consume2.AppendTo(&answer))
-	assert.Empty(t, answer)
+	iter := n.Mantissa().Iterator()
+	assert.Equal(t, -1, iter())
 }
 
 func Test1(t *testing.T) {
-	var answer []int
 	n := Sqrt(1)
 	assert.Equal(t, 1, n.Exponent())
-	n.Mantissa().Send(consume2.AppendTo(&answer))
-	assert.Equal(t, []int{1}, answer)
+	assert.Equal(t, "0.1", n.Mantissa().Sprint(10))
 }
 
 func Test100489(t *testing.T) {
-	var answer []int
 	n := Sqrt(100489)
 	assert.Equal(t, 3, n.Exponent())
-	n.Mantissa().Send(consume2.AppendTo(&answer))
-	assert.Equal(t, []int{3, 1, 7}, answer)
+	assert.Equal(t, "0.317", n.Mantissa().Sprint(10))
 }
 
 func Test100489Iterator(t *testing.T) {
@@ -137,66 +123,50 @@ func TestNegative(t *testing.T) {
 }
 
 func Test256(t *testing.T) {
-	var answer []int
 	n := Sqrt(256)
 	assert.Equal(t, 2, n.Exponent())
-	n.Mantissa().Send(consume2.AppendTo(&answer))
-	assert.Equal(t, []int{1, 6}, answer)
+	assert.Equal(t, "0.16", n.Mantissa().Sprint(10))
 }
 
 func Test40(t *testing.T) {
-	var answer []int
 	n := Sqrt(40)
 	assert.Equal(t, 1, n.Exponent())
-	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
-	assert.Equal(t, []int{6, 3, 2, 4, 5, 5, 5, 3, 2, 0}, answer)
+	assert.Equal(t, "0.6324555320", n.Mantissa().Sprint(10))
 }
 
 func Test0026(t *testing.T) {
-	var answer []int
 	n := SqrtRat(2600, 1000000)
 	assert.Equal(t, -1, n.Exponent())
-	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
-	assert.Equal(t, []int{5, 0, 9, 9, 0, 1, 9, 5, 1, 3}, answer)
+	assert.Equal(t, "0.5099019513", n.Mantissa().Sprint(10))
 }
 
 func Test026(t *testing.T) {
-	var answer []int
 	n := SqrtRat(26, 1000)
 	assert.Equal(t, 0, n.Exponent())
-	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer), 0, 10))
-	assert.Equal(t, []int{1, 6, 1, 2, 4, 5, 1, 5, 4, 9}, answer)
+	assert.Equal(t, "0.1612451549", n.Mantissa().Sprint(10))
 }
 
 func Test2401Over400(t *testing.T) {
-	var answer []int
 	n := SqrtRat(2401, 4)
 	assert.Equal(t, 2, n.Exponent())
-	n.Mantissa().Send(consume2.AppendTo(&answer))
-	assert.Equal(t, []int{2, 4, 5}, answer)
+	assert.Equal(t, "0.245", n.Mantissa().Sprint(10))
 }
 
 func Test3Over7(t *testing.T) {
-	var answer []int
 	n := SqrtRat(3, 7)
 	assert.Equal(t, 0, n.Exponent())
-	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer), 0, 14))
-	assert.Equal(t, []int{6, 5, 4, 6, 5, 3, 6, 7, 0, 7, 0, 7, 9, 7}, answer)
+	assert.Equal(t, "0.65465367070797", n.Mantissa().Sprint(14))
 }
 
 func Test3Over70000Reusable(t *testing.T) {
-	var answer []int
 	radican := big.NewRat(3, 70000)
 	n := SqrtBigRat(radican)
 	assert.Equal(t, -2, n.Exponent())
-	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer), 0, 14))
-	assert.Equal(t, []int{6, 5, 4, 6, 5, 3, 6, 7, 0, 7, 0, 7, 9, 7}, answer)
+	assert.Equal(t, "0.65465367070797", n.Mantissa().Sprint(14))
 	assert.Equal(t, big.NewRat(3, 70000), radican)
 	radican.Num().SetInt64(5)
 	radican.Denom().SetInt64(80000)
-	var answer2 []int
-	n.Mantissa().Send(consume2.Slice(consume2.AppendTo(&answer2), 0, 14))
-	assert.Equal(t, []int{6, 5, 4, 6, 5, 3, 6, 7, 0, 7, 0, 7, 9, 7}, answer2)
+	assert.Equal(t, "0.65465367070797", n.Mantissa().Sprint(14))
 	assert.Equal(t, big.NewInt(5), radican.Num())
 	assert.Equal(t, big.NewInt(80000), radican.Denom())
 }
@@ -405,6 +375,114 @@ func TestErrorAtAllStages(t *testing.T) {
 		assert.Equal(t, i, n)
 		assert.Error(t, err)
 	}
+}
+
+func TestPrintP(t *testing.T) {
+	p := new(Positions).AddRange(5, 8).AddRange(45, 50)
+	actual := fakeMantissa.Digits(p).Sprint(
+		DigitsPerRow(11), DigitsPerColumn(10))
+	expected := `  0......678.. .
+44  .67890`
+	assert.Equal(t, expected, actual)
+}
+
+func TestPrintP2(t *testing.T) {
+	p := new(Positions).AddRange(0, 2).AddRange(3, 5).AddRange(8, 11)
+	digits := fakeMantissa.Digits(p)
+	actual := digits.Sprint(DigitsPerRow(11), DigitsPerColumn(10))
+	expected := `0.12.45...90 1`
+	assert.Equal(t, expected, actual)
+}
+
+func TestPrintPGaps(t *testing.T) {
+	p := new(Positions).AddRange(22, 44).AddRange(66, 77)
+	digits := fakeMantissa.Digits(p)
+	actual := digits.Sprint(DigitsPerRow(11), DigitsPerColumn(10))
+	expected := `22  3456789012 3
+33  4567890123 4
+66  7890123456 7`
+	assert.Equal(t, expected, actual)
+}
+
+func TestPrintDGaps(t *testing.T) {
+	p := new(Positions).AddRange(22, 44).AddRange(66, 77)
+	digits := fakeMantissa.Digits(p)
+	actual := digits.Sprint(DigitsPerRow(11), DigitsPerColumn(10))
+	expected := `22  3456789012 3
+33  4567890123 4
+66  7890123456 7`
+	assert.Equal(t, expected, actual)
+}
+
+func TestPrintPGaps2(t *testing.T) {
+	p := new(Positions).AddRange(0, 10).AddRange(11, 21).AddRange(33, 43)
+	p.AddRange(66, 76)
+	digits := fakeMantissa.Digits(p)
+	actual := digits.Sprint(DigitsPerRow(11), DigitsPerColumn(10))
+	expected := `  0.1234567890 .
+11  2345678901 .
+33  4567890123 .
+66  7890123456`
+	assert.Equal(t, expected, actual)
+}
+
+func TestPrintPGaps3(t *testing.T) {
+	p := new(Positions).AddRange(21, 33).AddRange(65, 77)
+	digits := fakeMantissa.Digits(p)
+	actual := digits.Sprint(DigitsPerRow(11), DigitsPerColumn(10))
+	expected := `11  .......... 2
+22  3456789012 3
+55  .......... 6
+66  7890123456 7`
+	assert.Equal(t, expected, actual)
+}
+
+func TestPrintPNoShowCount(t *testing.T) {
+	p := new(Positions).AddRange(21, 33).AddRange(65, 77)
+	digits := fakeMantissa.Digits(p)
+	actual := digits.Sprint(
+		DigitsPerRow(11), DigitsPerColumn(10), ShowCount(false))
+	expected := `0........... .
+  .......... 2
+  3456789012 3
+  .......... .
+  .......... .
+  .......... 6
+  7890123456 7`
+	assert.Equal(t, expected, actual)
+}
+
+func TestPrintPNarrow(t *testing.T) {
+	p := new(Positions).Add(3).Add(5).Add(8)
+	digits := fakeMantissa.Digits(p)
+	actual := digits.Sprint(DigitsPerRow(1))
+	expected := `3  4
+5  6
+8  9`
+	assert.Equal(t, expected, actual)
+}
+
+func TestPrintPDefaults(t *testing.T) {
+	p := new(Positions).AddRange(0, 75)
+	digits := fakeMantissa.Digits(p)
+	actual := digits.Sprint()
+	expected := `  0.12345 67890 12345 67890 12345 67890 12345 67890 12345 67890
+50  12345 67890 12345 67890 12345`
+	assert.Equal(t, expected, actual)
+}
+
+func TestPrintPTooShort(t *testing.T) {
+	n := Sqrt(100489)
+	p := new(Positions).AddRange(3, 5)
+	digits := n.Mantissa().Digits(p)
+	assert.Empty(t, digits.Sprint())
+}
+
+func TestPrintPZero(t *testing.T) {
+	var m Mantissa
+	p := new(Positions).AddRange(3, 5)
+	digits := m.Digits(p)
+	assert.Empty(t, digits.Sprint())
 }
 
 func TestFormat(t *testing.T) {
@@ -794,20 +872,20 @@ func TestNumberBadVerb(t *testing.T) {
 
 func TestFindFirstN(t *testing.T) {
 	number := Sqrt(5)
-	hits := number.Mantissa().FindFirstN([]int{9, 7}, 3)
+	hits := FindFirstN(number.Mantissa(), []int{9, 7}, 3)
 	assert.Equal(t, []int{7, 12, 59}, hits)
 }
 
-func TestFindAllSlice(t *testing.T) {
+func TestFindAll(t *testing.T) {
 	number := Sqrt(5).WithSignificant(100)
-	hits := number.Mantissa().FindAllSlice([]int{9, 7})
+	hits := FindAll(number.Mantissa(), []int{9, 7})
 	assert.Equal(t, []int{7, 12, 59}, hits)
 }
 
 func TestFind(t *testing.T) {
 	number := Sqrt(5)
 	pattern := []int{9, 7}
-	matches := number.Mantissa().Find(pattern)
+	matches := Find(number.Mantissa(), pattern)
 	pattern[0] = 2
 	pattern[1] = 3
 	assert.Equal(t, 7, matches())
@@ -817,30 +895,30 @@ func TestFind(t *testing.T) {
 
 func TestFindFirstNSingle(t *testing.T) {
 	number := Sqrt(11)
-	hits := number.Mantissa().FindFirstN([]int{3}, 4)
+	hits := FindFirstN(number.Mantissa(), []int{3}, 4)
 	assert.Equal(t, []int{0, 1, 10, 13}, hits)
 }
 
 func TestFindFirst(t *testing.T) {
 	number := Sqrt(2)
-	assert.Equal(t, 1, number.Mantissa().FindFirst([]int{4, 1, 4}))
+	assert.Equal(t, 1, FindFirst(number.Mantissa(), []int{4, 1, 4}))
 }
 
 func TestFindFirstNotThere(t *testing.T) {
 	number := Sqrt(100489)
-	assert.Equal(t, -1, number.Mantissa().FindFirst([]int{5}))
+	assert.Equal(t, -1, FindFirst(number.Mantissa(), []int{5}))
 }
 
 func TestFindEmptyPattern(t *testing.T) {
 	number := Sqrt(2)
-	hits := number.Mantissa().FindFirstN(nil, 4)
+	hits := FindFirstN(number.Mantissa(), nil, 4)
 	assert.Equal(t, []int{0, 1, 2, 3}, hits)
-	assert.Equal(t, 0, number.Mantissa().FindFirst(nil))
+	assert.Equal(t, 0, FindFirst(number.Mantissa(), nil))
 }
 
 func TestFindEmptyPatternIterator(t *testing.T) {
 	number := Sqrt(2).WithSignificant(4)
-	iter := number.Mantissa().Find(nil)
+	iter := Find(number.Mantissa(), nil)
 	assert.Equal(t, 0, iter())
 	assert.Equal(t, 1, iter())
 	assert.Equal(t, 2, iter())
@@ -854,47 +932,20 @@ func TestFindFirstNTrickyPattern(t *testing.T) {
 		"149138124915706483400311993274596508420730841", 10)
 	assert.True(t, ok)
 	number := SqrtBigInt(radican)
-	hits := number.Mantissa().FindFirstN(
-		[]int{1, 2, 2, 1, 2, 1, 2, 2, 1, 2, 2, 1}, 3)
-	assert.Equal(t, []int{3, 11}, hits)
-}
-
-func TestFindAll(t *testing.T) {
-	var indexes []int
-
-	// Find all 000's in sqrt(2). Stop when we find 4 or more zeros in a row
-	consumer := consume2.TakeWhile(
-		consume2.AppendTo(&indexes),
-		func(index int) bool {
-			length := len(indexes)
-			return !(length >= 2 && (indexes[length-1] == indexes[length-2]+1) && (index > indexes[length-1]+1))
-		},
+	hits := FindFirstN(
+		number.Mantissa(),
+		[]int{1, 2, 2, 1, 2, 1, 2, 2, 1, 2, 2, 1},
+		3,
 	)
-	number := Sqrt(2)
-	number.Mantissa().FindAll([]int{0, 0, 0}, consumer)
-	assert.Equal(t, []int{
-		1879,
-		8189,
-		8937,
-		9025,
-		9221,
-		10762,
-		10801,
-		11460,
-		12378,
-		12413,
-		12561,
-		12655,
-		12656,
-	}, indexes)
+	assert.Equal(t, []int{3, 11}, hits)
 }
 
 func TestFindZeroMantissa(t *testing.T) {
 	var m Mantissa
-	assert.Equal(t, -1, m.FindFirst([]int{5}))
-	assert.Equal(t, -1, m.FindFirst(nil))
-	assert.Empty(t, m.FindFirstN([]int{5}, 3))
-	assert.Empty(t, m.FindFirstN(nil, 3))
+	assert.Equal(t, -1, FindFirst(m, []int{5}))
+	assert.Equal(t, -1, FindFirst(m, nil))
+	assert.Empty(t, FindFirstN(m, []int{5}, 3))
+	assert.Empty(t, FindFirstN(m, nil, 3))
 }
 
 func TestWithSignificant(t *testing.T) {
@@ -919,28 +970,24 @@ func TestWithSignificantToZero(t *testing.T) {
 	assert.Zero(t, n)
 }
 
-func TestDigitAt(t *testing.T) {
+func TestAt(t *testing.T) {
 	m := Sqrt(2).Mantissa()
-	assert.Equal(t, 5, m.DigitAt(15))
-	assert.Equal(t, 7, m.DigitAt(25))
+	assert.Equal(t, 5, m.At(15))
+	assert.Equal(t, 7, m.At(25))
+	assert.Equal(t, -1, m.At(-1))
 }
 
-func TestDigitAtFinite(t *testing.T) {
+func TestAtFinite(t *testing.T) {
 	m := Sqrt(100489).Mantissa()
-	assert.Equal(t, 3, m.DigitAt(0))
-	assert.Equal(t, 7, m.DigitAt(2))
-	assert.Equal(t, -1, m.DigitAt(3))
+	assert.Equal(t, 3, m.At(0))
+	assert.Equal(t, 7, m.At(2))
+	assert.Equal(t, -1, m.At(3))
 }
 
-func TestDigitsAt(t *testing.T) {
-	m := Sqrt(2).WithSignificant(50).Mantissa()
-	assert.Equal(t, []int{7, 5, -1}, m.DigitsAt([]int{25, 15, 50}))
-}
-
-func TestDigitsAtP(t *testing.T) {
+func TestDigits(t *testing.T) {
 	m := Sqrt(2).Mantissa()
-	positions := NewPositions().Add(25).Add(15).Add(50)
-	digits := m.DigitsAtP(positions)
+	positions := new(Positions).Add(25).Add(15).Add(50)
+	digits := m.Digits(positions)
 	assert.Equal(t, 5, digits.At(15))
 	assert.Equal(t, 7, digits.At(25))
 	assert.Equal(t, 4, digits.At(50))
@@ -949,12 +996,27 @@ func TestDigitsAtP(t *testing.T) {
 	assert.Equal(t, 25, iter())
 	assert.Equal(t, 50, iter())
 	assert.Equal(t, -1, iter())
+	iter = digits.IteratorAt(25)
+	assert.Equal(t, 25, iter())
+	assert.Equal(t, 50, iter())
+	assert.Equal(t, -1, iter())
+	assert.Equal(t, 15, digits.Min())
+	assert.Equal(t, 50, digits.Max())
+	iter = digits.Reverse()
+	assert.Equal(t, 50, iter())
+	assert.Equal(t, 25, iter())
+	assert.Equal(t, 15, iter())
+	assert.Equal(t, -1, iter())
+	iter = digits.ReverseAt(50)
+	assert.Equal(t, 25, iter())
+	assert.Equal(t, 15, iter())
+	assert.Equal(t, -1, iter())
 }
 
-func TestDigitsAtPFinite(t *testing.T) {
+func TestDigitsFinite(t *testing.T) {
 	m := Sqrt(2).WithSignificant(50).Mantissa()
-	positions := NewPositions().Add(25).Add(15).Add(50)
-	digits := m.DigitsAtP(positions)
+	positions := new(Positions).Add(25).Add(15).Add(50)
+	digits := m.Digits(positions)
 	assert.Equal(t, 5, digits.At(15))
 	assert.Equal(t, 7, digits.At(25))
 	assert.Equal(t, -1, digits.At(50))
@@ -962,48 +1024,103 @@ func TestDigitsAtPFinite(t *testing.T) {
 	assert.Equal(t, 15, iter())
 	assert.Equal(t, 25, iter())
 	assert.Equal(t, -1, iter())
+	iter = digits.Reverse()
+	assert.Equal(t, 25, iter())
+	assert.Equal(t, 15, iter())
+	assert.Equal(t, -1, iter())
 }
 
-func TestDigitsAtPNone(t *testing.T) {
+func TestDigitsNone(t *testing.T) {
 	m := Sqrt(2).Mantissa()
-	digits := m.DigitsAtP(NewPositions())
-	iter := digits.Iterator()
-	assert.Equal(t, -1, iter())
-	assert.Equal(t, -1, digits.At(0))
+	digits := m.Digits(new(Positions))
+	assert.Zero(t, digits)
 }
 
 func TestDigitsZero(t *testing.T) {
 	var digits Digits
 	iter := digits.Iterator()
 	assert.Equal(t, -1, iter())
+	iter = digits.Reverse()
+	assert.Equal(t, -1, iter())
 	assert.Equal(t, -1, digits.At(0))
+	assert.Empty(t, digits.Sprint())
+	assert.Equal(t, -1, digits.Min())
+	assert.Equal(t, -1, digits.Max())
+	assert.Equal(t, 0, digits.Len())
+	assert.Empty(t, FindAll(digits, nil))
+	assert.Empty(t, FindAll(digits, []int{5}))
+}
+
+func TestDigitsBuilder(t *testing.T) {
+	var builder DigitsBuilder
+	assert.NoError(t, builder.AddDigit(0, 3))
+	assert.NoError(t, builder.AddDigit(1, 1))
+	assert.NoError(t, builder.AddDigit(2, 4))
+	assert.NoError(t, builder.AddDigit(3, 1))
+	assert.NoError(t, builder.AddDigit(6, 4))
+	assert.NoError(t, builder.AddDigit(7, 1))
+	assert.NoError(t, builder.AddDigit(8, 4))
+	digits := builder.Build()
+	assert.NoError(t, builder.AddDigit(0, 4))
+	assert.NoError(t, builder.AddDigit(1, 6))
+	assert.NoError(t, builder.AddDigit(2, 6))
+	assert.NoError(t, builder.AddDigit(3, 9))
+	assert.NoError(t, builder.AddDigit(4, 2))
+	assert.NoError(t, builder.AddDigit(5, 0))
+	feigenbaum := builder.Build()
+	actual := digits.Sprint(
+		DigitsPerRow(0), DigitsPerColumn(0), ShowCount(false))
+	assert.Equal(t, "0.3141..414", actual)
+	assert.Equal(t, 7, digits.Len())
+	matches := FindAll(digits, []int{1, 4})
+	assert.Equal(t, []int{1, 7}, matches)
+	assert.Equal(t, 6, feigenbaum.Len())
+}
+
+func TestDigitBuilderErrors(t *testing.T) {
+	var builder DigitsBuilder
+	assert.Error(t, builder.AddDigit(-1, 3))
+	assert.Error(t, builder.AddDigit(0, -1))
+	assert.Error(t, builder.AddDigit(0, 10))
+	assert.NoError(t, builder.AddDigit(0, 2))
+	assert.Error(t, builder.AddDigit(0, 1))
+	digits := builder.Build()
+	assert.Equal(t, 1, digits.Len())
 }
 
 func TestPositions(t *testing.T) {
-	p := NewPositions().AddRange(0, 3).Add(4).Add(10)
+	p := new(Positions).AddRange(0, 3).Add(4).Add(10)
 	p.Add(0)
 	q := p.Copy()
 	q.AddRange(13, 15)
-	assert.Equal(t, map[int]int{0: 3, 4: 1, 10: 1}, p.ranges)
-	assert.Equal(t, 11, p.limit)
+	p.AddRange(100, 105)
+	assert.Equal(t, map[int]int{0: 3, 4: 1, 10: 1, 100: 5}, p.ranges)
+	assert.Equal(t, 105, p.limit)
 	assert.Equal(t, map[int]int{0: 3, 4: 1, 10: 1, 13: 2}, q.ranges)
 	assert.Equal(t, 15, q.limit)
 }
 
+func TestPositionsCopyZero(t *testing.T) {
+	var p Positions
+	q := p.Copy()
+	assert.NotSame(t, p, q)
+	assert.Zero(t, *q)
+}
+
 func TestPositionsPanic(t *testing.T) {
-	assert.Panics(t, func() { NewPositions().Add(-1) })
+	assert.Panics(t, func() { new(Positions).Add(-1) })
 }
 
 func TestDigitLookup(t *testing.T) {
 	n := Sqrt(11).WithSignificant(10000)
 	pattern := []int{4, 5, 7}
-	finds := n.Mantissa().FindAllSlice(pattern)
+	finds := FindAll(n.Mantissa(), pattern)
 	assert.Len(t, finds, 7)
-	p := NewPositions()
+	var p Positions
 	for _, find := range finds {
 		p.AddRange(find, find+3)
 	}
-	digits := n.Mantissa().DigitsAtP(p)
+	digits := n.Mantissa().Digits(&p)
 	iter := digits.Iterator()
 	count := 0
 	for posit := iter(); posit != -1; posit = iter() {
@@ -1012,6 +1129,16 @@ func TestDigitLookup(t *testing.T) {
 		count++
 	}
 	assert.Equal(t, 7*3, count)
+}
+
+func TestFindWithDigits(t *testing.T) {
+	n := Sqrt(5)
+	// '000' in Sqrt(5) at 424 569 3663 4506 4601 6113 7173 9110 9114
+	p := new(Positions).AddRange(7173, 7176).AddRange(9110, 9117)
+	p.AddRange(4500, 4600)
+	digits := n.Mantissa().Digits(p)
+	finds := FindAll(digits, []int{0, 0, 0})
+	assert.Equal(t, []int{4506, 7173, 9110, 9114}, finds)
 }
 
 type maxBytesWriter struct {

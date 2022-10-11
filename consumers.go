@@ -8,8 +8,40 @@ import (
 )
 
 type printer struct {
+	rawPrinter
+}
+
+func newPrinter(
+	writer io.Writer, maxDigits int, settings *printerSettings) *printer {
+	var result printer
+	result.Init(writer, maxDigits, settings)
+	return &result
+}
+
+func (p *printer) Consume(pd positDigit) {
+	if p.index < pd.Posit {
+		if p.digitsPerRow > 0 && p.digitCountSpec != "" {
+			p.skipRowsFor(pd.Posit)
+		}
+		for p.index < pd.Posit {
+			p.rawPrinter.Consume('.')
+		}
+	}
+	p.rawPrinter.Consume('0' + rune(pd.Digit))
+}
+
+func (p *printer) skipRowsFor(nextPosit int) {
+	currentRow := p.index / p.digitsPerRow
+	nextRow := nextPosit / p.digitsPerRow
+	if p.index%p.digitsPerRow == 0 {
+		p.skipRows(nextRow - currentRow)
+	} else if nextRow > currentRow {
+		p.skipRows(nextRow - currentRow - 1)
+	}
+}
+
+type rawPrinter struct {
 	writer          io.Writer
-	maxDigits       int
 	indentation     string
 	digitCountSpec  string
 	digitsPerRow    int
@@ -20,13 +52,12 @@ type printer struct {
 	err             error
 }
 
-func newPrinter(
-	writer io.Writer, maxDigits int, settings *printerSettings) *printer {
+func (p *rawPrinter) Init(
+	writer io.Writer, maxDigits int, settings *printerSettings) {
 	indentation, digitCountSpec := computeIndentation(
 		settings.digitCountWidth(maxDigits))
-	return &printer{
+	*p = rawPrinter{
 		writer:          writer,
-		maxDigits:       maxDigits,
 		indentation:     indentation,
 		digitCountSpec:  digitCountSpec,
 		digitsPerRow:    settings.digitsPerRow,
@@ -34,11 +65,11 @@ func newPrinter(
 	}
 }
 
-func (p *printer) CanConsume() bool {
-	return p.err == nil && p.index < p.maxDigits
+func (p *rawPrinter) CanConsume() bool {
+	return p.err == nil
 }
 
-func (p *printer) Consume(digit int) {
+func (p *rawPrinter) Consume(digit rune) {
 	if !p.CanConsume() {
 		return
 	}
@@ -48,9 +79,11 @@ func (p *printer) Consume(digit int) {
 			return
 		}
 	} else if p.digitsPerRow > 0 && p.index%p.digitsPerRow == 0 {
-		n, err := fmt.Fprintln(p.writer)
-		if !p.updateByteCount(n, err) {
-			return
+		if p.byteCount > 0 {
+			n, err := fmt.Fprintln(p.writer)
+			if !p.updateByteCount(n, err) {
+				return
+			}
 		}
 		if p.digitCountSpec != "" {
 			n, err := fmt.Fprintf(p.writer, p.digitCountSpec, p.index)
@@ -58,7 +91,7 @@ func (p *printer) Consume(digit int) {
 				return
 			}
 		}
-		n, err = fmt.Fprint(p.writer, "  ")
+		n, err := fmt.Fprint(p.writer, "  ")
 		if !p.updateByteCount(n, err) {
 			return
 		}
@@ -69,7 +102,7 @@ func (p *printer) Consume(digit int) {
 			return
 		}
 	}
-	n, err := fmt.Fprint(p.writer, digit)
+	n, err := fmt.Fprintf(p.writer, "%c", digit)
 	if !p.updateByteCount(n, err) {
 		return
 	}
@@ -77,7 +110,11 @@ func (p *printer) Consume(digit int) {
 	p.indexInRow++
 }
 
-func (p *printer) updateByteCount(n int, err error) bool {
+func (p *rawPrinter) skipRows(rowsToSkip int) {
+	p.index += rowsToSkip * p.digitsPerRow
+}
+
+func (p *rawPrinter) updateByteCount(n int, err error) bool {
 	p.byteCount += n
 	p.err = err
 	return err == nil
@@ -185,15 +222,14 @@ type digitAt struct {
 	posits []int
 }
 
-func newDigitAt() *digitAt {
-	return &digitAt{digits: make(map[int]int)}
-}
-
 func (d *digitAt) CanConsume() bool {
 	return true
 }
 
 func (d *digitAt) Consume(pd positDigit) {
+	if d.digits == nil {
+		d.digits = make(map[int]int)
+	}
 	d.digits[pd.Posit] = pd.Digit
 	d.posits = append(d.posits, pd.Posit)
 }
@@ -202,3 +238,9 @@ type positDigit struct {
 	Posit int
 	Digit int
 }
+
+func (p positDigit) Valid() bool {
+	return p.Posit >= 0
+}
+
+var invalidPositDigit = positDigit{Posit: -1}
