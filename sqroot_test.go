@@ -1063,6 +1063,122 @@ func TestDigitsZero(t *testing.T) {
 	assert.Empty(t, FindAll(digits, []int{5}))
 }
 
+func TestDigitsBinary(t *testing.T) {
+	mantissa := Sqrt(2).Mantissa()
+	var p Positions
+	p.AddRange(1000, 2000).AddRange(5000, 5999).AddRange(10000, 10999)
+	digits := GetDigits(mantissa, &p)
+	arr, err := digits.MarshalBinary()
+	assert.Len(t, arr, 1532)
+	assert.NoError(t, err)
+	var copy Digits
+	assert.NoError(t, copy.UnmarshalBinary(arr))
+	assert.Equal(t, digits.Sprint(), copy.Sprint())
+}
+
+func TestDigitsBinary2(t *testing.T) {
+	mantissa := Sqrt(2).Mantissa()
+	var p Positions
+	p.Add(50).Add(25).Add(15).Add(0).AddRange(100, 102)
+	digits := GetDigits(mantissa, &p)
+	arr, err := digits.MarshalBinary()
+	assert.NoError(t, err)
+	var copy Digits
+	assert.NoError(t, copy.UnmarshalBinary(arr))
+	assert.Equal(t, digits.Sprint(), copy.Sprint())
+}
+
+func TestDigitsBinary3(t *testing.T) {
+	mantissa := Sqrt(2).Mantissa()
+	var p Positions
+	p.AddRange(0, 4).Add(26)
+	digits := GetDigits(mantissa, &p)
+	arr, err := digits.MarshalBinary()
+	assert.NoError(t, err)
+	var copy Digits
+	assert.NoError(t, copy.UnmarshalBinary(arr))
+	assert.Equal(t, digits.Sprint(), copy.Sprint())
+}
+
+func TestDigitsBinaryZero(t *testing.T) {
+	var digits Digits
+	arr, err := digits.MarshalBinary()
+	assert.NoError(t, err)
+	var copy Digits
+	assert.NoError(t, copy.UnmarshalBinary(arr))
+	assert.Zero(t, copy)
+	assert.Equal(t, digits.Sprint(), copy.Sprint())
+}
+
+func TestDigitsBinaryEmpty(t *testing.T) {
+	var digits Digits
+	assert.Error(t, digits.UnmarshalBinary(nil))
+}
+
+func TestDigitsBinaryBadVersion(t *testing.T) {
+	var digits Digits
+	assert.Error(t, digits.UnmarshalBinary([]byte{51}))
+}
+
+func TestDigitsText(t *testing.T) {
+	mantissa := Sqrt(2).Mantissa()
+	var p Positions
+	p.AddRange(0, 4).Add(26)
+	digits := GetDigits(mantissa, &p)
+	arr, err := digits.MarshalText()
+	assert.NoError(t, err)
+	assert.Equal(t, "1414[26]2", string(arr))
+	var copy Digits
+	assert.NoError(t, copy.UnmarshalText(arr))
+	assert.Equal(t, digits.Sprint(), copy.Sprint())
+}
+
+func TestDigitsText2(t *testing.T) {
+	mantissa := Sqrt(2).Mantissa()
+	var p Positions
+	p.AddRange(3, 6).AddRange(10, 12)
+	digits := GetDigits(mantissa, &p)
+	arr, err := digits.MarshalText()
+	assert.NoError(t, err)
+	assert.Equal(t, "[3]421[10]37", string(arr))
+	var copy Digits
+	assert.NoError(t, copy.UnmarshalText(arr))
+	assert.Equal(t, digits.Sprint(), copy.Sprint())
+}
+
+func TestDigitsText3(t *testing.T) {
+	mantissa := Sqrt(2).Mantissa()
+	var p Positions
+	digits := GetDigits(mantissa, p.AddRange(0, 6))
+	arr, err := digits.MarshalText()
+	assert.NoError(t, err)
+	assert.Equal(t, "141421", string(arr))
+	var copy Digits
+	assert.NoError(t, copy.UnmarshalText(arr))
+	assert.Equal(t, digits.Sprint(), copy.Sprint())
+}
+
+func TestDigitsTextZero(t *testing.T) {
+	var digits Digits
+	arr, err := digits.MarshalText()
+	assert.NoError(t, err)
+	assert.Empty(t, arr)
+	var copy Digits
+	assert.NoError(t, copy.UnmarshalText(arr))
+	assert.Zero(t, copy)
+	assert.Equal(t, digits.Sprint(), copy.Sprint())
+}
+
+func TestDigitsUnmarshalText(t *testing.T) {
+	text := ([]byte)("12345[")
+	var digits Digits
+	assert.Error(t, digits.UnmarshalText(text))
+	text = ([]byte)("12345[67]")
+	assert.Error(t, digits.UnmarshalText(text))
+	text = ([]byte)("12abc")
+	assert.Error(t, digits.UnmarshalText(text))
+}
+
 func TestDigitsBuilder(t *testing.T) {
 	var builder DigitsBuilder
 	assert.NoError(t, builder.AddDigit(0, 3))

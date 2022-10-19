@@ -2,19 +2,25 @@
 package sqroot
 
 import (
+	"bytes"
+	"encoding/gob"
+	"errors"
 	"fmt"
 	"io"
 	"math/big"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/keep94/consume2"
 )
 
 const (
-	fPrecision = 6
-	gPrecision = 16
+	fPrecision                 = 6
+	gPrecision                 = 16
+	digitsBinaryVersion        = 187
+	unmarshalTextUnexpectedEnd = "sqroot: UnmarshalText hit unexpected end of text"
 )
 
 // Option represents an option for the Print, Fprint, and Sprint methods of
@@ -174,6 +180,76 @@ type Digits struct {
 	posits []int
 }
 
+// MarshalBinary implements the encoding.BinaryMarshaler interface.
+func (d Digits) MarshalBinary() ([]byte, error) {
+	buf := bytes.NewBuffer([]byte{digitsBinaryVersion})
+	encoder := gob.NewEncoder(buf)
+	if err := encoder.Encode(d.asArray()); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+// MarshalText implements the encoding.TextMarshaler interface.
+func (d Digits) MarshalText() ([]byte, error) {
+	iter := d.Iterator()
+	nextPosit := 0
+	var result []byte
+	for posit := iter(); posit != -1; posit = iter() {
+		if posit > nextPosit {
+			result = append(result, byte('['))
+			result = strconv.AppendInt(result, int64(posit), 10)
+			result = append(result, byte(']'))
+			nextPosit = posit
+		}
+		result = append(result, byte('0'+d.At(posit)))
+		nextPosit++
+	}
+	return result, nil
+}
+
+// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
+func (d *Digits) UnmarshalBinary(b []byte) error {
+	if len(b) == 0 || b[0] != digitsBinaryVersion {
+		return errors.New("sqroot: Bad Digits Binary Version")
+	}
+	decoder := gob.NewDecoder(bytes.NewBuffer(b[1:]))
+	var arr []uint
+	if err := decoder.Decode(&arr); err != nil {
+		return err
+	}
+	result, err := newDigits(arr)
+	if err != nil {
+		return err
+	}
+	*d = result
+	return nil
+}
+
+// UnmarshalText implements the encoding.TextUnmarshaler interface.
+func (d *Digits) UnmarshalText(text []byte) error {
+	var builder DigitsBuilder
+	posit := 0
+	i := 0
+	var err error
+	for i < len(text) {
+		if text[i] == '[' {
+			posit, i, err = readPositiveInt(text, i+1)
+			if err != nil {
+				return err
+			}
+		}
+		digit := int(text[i] - '0')
+		if err := builder.AddDigit(posit, digit); err != nil {
+			return err
+		}
+		posit++
+		i++
+	}
+	*d = builder.Build()
+	return nil
+}
+
 // At returns the digit between 0 and 9 at the given zero based position.
 // If the digit at posit is unknown or if posit is negative, At returns -1.
 func (d Digits) At(posit int) int {
@@ -297,6 +373,79 @@ func (d Digits) positDigitIter() func() positDigit {
 	}
 }
 
+func (d Digits) asArray() []uint {
+	iter := d.Iterator()
+	nextPosit := 0
+	var result []uint
+	state := 0
+	pair := uint(0)
+	for posit := iter(); posit != -1; posit = iter() {
+		delta := posit - nextPosit
+		if delta > 0 {
+			if state == 1 {
+				result = append(result, 100+pair)
+				state = 0
+				pair = 0
+			}
+			result = append(result, uint(delta+109))
+		}
+		nextPosit = posit + 1
+		pair = 10*pair + uint(d.At(posit))
+		if state == 1 {
+			result = append(result, pair)
+			pair = 0
+		}
+		state = 1 - state
+	}
+	if state == 1 {
+		result = append(result, 100+pair)
+	}
+	return result
+}
+
+func newDigits(arr []uint) (Digits, error) {
+	var builder DigitsBuilder
+	posit := 0
+	for i := range arr {
+		if arr[i] >= 110 {
+			posit += int(arr[i] - 109)
+		} else if arr[i] >= 100 {
+			if err := builder.AddDigit(posit, int(arr[i]-100)); err != nil {
+				return Digits{}, err
+			}
+			posit++
+		} else {
+			if err := builder.AddDigit(posit, int(arr[i]/10)); err != nil {
+				return Digits{}, err
+			}
+			posit++
+			if err := builder.AddDigit(posit, int(arr[i]%10)); err != nil {
+				return Digits{}, err
+			}
+			posit++
+		}
+	}
+	return builder.Build(), nil
+}
+
+func readPositiveInt(text []byte, i int) (int, int, error) {
+	result := 0
+	for i < len(text) {
+		if text[i] == ']' {
+			if i+1 == len(text) {
+				return 0, 0, errors.New(unmarshalTextUnexpectedEnd)
+			}
+			return result, i + 1, nil
+		} else if text[i] >= '0' && text[i] <= '9' {
+			result = result*10 + int(text[i]-'0')
+		} else {
+			return 0, 0, fmt.Errorf("sqroot: UnmarshalText unexpected character in text: %c", text[i])
+		}
+		i++
+	}
+	return 0, 0, errors.New(unmarshalTextUnexpectedEnd)
+}
+
 // DigitsBuilder builds a Digits instance from scratch. The zero value
 // is an empty DigitsBuilder ready to use.
 type DigitsBuilder struct {
@@ -417,8 +566,8 @@ func (m Mantissa) Fprint(w io.Writer, maxDigits int, options ...Option) (
 // At returns the digit at the given 0 based position in this Mantissa. If
 // this Mantissa has posit or fewer digits, At returns -1. If posit is
 // negative, At returns -1. When fetching digits at multiple positions, it
-// is more efficient to call the Digits method once than it is to call At
-// multiple times.
+// is more efficient to use the GetDigits function to get a Digits instance
+// than it is to call At multiple times.
 func (m Mantissa) At(posit int) int {
 	if posit < 0 {
 		return -1
