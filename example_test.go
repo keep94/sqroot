@@ -62,6 +62,26 @@ func ExampleFindFirstN() {
 	// [0 2 144]
 }
 
+func ExampleGetDigits() {
+
+	// sqrt(7) = 0.264575131106459...*10^1
+	n := sqroot.Sqrt(7)
+
+	var positions sqroot.Positions
+	positions.AddRange(0, 3).Add(4).Add(10)
+	digits := sqroot.GetDigits(n.Mantissa(), &positions)
+	iter := digits.Iterator()
+	for posit := iter(); posit != -1; posit = iter() {
+		fmt.Printf("Position: %d; Digit: %d\n", posit, digits.At(posit))
+	}
+	// Output:
+	// Position: 0; Digit: 2
+	// Position: 1; Digit: 6
+	// Position: 2; Digit: 4
+	// Position: 4; Digit: 7
+	// Position: 10; Digit: 0
+}
+
 func ExampleMantissa_Iterator() {
 
 	// sqrt(7) = 0.264575... * 10^1
@@ -126,7 +146,7 @@ func ExampleDigits_Print() {
 
 	var p sqroot.Positions
 	p.AddRange(200, 210).AddRange(500, 510).AddRange(1000, 1010)
-	digits := n.Mantissa().Digits(&p)
+	digits := sqroot.GetDigits(n.Mantissa(), &p)
 	digits.Print(sqroot.DigitsPerRow(10))
 	// Output:
 	//  200  70109 55997
@@ -142,26 +162,6 @@ func ExampleMantissa_At() {
 	fmt.Println(n.Mantissa().At(0))
 	// Output:
 	// 2
-}
-
-func ExampleMantissa_Digits() {
-
-	// sqrt(7) = 0.264575131106459...*10^1
-	n := sqroot.Sqrt(7)
-
-	var positions sqroot.Positions
-	positions.AddRange(0, 3).Add(4).Add(10)
-	digits := n.Mantissa().Digits(&positions)
-	iter := digits.Iterator()
-	for posit := iter(); posit != -1; posit = iter() {
-		fmt.Printf("Position: %d; Digit: %d\n", posit, digits.At(posit))
-	}
-	// Output:
-	// Position: 0; Digit: 2
-	// Position: 1; Digit: 6
-	// Position: 2; Digit: 4
-	// Position: 4; Digit: 7
-	// Position: 10; Digit: 0
 }
 
 func ExampleNumber_WithSignificant() {

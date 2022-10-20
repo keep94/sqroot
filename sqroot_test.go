@@ -379,7 +379,7 @@ func TestErrorAtAllStages(t *testing.T) {
 
 func TestPrintP(t *testing.T) {
 	p := new(Positions).AddRange(5, 8).AddRange(45, 50)
-	actual := fakeMantissa.Digits(p).Sprint(
+	actual := GetDigits(fakeMantissa, p).Sprint(
 		DigitsPerRow(11), DigitsPerColumn(10))
 	expected := `  0......678.. .
 44  .67890`
@@ -388,7 +388,7 @@ func TestPrintP(t *testing.T) {
 
 func TestPrintP2(t *testing.T) {
 	p := new(Positions).AddRange(0, 2).AddRange(3, 5).AddRange(8, 11)
-	digits := fakeMantissa.Digits(p)
+	digits := GetDigits(fakeMantissa, p)
 	actual := digits.Sprint(DigitsPerRow(11), DigitsPerColumn(10))
 	expected := `0.12.45...90 1`
 	assert.Equal(t, expected, actual)
@@ -396,17 +396,7 @@ func TestPrintP2(t *testing.T) {
 
 func TestPrintPGaps(t *testing.T) {
 	p := new(Positions).AddRange(22, 44).AddRange(66, 77)
-	digits := fakeMantissa.Digits(p)
-	actual := digits.Sprint(DigitsPerRow(11), DigitsPerColumn(10))
-	expected := `22  3456789012 3
-33  4567890123 4
-66  7890123456 7`
-	assert.Equal(t, expected, actual)
-}
-
-func TestPrintDGaps(t *testing.T) {
-	p := new(Positions).AddRange(22, 44).AddRange(66, 77)
-	digits := fakeMantissa.Digits(p)
+	digits := GetDigits(fakeMantissa, p)
 	actual := digits.Sprint(DigitsPerRow(11), DigitsPerColumn(10))
 	expected := `22  3456789012 3
 33  4567890123 4
@@ -417,7 +407,7 @@ func TestPrintDGaps(t *testing.T) {
 func TestPrintPGaps2(t *testing.T) {
 	p := new(Positions).AddRange(0, 10).AddRange(11, 21).AddRange(33, 43)
 	p.AddRange(66, 76)
-	digits := fakeMantissa.Digits(p)
+	digits := GetDigits(fakeMantissa, p)
 	actual := digits.Sprint(DigitsPerRow(11), DigitsPerColumn(10))
 	expected := `  0.1234567890 .
 11  2345678901 .
@@ -428,7 +418,7 @@ func TestPrintPGaps2(t *testing.T) {
 
 func TestPrintPGaps3(t *testing.T) {
 	p := new(Positions).AddRange(21, 33).AddRange(65, 77)
-	digits := fakeMantissa.Digits(p)
+	digits := GetDigits(fakeMantissa, p)
 	actual := digits.Sprint(DigitsPerRow(11), DigitsPerColumn(10))
 	expected := `11  .......... 2
 22  3456789012 3
@@ -439,7 +429,7 @@ func TestPrintPGaps3(t *testing.T) {
 
 func TestPrintPNoShowCount(t *testing.T) {
 	p := new(Positions).AddRange(21, 33).AddRange(65, 77)
-	digits := fakeMantissa.Digits(p)
+	digits := GetDigits(fakeMantissa, p)
 	actual := digits.Sprint(
 		DigitsPerRow(11), DigitsPerColumn(10), ShowCount(false))
 	expected := `0........... .
@@ -454,7 +444,7 @@ func TestPrintPNoShowCount(t *testing.T) {
 
 func TestPrintPNarrow(t *testing.T) {
 	p := new(Positions).Add(3).Add(5).Add(8)
-	digits := fakeMantissa.Digits(p)
+	digits := GetDigits(fakeMantissa, p)
 	actual := digits.Sprint(DigitsPerRow(1))
 	expected := `3  4
 5  6
@@ -464,7 +454,7 @@ func TestPrintPNarrow(t *testing.T) {
 
 func TestPrintPDefaults(t *testing.T) {
 	p := new(Positions).AddRange(0, 75)
-	digits := fakeMantissa.Digits(p)
+	digits := GetDigits(fakeMantissa, p)
 	actual := digits.Sprint()
 	expected := `  0.12345 67890 12345 67890 12345 67890 12345 67890 12345 67890
 50  12345 67890 12345 67890 12345`
@@ -474,14 +464,16 @@ func TestPrintPDefaults(t *testing.T) {
 func TestPrintPTooShort(t *testing.T) {
 	n := Sqrt(100489)
 	p := new(Positions).AddRange(3, 5)
-	digits := n.Mantissa().Digits(p)
+	digits := GetDigits(n.Mantissa(), p)
+	assert.Zero(t, digits)
 	assert.Empty(t, digits.Sprint())
 }
 
 func TestPrintPZero(t *testing.T) {
 	var m Mantissa
 	p := new(Positions).AddRange(3, 5)
-	digits := m.Digits(p)
+	digits := GetDigits(m, p)
+	assert.Zero(t, digits)
 	assert.Empty(t, digits.Sprint())
 }
 
@@ -961,13 +953,11 @@ func TestWithSignificantPanics(t *testing.T) {
 
 func TestWithSignificantZero(t *testing.T) {
 	var n Number
-	n2 := n.WithSignificant(5)
-	assert.Zero(t, n2)
+	assert.Zero(t, n.WithSignificant(5))
 }
 
 func TestWithSignificantToZero(t *testing.T) {
-	n := Sqrt(2).WithSignificant(0)
-	assert.Zero(t, n)
+	assert.Zero(t, Sqrt(2).WithSignificant(0))
 }
 
 func TestAt(t *testing.T) {
@@ -987,7 +977,7 @@ func TestAtFinite(t *testing.T) {
 func TestDigits(t *testing.T) {
 	m := Sqrt(2).Mantissa()
 	positions := new(Positions).Add(25).Add(15).Add(50)
-	digits := m.Digits(positions)
+	digits := GetDigits(m, positions)
 	assert.Equal(t, 5, digits.At(15))
 	assert.Equal(t, 7, digits.At(25))
 	assert.Equal(t, 4, digits.At(50))
@@ -1013,10 +1003,33 @@ func TestDigits(t *testing.T) {
 	assert.Equal(t, -1, iter())
 }
 
+func TestGetDigitsFromDigits(t *testing.T) {
+	m := Sqrt(2).Mantissa()
+	var p Positions
+	p.AddRange(0, 100).AddRange(200, 300).AddRange(400, 500)
+	digits := GetDigits(m, &p)
+	var q Positions
+	q.AddRange(100, 200).AddRange(300, 400).AddRange(500, 600)
+	assert.Zero(t, GetDigits(digits, &q))
+}
+
+func TestGetDigitsFromDigits2(t *testing.T) {
+	m := Sqrt(2).Mantissa()
+	var p Positions
+	p.AddRange(100, 200).AddRange(300, 400).AddRange(500, 600)
+	digits := GetDigits(m, &p)
+	var q Positions
+	q.AddRange(0, 101).AddRange(200, 301).Add(500)
+	digits = GetDigits(digits, &q)
+	var r Positions
+	expected := GetDigits(m, r.Add(100).Add(300).Add(500))
+	assert.Equal(t, expected.Sprint(), digits.Sprint())
+}
+
 func TestDigitsFinite(t *testing.T) {
 	m := Sqrt(2).WithSignificant(50).Mantissa()
 	positions := new(Positions).Add(25).Add(15).Add(50)
-	digits := m.Digits(positions)
+	digits := GetDigits(m, positions)
 	assert.Equal(t, 5, digits.At(15))
 	assert.Equal(t, 7, digits.At(25))
 	assert.Equal(t, -1, digits.At(50))
@@ -1032,8 +1045,7 @@ func TestDigitsFinite(t *testing.T) {
 
 func TestDigitsNone(t *testing.T) {
 	m := Sqrt(2).Mantissa()
-	digits := m.Digits(new(Positions))
-	assert.Zero(t, digits)
+	assert.Zero(t, GetDigits(m, new(Positions)))
 }
 
 func TestDigitsZero(t *testing.T) {
@@ -1120,7 +1132,7 @@ func TestDigitLookup(t *testing.T) {
 	for _, find := range finds {
 		p.AddRange(find, find+3)
 	}
-	digits := n.Mantissa().Digits(&p)
+	digits := GetDigits(n.Mantissa(), &p)
 	iter := digits.Iterator()
 	count := 0
 	for posit := iter(); posit != -1; posit = iter() {
@@ -1136,7 +1148,7 @@ func TestFindWithDigits(t *testing.T) {
 	// '000' in Sqrt(5) at 424 569 3663 4506 4601 6113 7173 9110 9114
 	p := new(Positions).AddRange(7173, 7176).AddRange(9110, 9117)
 	p.AddRange(4500, 4600)
-	digits := n.Mantissa().Digits(p)
+	digits := GetDigits(n.Mantissa(), p)
 	finds := FindAll(digits, []int{0, 0, 0})
 	assert.Equal(t, []int{4506, 7173, 9110, 9114}, finds)
 }

@@ -92,6 +92,15 @@ func (p *Positions) Copy() *Positions {
 	return &Positions{ranges: result, limit: p.limit}
 }
 
+func (p *Positions) filter() *positionsFilter {
+	starts := make([]int, 0, len(p.ranges))
+	for k := range p.ranges {
+		starts = append(starts, k)
+	}
+	sort.Ints(starts)
+	return &positionsFilter{starts: starts, ranges: p.ranges}
+}
+
 // Sequence represents a sequence of possibly non contiguous digits.
 // That is, a Sequence may have holes. For instance, a Sequence could
 // be 375XXX695. The 0th digit is a 3; the 1st digit is a 7; the 2nd digit
@@ -149,6 +158,12 @@ func FindAll(s Sequence, pattern []int) []int {
 		result = append(result, index)
 	}
 	return result
+}
+
+// GetDigits gets the digits from s found at the zero based positions
+// in p.
+func GetDigits(s Sequence, p *Positions) Digits {
+	return asDigits(newPart(s, p))
 }
 
 // Digits holds the digits found at selected positions of a Mantissa so
@@ -372,12 +387,6 @@ func (m Mantissa) Iterator() func() int {
 	return m.spec.Iterator()
 }
 
-// Digits returns the digits found at the zero based positions in p
-// in this Mantissa.
-func (m Mantissa) Digits(p *Positions) Digits {
-	return asDigits(m.partHaving(p))
-}
-
 // Print works like Fprint and prints this Mantissa to stdout.
 func (m Mantissa) Print(maxDigits int, options ...Option) (n int, err error) {
 	return m.Fprint(os.Stdout, maxDigits, options...)
@@ -401,7 +410,7 @@ func (m Mantissa) Fprint(w io.Writer, maxDigits int, options ...Option) (
 	settings := &printerSettings{}
 	return fprint(
 		w,
-		m.partHaving(new(Positions).AddRange(0, maxDigits)),
+		newPart(m, new(Positions).AddRange(0, maxDigits)),
 		mutateSettings(options, settings))
 }
 
@@ -414,29 +423,7 @@ func (m Mantissa) At(posit int) int {
 	if posit < 0 {
 		return -1
 	}
-	return m.Digits(new(Positions).Add(posit)).At(posit)
-}
-
-func (m Mantissa) positIter(p *Positions) func() positDigit {
-	iter := m.Iterator()
-	digit := iter()
-	posit := 0
-	localLimit := 0
-	return func() positDigit {
-		result := invalidPositDigit
-		for !result.Valid() && digit != -1 && posit < p.limit {
-			candidateLimit := posit + p.ranges[posit]
-			if candidateLimit > localLimit {
-				localLimit = candidateLimit
-			}
-			if posit < localLimit {
-				result = positDigit{Posit: posit, Digit: digit}
-			}
-			posit++
-			digit = iter()
-		}
-		return result
-	}
+	return GetDigits(m, new(Positions).Add(posit)).At(posit)
 }
 
 func (m Mantissa) positDigitIter() func() positDigit {
@@ -463,10 +450,6 @@ func (m Mantissa) send(consumer consume2.Consumer[int]) {
 		}
 		consumer.Consume(digit)
 	}
-}
-
-func (m Mantissa) partHaving(p *Positions) part {
-	return &lazyPart{mantissa: m, positions: p}
 }
 
 // Number represents a square root value. The zero value for Number
@@ -696,8 +679,12 @@ type part interface {
 }
 
 type lazyPart struct {
-	mantissa  Mantissa
+	sequence  Sequence
 	positions *Positions
+}
+
+func newPart(sequence Sequence, positions *Positions) part {
+	return &lazyPart{sequence: sequence, positions: positions}
 }
 
 func (p *lazyPart) limit() int {
@@ -705,7 +692,19 @@ func (p *lazyPart) limit() int {
 }
 
 func (p *lazyPart) positDigitIter() func() positDigit {
-	return p.mantissa.positIter(p.positions)
+	filter := p.positions.filter()
+	iter := p.sequence.positDigitIter()
+	pd := iter()
+	return func() positDigit {
+		result := invalidPositDigit
+		for pd.Valid() && pd.Posit < p.positions.limit && !result.Valid() {
+			if filter.Includes(pd.Posit) {
+				result = pd
+			}
+			pd = iter()
+		}
+		return result
+	}
 }
 
 func fprint(
@@ -737,4 +736,27 @@ func find(s Sequence, pattern []int) func() int {
 		return zeroPattern(s.positDigitIter())
 	}
 	return kmp(s.positDigitIter(), pattern)
+}
+
+type positionsFilter struct {
+	starts     []int
+	ranges     map[int]int
+	startIndex int
+	limit      int
+}
+
+func (p *positionsFilter) Includes(posit int) bool {
+	p.update(posit)
+	return posit < p.limit
+}
+
+func (p *positionsFilter) update(posit int) {
+	for p.startIndex < len(p.starts) && p.starts[p.startIndex] <= posit {
+		start := p.starts[p.startIndex]
+		localLimit := start + p.ranges[start]
+		if localLimit > p.limit {
+			p.limit = localLimit
+		}
+		p.startIndex++
+	}
 }
