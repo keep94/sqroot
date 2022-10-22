@@ -1066,10 +1066,10 @@ func TestDigitsZero(t *testing.T) {
 func TestDigitsBinary(t *testing.T) {
 	mantissa := Sqrt(2).Mantissa()
 	var p Positions
-	p.AddRange(1000, 2000).AddRange(5000, 5999).AddRange(10000, 10999)
+	p.AddRange(1000, 2000).AddRange(5000, 5999).AddRange(10000, 10999).Add(11000)
 	digits := GetDigits(mantissa, &p)
 	arr, err := digits.MarshalBinary()
-	assert.Len(t, arr, 1532)
+	assert.Equal(t, 1509, len(arr))
 	assert.NoError(t, err)
 	var copy Digits
 	assert.NoError(t, copy.UnmarshalBinary(arr))
@@ -1095,6 +1095,7 @@ func TestDigitsBinary3(t *testing.T) {
 	digits := GetDigits(mantissa, &p)
 	arr, err := digits.MarshalBinary()
 	assert.NoError(t, err)
+	assert.Equal(t, 6, len(arr))
 	var copy Digits
 	assert.NoError(t, copy.UnmarshalBinary(arr))
 	assert.Equal(t, digits.Sprint(), copy.Sprint())
@@ -1104,6 +1105,7 @@ func TestDigitsBinaryZero(t *testing.T) {
 	var digits Digits
 	arr, err := digits.MarshalBinary()
 	assert.NoError(t, err)
+	assert.Equal(t, 1, len(arr))
 	var copy Digits
 	assert.NoError(t, copy.UnmarshalBinary(arr))
 	assert.Zero(t, copy)
@@ -1118,6 +1120,17 @@ func TestDigitsBinaryEmpty(t *testing.T) {
 func TestDigitsBinaryBadVersion(t *testing.T) {
 	var digits Digits
 	assert.Error(t, digits.UnmarshalBinary([]byte{51}))
+}
+
+func TestDigitsBinaryUnmarshalErrors(t *testing.T) {
+	// A very large position gap results in a negative position delta.
+	data := []byte{0xbb, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x01, 0x44}
+	var digits Digits
+	assert.Error(t, digits.UnmarshalBinary(data))
+	data = []byte{0xbb, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x01, 0x6d}
+	assert.Error(t, digits.UnmarshalBinary(data))
+	data = []byte{0xbb, 0xff}
+	assert.Error(t, digits.UnmarshalBinary(data))
 }
 
 func TestDigitsText(t *testing.T) {
@@ -1169,13 +1182,15 @@ func TestDigitsTextZero(t *testing.T) {
 	assert.Equal(t, digits.Sprint(), copy.Sprint())
 }
 
-func TestDigitsUnmarshalText(t *testing.T) {
+func TestDigitsTextUnmarshalErrors(t *testing.T) {
 	text := ([]byte)("12345[")
 	var digits Digits
 	assert.Error(t, digits.UnmarshalText(text))
 	text = ([]byte)("12345[67]")
 	assert.Error(t, digits.UnmarshalText(text))
 	text = ([]byte)("12abc")
+	assert.Error(t, digits.UnmarshalText(text))
+	text = ([]byte)("12345[6a]")
 	assert.Error(t, digits.UnmarshalText(text))
 }
 

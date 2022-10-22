@@ -3,7 +3,7 @@ package sqroot
 
 import (
 	"bytes"
-	"encoding/gob"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -182,12 +182,33 @@ type Digits struct {
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface.
 func (d Digits) MarshalBinary() ([]byte, error) {
-	buf := bytes.NewBuffer([]byte{digitsBinaryVersion})
-	encoder := gob.NewEncoder(buf)
-	if err := encoder.Encode(d.asArray()); err != nil {
-		return nil, err
+	iter := d.Iterator()
+	nextPosit := 0
+	result := []byte{digitsBinaryVersion}
+	state := 0
+	pair := uint64(0)
+	for posit := iter(); posit != -1; posit = iter() {
+		delta := posit - nextPosit
+		if delta > 0 {
+			if state == 1 {
+				result = binary.AppendUvarint(result, 100+pair)
+				state = 0
+				pair = 0
+			}
+			result = binary.AppendUvarint(result, uint64(delta)+109)
+		}
+		nextPosit = posit + 1
+		pair = 10*pair + uint64(d.At(posit))
+		if state == 1 {
+			result = binary.AppendUvarint(result, pair)
+			pair = 0
+		}
+		state = 1 - state
 	}
-	return buf.Bytes(), nil
+	if state == 1 {
+		result = binary.AppendUvarint(result, 100+pair)
+	}
+	return result, nil
 }
 
 // MarshalText implements the encoding.TextMarshaler interface.
@@ -213,16 +234,33 @@ func (d *Digits) UnmarshalBinary(b []byte) error {
 	if len(b) == 0 || b[0] != digitsBinaryVersion {
 		return errors.New("sqroot: Bad Digits Binary Version")
 	}
-	decoder := gob.NewDecoder(bytes.NewBuffer(b[1:]))
-	var arr []uint
-	if err := decoder.Decode(&arr); err != nil {
-		return err
+	var builder digitsBuilder
+	posit := 0
+	reader := bytes.NewReader(b[1:])
+	for reader.Len() > 0 {
+		val, err := binary.ReadUvarint(reader)
+		if err != nil {
+			return err
+		}
+		if val >= 110 {
+			posit += int(val - 109)
+		} else if val >= 100 {
+			if err := builder.AddDigit(posit, int(val-100)); err != nil {
+				return err
+			}
+			posit++
+		} else {
+			if err := builder.AddDigit(posit, int(val/10)); err != nil {
+				return err
+			}
+			posit++
+			if err := builder.AddDigit(posit, int(val%10)); err != nil {
+				return err
+			}
+			posit++
+		}
 	}
-	result, err := newDigits(arr)
-	if err != nil {
-		return err
-	}
-	*d = result
+	*d = builder.Build()
 	return nil
 }
 
@@ -371,61 +409,6 @@ func (d Digits) positDigitIter() func() positDigit {
 		index++
 		return result
 	}
-}
-
-func (d Digits) asArray() []uint {
-	iter := d.Iterator()
-	nextPosit := 0
-	var result []uint
-	state := 0
-	pair := uint(0)
-	for posit := iter(); posit != -1; posit = iter() {
-		delta := posit - nextPosit
-		if delta > 0 {
-			if state == 1 {
-				result = append(result, 100+pair)
-				state = 0
-				pair = 0
-			}
-			result = append(result, uint(delta+109))
-		}
-		nextPosit = posit + 1
-		pair = 10*pair + uint(d.At(posit))
-		if state == 1 {
-			result = append(result, pair)
-			pair = 0
-		}
-		state = 1 - state
-	}
-	if state == 1 {
-		result = append(result, 100+pair)
-	}
-	return result
-}
-
-func newDigits(arr []uint) (Digits, error) {
-	var builder digitsBuilder
-	posit := 0
-	for i := range arr {
-		if arr[i] >= 110 {
-			posit += int(arr[i] - 109)
-		} else if arr[i] >= 100 {
-			if err := builder.AddDigit(posit, int(arr[i]-100)); err != nil {
-				return Digits{}, err
-			}
-			posit++
-		} else {
-			if err := builder.AddDigit(posit, int(arr[i]/10)); err != nil {
-				return Digits{}, err
-			}
-			posit++
-			if err := builder.AddDigit(posit, int(arr[i]%10)); err != nil {
-				return Digits{}, err
-			}
-			posit++
-		}
-	}
-	return builder.Build(), nil
 }
 
 func readPositiveInt(text []byte, i int) (int, int, error) {
