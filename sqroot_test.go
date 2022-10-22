@@ -1180,7 +1180,7 @@ func TestDigitsUnmarshalText(t *testing.T) {
 }
 
 func TestDigitsBuilder(t *testing.T) {
-	var builder DigitsBuilder
+	var builder digitsBuilder
 	assert.NoError(t, builder.AddDigit(0, 3))
 	assert.NoError(t, builder.AddDigit(1, 1))
 	assert.NoError(t, builder.AddDigit(2, 4))
@@ -1206,7 +1206,7 @@ func TestDigitsBuilder(t *testing.T) {
 }
 
 func TestDigitBuilderErrors(t *testing.T) {
-	var builder DigitsBuilder
+	var builder digitsBuilder
 	assert.Error(t, builder.AddDigit(-1, 3))
 	assert.Error(t, builder.AddDigit(0, -1))
 	assert.Error(t, builder.AddDigit(0, 10))

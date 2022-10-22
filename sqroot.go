@@ -228,7 +228,7 @@ func (d *Digits) UnmarshalBinary(b []byte) error {
 
 // UnmarshalText implements the encoding.TextUnmarshaler interface.
 func (d *Digits) UnmarshalText(text []byte) error {
-	var builder DigitsBuilder
+	var builder digitsBuilder
 	posit := 0
 	i := 0
 	var err error
@@ -404,7 +404,7 @@ func (d Digits) asArray() []uint {
 }
 
 func newDigits(arr []uint) (Digits, error) {
-	var builder DigitsBuilder
+	var builder digitsBuilder
 	posit := 0
 	for i := range arr {
 		if arr[i] >= 110 {
@@ -446,18 +446,12 @@ func readPositiveInt(text []byte, i int) (int, int, error) {
 	return 0, 0, errors.New(unmarshalTextUnexpectedEnd)
 }
 
-// DigitsBuilder builds a Digits instance from scratch. The zero value
-// is an empty DigitsBuilder ready to use.
-type DigitsBuilder struct {
+type digitsBuilder struct {
 	digits map[int]int
 	posits []int
 }
 
-// AddDigit adds a new digit to this builder at given posit. AddDigit
-// must be called with increasing posit values, posit must be non-negative,
-// and digit must be between 0 and 9. AddDigit returns a non-nil error
-// if these requirements are not met.
-func (d *DigitsBuilder) AddDigit(posit int, digit int) error {
+func (d *digitsBuilder) AddDigit(posit int, digit int) error {
 	if posit < 0 {
 		return fmt.Errorf(
 			"sqroot: posit must be non-negative but was %d", posit)
@@ -481,9 +475,7 @@ func (d *DigitsBuilder) AddDigit(posit int, digit int) error {
 	return nil
 }
 
-// Build builds a Digits instance from this builder and empties this
-// builder.
-func (d *DigitsBuilder) Build() Digits {
+func (d *digitsBuilder) Build() Digits {
 	result := Digits{digits: d.digits, posits: d.posits}
 	d.digits = nil
 	d.posits = nil
