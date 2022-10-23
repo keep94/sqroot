@@ -20,7 +20,7 @@ const (
 	fPrecision                 = 6
 	gPrecision                 = 16
 	digitsBinaryVersion        = 187
-	unmarshalTextUnexpectedEnd = "sqroot: UnmarshalText hit unexpected end of text"
+	unmarshalTextUnexpectedEnd = "sqroot: Digits.UnmarshalText hit unexpected end of text"
 )
 
 // Option represents an option for the Print, Fprint, and Sprint methods of
@@ -215,7 +215,7 @@ func (d Digits) MarshalBinary() ([]byte, error) {
 func (d Digits) MarshalText() ([]byte, error) {
 	iter := d.Iterator()
 	nextPosit := 0
-	var result []byte
+	result := []byte("v1:")
 	for posit := iter(); posit != -1; posit = iter() {
 		if posit > nextPosit {
 			result = append(result, byte('['))
@@ -268,8 +268,10 @@ func (d *Digits) UnmarshalBinary(b []byte) error {
 func (d *Digits) UnmarshalText(text []byte) error {
 	var builder digitsBuilder
 	posit := 0
-	i := 0
-	var err error
+	version, i, err := readVersion(text)
+	if err != nil || version != "v1" {
+		return errors.New("sqroot: Bad Digits Text Version")
+	}
 	for i < len(text) {
 		if text[i] == '[' {
 			posit, i, err = readPositiveInt(text, i+1)
@@ -411,6 +413,14 @@ func (d Digits) positDigitIter() func() positDigit {
 	}
 }
 
+func readVersion(text []byte) (string, int, error) {
+	idx := bytes.Index(text, []byte(":"))
+	if idx == -1 {
+		return "", 0, errors.New("sqroot: Digits.UnmarhalText: Can't read version")
+	}
+	return string(text[:idx]), idx + 1, nil
+}
+
 func readPositiveInt(text []byte, i int) (int, int, error) {
 	result := 0
 	for i < len(text) {
@@ -422,7 +432,7 @@ func readPositiveInt(text []byte, i int) (int, int, error) {
 		} else if text[i] >= '0' && text[i] <= '9' {
 			result = result*10 + int(text[i]-'0')
 		} else {
-			return 0, 0, fmt.Errorf("sqroot: UnmarshalText unexpected character in text: %c", text[i])
+			return 0, 0, fmt.Errorf("sqroot: Digits.UnmarshalText unexpected character in text: %c", text[i])
 		}
 		i++
 	}
@@ -437,15 +447,15 @@ type digitsBuilder struct {
 func (d *digitsBuilder) AddDigit(posit int, digit int) error {
 	if posit < 0 {
 		return fmt.Errorf(
-			"sqroot: posit must be non-negative but was %d", posit)
+			"sqroot: digitsBuilder.AddDigit: posit must be non-negative but was %d", posit)
 	}
 	if digit < 0 || digit > 9 {
 		return fmt.Errorf(
-			"sqroot: digit must be between 0 and 9 but was %d", digit)
+			"sqroot: digitsBuilder.AddDigit: digit must be between 0 and 9 but was %d", digit)
 	}
 	if len(d.posits) > 0 && d.posits[len(d.posits)-1] >= posit {
 		return fmt.Errorf(
-			"sqroot: posit must be ever increasing was %d now %d",
+			"sqroot: digitsBuilder.AddDigit: posit must be ever increasing was %d now %d",
 			d.posits[len(d.posits)-1],
 			posit,
 		)

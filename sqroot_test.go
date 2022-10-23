@@ -1140,7 +1140,7 @@ func TestDigitsText(t *testing.T) {
 	digits := GetDigits(mantissa, &p)
 	arr, err := digits.MarshalText()
 	assert.NoError(t, err)
-	assert.Equal(t, "1414[26]2", string(arr))
+	assert.Equal(t, "v1:1414[26]2", string(arr))
 	var copy Digits
 	assert.NoError(t, copy.UnmarshalText(arr))
 	assert.Equal(t, digits.Sprint(), copy.Sprint())
@@ -1153,7 +1153,7 @@ func TestDigitsText2(t *testing.T) {
 	digits := GetDigits(mantissa, &p)
 	arr, err := digits.MarshalText()
 	assert.NoError(t, err)
-	assert.Equal(t, "[3]421[10]37", string(arr))
+	assert.Equal(t, "v1:[3]421[10]37", string(arr))
 	var copy Digits
 	assert.NoError(t, copy.UnmarshalText(arr))
 	assert.Equal(t, digits.Sprint(), copy.Sprint())
@@ -1165,7 +1165,7 @@ func TestDigitsText3(t *testing.T) {
 	digits := GetDigits(mantissa, p.AddRange(0, 6))
 	arr, err := digits.MarshalText()
 	assert.NoError(t, err)
-	assert.Equal(t, "141421", string(arr))
+	assert.Equal(t, "v1:141421", string(arr))
 	var copy Digits
 	assert.NoError(t, copy.UnmarshalText(arr))
 	assert.Equal(t, digits.Sprint(), copy.Sprint())
@@ -1175,7 +1175,7 @@ func TestDigitsTextZero(t *testing.T) {
 	var digits Digits
 	arr, err := digits.MarshalText()
 	assert.NoError(t, err)
-	assert.Empty(t, arr)
+	assert.Equal(t, "v1:", string(arr))
 	var copy Digits
 	assert.NoError(t, copy.UnmarshalText(arr))
 	assert.Zero(t, copy)
@@ -1183,14 +1183,18 @@ func TestDigitsTextZero(t *testing.T) {
 }
 
 func TestDigitsTextUnmarshalErrors(t *testing.T) {
-	text := ([]byte)("12345[")
+	text := []byte("v1:12345[")
 	var digits Digits
 	assert.Error(t, digits.UnmarshalText(text))
-	text = ([]byte)("12345[67]")
+	text = []byte("v1:12345[67]")
 	assert.Error(t, digits.UnmarshalText(text))
-	text = ([]byte)("12abc")
+	text = []byte("v1:12abc")
 	assert.Error(t, digits.UnmarshalText(text))
-	text = ([]byte)("12345[6a]")
+	text = []byte("v1:12345[6a]")
+	assert.Error(t, digits.UnmarshalText(text))
+	text = []byte("v2:")
+	assert.Error(t, digits.UnmarshalText(text))
+	text = []byte("")
 	assert.Error(t, digits.UnmarshalText(text))
 }
 
