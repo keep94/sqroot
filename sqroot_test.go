@@ -1018,11 +1018,9 @@ func TestGetDigitsFromDigits2(t *testing.T) {
 	var p Positions
 	p.AddRange(100, 200).AddRange(300, 400).AddRange(500, 600)
 	digits := GetDigits(m, &p)
-	var q Positions
-	q.AddRange(0, 101).AddRange(200, 301).Add(500)
-	digits = GetDigits(digits, &q)
-	var r Positions
-	expected := GetDigits(m, r.Add(100).Add(300).Add(500))
+	p.Clear().AddRange(0, 101).AddRange(200, 301).Add(500)
+	digits = GetDigits(digits, &p)
+	expected := GetDigits(m, p.Clear().Add(100).Add(300).Add(500))
 	assert.Equal(t, expected.Sprint(), digits.Sprint())
 }
 
@@ -1237,14 +1235,22 @@ func TestDigitBuilderErrors(t *testing.T) {
 
 func TestPositions(t *testing.T) {
 	p := new(Positions).AddRange(0, 3).Add(4).Add(10)
+	p.AddRange(13, 15)
 	p.Add(0)
 	q := p.Copy()
-	q.AddRange(13, 15)
-	p.AddRange(100, 105)
-	assert.Equal(t, map[int]int{0: 3, 4: 1, 10: 1, 100: 5}, p.ranges)
-	assert.Equal(t, 105, p.limit)
-	assert.Equal(t, map[int]int{0: 3, 4: 1, 10: 1, 13: 2}, q.ranges)
-	assert.Equal(t, 15, q.limit)
+	q.AddRange(100, 105)
+	assert.Equal(t, map[int]int{0: 3, 4: 1, 10: 1, 13: 2}, p.ranges)
+	assert.Equal(t, 15, p.limit)
+	assert.Equal(t, map[int]int{0: 3, 4: 1, 10: 1, 13: 2, 100: 5}, q.ranges)
+	assert.Equal(t, 105, q.limit)
+}
+
+func TestPositionsClear(t *testing.T) {
+	var p Positions
+	p.AddRange(10, 15)
+	assert.NotZero(t, p)
+	p.Clear()
+	assert.Zero(t, p)
 }
 
 func TestPositionsCopyZero(t *testing.T) {

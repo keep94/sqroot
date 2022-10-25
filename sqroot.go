@@ -58,7 +58,7 @@ type Positions struct {
 	limit  int
 }
 
-// Add adds a posit to this instance and returns this instance for chaining.
+// Add adds posit to this instance and returns this instance for chaining.
 // Add panics if posit is negative.
 func (p *Positions) Add(posit int) *Positions {
 	return p.AddRange(posit, posit+1)
@@ -96,6 +96,13 @@ func (p *Positions) Copy() *Positions {
 		result[k] = v
 	}
 	return &Positions{ranges: result, limit: p.limit}
+}
+
+// Clear clears this instance so that it contains no positions and returns
+// this instance for chaining.
+func (p *Positions) Clear() *Positions {
+	*p = Positions{}
+	return p
 }
 
 func (p *Positions) filter() *positionsFilter {
