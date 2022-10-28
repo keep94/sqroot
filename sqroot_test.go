@@ -1235,15 +1235,18 @@ func TestDigitBuilderErrors(t *testing.T) {
 }
 
 func TestPositions(t *testing.T) {
-	p := new(Positions).AddRange(0, 3).Add(4).Add(10)
+	p := new(Positions).AddRange(0, 2).Add(4).Add(10).AddRange(-1, 3)
+	p.AddRange(-3, -1)
 	p.AddRange(13, 15)
 	p.Add(0)
-	q := p.Copy()
-	q.AddRange(100, 105)
 	assert.Equal(t, map[int]int{0: 3, 4: 1, 10: 1, 13: 2}, p.ranges)
 	assert.Equal(t, 15, p.limit)
-	assert.Equal(t, map[int]int{0: 3, 4: 1, 10: 1, 13: 2, 100: 5}, q.ranges)
-	assert.Equal(t, 105, q.limit)
+}
+
+func TestPositionsNegative(t *testing.T) {
+	var p Positions
+	p.Add(-1)
+	assert.Zero(t, p)
 }
 
 func TestPositionsClear(t *testing.T) {
@@ -1252,17 +1255,6 @@ func TestPositionsClear(t *testing.T) {
 	assert.NotZero(t, p)
 	p.Clear()
 	assert.Zero(t, p)
-}
-
-func TestPositionsCopyZero(t *testing.T) {
-	var p Positions
-	q := p.Copy()
-	assert.NotSame(t, p, q)
-	assert.Zero(t, *q)
-}
-
-func TestPositionsPanic(t *testing.T) {
-	assert.Panics(t, func() { new(Positions).Add(-1) })
 }
 
 func TestDigitLookup(t *testing.T) {

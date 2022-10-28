@@ -66,18 +66,18 @@ type Positions struct {
 }
 
 // Add adds posit to this instance and returns this instance for chaining.
-// Add panics if posit is negative.
+// If posit is negative, Add is a no-op.
 func (p *Positions) Add(posit int) *Positions {
 	return p.AddRange(posit, posit+1)
 }
 
 // AddRange adds a range of positions to this instance and returns this
 // instance for chaining. The range is between start inclusive and end
-// exclusive. If end <= start, AddRange is a no-op. AddRange panics if
-// start is negative.
+// exclusive. AddRange ignores any negative positions within the specified
+// range. If end <= start, AddRange is a no-op.
 func (p *Positions) AddRange(start, end int) *Positions {
 	if start < 0 {
-		panic("start must be non-negative")
+		start = 0
 	}
 	oldValue := p.ranges[start]
 	if end-start <= oldValue {
@@ -91,18 +91,6 @@ func (p *Positions) AddRange(start, end int) *Positions {
 		p.limit = end
 	}
 	return p
-}
-
-// Copy returns a new instance that is a copy of this instance.
-func (p *Positions) Copy() *Positions {
-	if len(p.ranges) == 0 {
-		return &Positions{}
-	}
-	result := make(map[int]int, len(p.ranges))
-	for k, v := range p.ranges {
-		result[k] = v
-	}
-	return &Positions{ranges: result, limit: p.limit}
 }
 
 // Clear clears this instance so that it contains no positions and returns
