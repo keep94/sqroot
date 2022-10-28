@@ -419,10 +419,11 @@ func TestPrintPGaps2(t *testing.T) {
 func TestPrintPGaps3(t *testing.T) {
 	p := new(Positions).AddRange(21, 33).AddRange(65, 77)
 	digits := GetDigits(fakeMantissa, p)
-	actual := digits.Sprint(DigitsPerRow(11), DigitsPerColumn(10))
-	expected := `11  .......... 2
+	actual := digits.Sprint(
+		DigitsPerRow(11), DigitsPerColumn(10), MissingDigit('-'))
+	expected := `11  ---------- 2
 22  3456789012 3
-55  .......... 6
+55  ---------- 6
 66  7890123456 7`
 	assert.Equal(t, expected, actual)
 }

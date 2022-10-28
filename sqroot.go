@@ -51,6 +51,13 @@ func ShowCount(on bool) Option {
 	})
 }
 
+// MissingDigit sets the character to represent a missing digit.
+func MissingDigit(missingDigit rune) Option {
+	return optionFunc(func(p *printerSettings) {
+		p.missingDigit = missingDigit
+	})
+}
+
 // Positions represents a set of zero based positions for which to fetch
 // digits. The zero value contains no positions and is ready to use.
 type Positions struct {
@@ -390,12 +397,14 @@ func (d Digits) Sprint(options ...Option) string {
 
 // Fprint prints this instance to w and returns number of bytes written
 // and any error encountered. For options, the default is 50 digits per
-// row, 5 digits per column, and show digit count.
+// row, 5 digits per column, show digit count, and period (.) for missing
+// digits.
 func (d Digits) Fprint(w io.Writer, options ...Option) (n int, err error) {
 	settings := &printerSettings{
 		digitsPerRow:    50,
 		digitsPerColumn: 5,
 		showCount:       true,
+		missingDigit:    '.',
 	}
 	return fprint(w, d, mutateSettings(options, settings))
 }
@@ -548,7 +557,7 @@ func (m Mantissa) Fprint(w io.Writer, maxDigits int, options ...Option) (
 	if m.spec == nil || maxDigits <= 0 {
 		return fmt.Fprint(w, "0")
 	}
-	settings := &printerSettings{}
+	settings := &printerSettings{missingDigit: '.'}
 	return fprint(
 		w,
 		newPart(m, new(Positions).AddRange(0, maxDigits)),

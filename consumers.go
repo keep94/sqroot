@@ -9,12 +9,14 @@ import (
 
 type printer struct {
 	rawPrinter
+	missingDigit rune
 }
 
 func newPrinter(
 	writer io.Writer, maxDigits int, settings *printerSettings) *printer {
 	var result printer
 	result.Init(writer, maxDigits, settings)
+	result.missingDigit = settings.missingDigit
 	return &result
 }
 
@@ -24,7 +26,7 @@ func (p *printer) Consume(pd positDigit) {
 			p.skipRowsFor(pd.Posit)
 		}
 		for p.index < pd.Posit {
-			p.rawPrinter.Consume('.')
+			p.rawPrinter.Consume(p.missingDigit)
 		}
 	}
 	p.rawPrinter.Consume('0' + rune(pd.Digit))
@@ -124,6 +126,7 @@ type printerSettings struct {
 	digitsPerRow    int
 	digitsPerColumn int
 	showCount       bool
+	missingDigit    rune
 }
 
 func (p *printerSettings) digitCountWidth(maxDigits int) int {
