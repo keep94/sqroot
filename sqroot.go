@@ -58,10 +58,11 @@ func MissingDigit(missingDigit rune) Option {
 	})
 }
 
-// PositionsBuilder builds Positions objects. The zero value is a
-// builder with no positions in it that is ready to use.
+// PositionsBuilder builds Positions objects. The zero value has no
+// positions in it and is ready to use.
 type PositionsBuilder struct {
-	ranges map[int]int
+	ranges   []positionRange
+	unsorted bool
 }
 
 // Add adds posit to this instance and returns this instance for chaining.
@@ -78,49 +79,45 @@ func (p *PositionsBuilder) AddRange(start, end int) *PositionsBuilder {
 	if start < 0 {
 		start = 0
 	}
-	oldValue := p.ranges[start]
-	if end-start <= oldValue {
+	if end <= start {
 		return p
 	}
-	if p.ranges == nil {
-		p.ranges = make(map[int]int)
+	newRange := positionRange{Start: start, End: end}
+	length := len(p.ranges)
+	if length == 0 {
+		p.ranges = append(p.ranges, newRange)
+		return p
 	}
-	p.ranges[start] = end - start
+	if start < p.ranges[length-1].Start {
+		p.ranges = append(p.ranges, newRange)
+		p.unsorted = true
+		return p
+	}
+	appendNotBefore(newRange, &p.ranges)
 	return p
 }
 
 // Build builds a Positions instance from this builder and resets this builder
 // so that it has no positions in it.
 func (p *PositionsBuilder) Build() Positions {
-	if len(p.ranges) == 0 {
+	if !p.unsorted {
+		result := p.ranges
 		*p = PositionsBuilder{}
-		return Positions{}
+		return Positions{ranges: result}
 	}
-	starts := make([]int, 0, len(p.ranges))
-	for k := range p.ranges {
-		starts = append(starts, k)
-	}
-	sort.Ints(starts)
-	prange := positionRange{Start: starts[0], End: p.endAt(starts[0])}
+	sort.Slice(
+		p.ranges,
+		func(i, j int) bool {
+			return p.ranges[i].Start < p.ranges[j].Start
+		},
+	)
 	var result []positionRange
-	for _, start := range starts[1:] {
-		if start >= prange.Start && start <= prange.End {
-			localEnd := p.endAt(start)
-			if localEnd > prange.End {
-				prange.End = localEnd
-			}
-		} else {
-			result = append(result, prange)
-			prange = positionRange{Start: start, End: p.endAt(start)}
-		}
+	result = append(result, p.ranges[0])
+	for _, prange := range p.ranges[1:] {
+		appendNotBefore(prange, &result)
 	}
-	result = append(result, prange)
 	*p = PositionsBuilder{}
 	return Positions{ranges: result}
-}
-
-func (p *PositionsBuilder) endAt(start int) int {
-	return start + p.ranges[start]
 }
 
 // Positions represents a set of zero based positions for which to fetch
@@ -929,5 +926,17 @@ func (p *positionsFilter) update(posit int) {
 	for p.startIndex < len(p.ranges) && p.ranges[p.startIndex].Start <= posit {
 		p.limit = p.ranges[p.startIndex].End
 		p.startIndex++
+	}
+}
+
+func appendNotBefore(item positionRange, ranges *[]positionRange) {
+	length := len(*ranges)
+	lastItem := &(*ranges)[length-1]
+	if item.Start <= lastItem.End {
+		if item.End > lastItem.End {
+			lastItem.End = item.End
+		}
+	} else {
+		*ranges = append(*ranges, item)
 	}
 }
