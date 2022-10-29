@@ -58,16 +58,15 @@ func MissingDigit(missingDigit rune) Option {
 	})
 }
 
-// Positions represents a set of zero based positions for which to fetch
-// digits. The zero value contains no positions and is ready to use.
-type Positions struct {
+// PositionsBuilder builds Positions objects. The zero value is a
+// builder with no positions in it that is ready to use.
+type PositionsBuilder struct {
 	ranges map[int]int
-	limit  int
 }
 
 // Add adds posit to this instance and returns this instance for chaining.
 // If posit is negative, Add is a no-op.
-func (p *Positions) Add(posit int) *Positions {
+func (p *PositionsBuilder) Add(posit int) *PositionsBuilder {
 	return p.AddRange(posit, posit+1)
 }
 
@@ -75,7 +74,7 @@ func (p *Positions) Add(posit int) *Positions {
 // instance for chaining. The range is between start inclusive and end
 // exclusive. AddRange ignores any negative positions within the specified
 // range. If end <= start, AddRange is a no-op.
-func (p *Positions) AddRange(start, end int) *Positions {
+func (p *PositionsBuilder) AddRange(start, end int) *PositionsBuilder {
 	if start < 0 {
 		start = 0
 	}
@@ -87,26 +86,59 @@ func (p *Positions) AddRange(start, end int) *Positions {
 		p.ranges = make(map[int]int)
 	}
 	p.ranges[start] = end - start
-	if end > p.limit {
-		p.limit = end
+	return p
+}
+
+// Build builds a Positions instance from this builder and resets this builder
+// so that it has no positions in it.
+func (p *PositionsBuilder) Build() Positions {
+	if len(p.ranges) == 0 {
+		*p = PositionsBuilder{}
+		return Positions{}
 	}
-	return p
-}
-
-// Clear clears this instance so that it contains no positions and returns
-// this instance for chaining.
-func (p *Positions) Clear() *Positions {
-	*p = Positions{}
-	return p
-}
-
-func (p *Positions) filter() *positionsFilter {
 	starts := make([]int, 0, len(p.ranges))
 	for k := range p.ranges {
 		starts = append(starts, k)
 	}
 	sort.Ints(starts)
-	return &positionsFilter{starts: starts, ranges: p.ranges}
+	prange := positionRange{Start: starts[0], End: p.endAt(starts[0])}
+	var result []positionRange
+	for _, start := range starts[1:] {
+		if start >= prange.Start && start <= prange.End {
+			localEnd := p.endAt(start)
+			if localEnd > prange.End {
+				prange.End = localEnd
+			}
+		} else {
+			result = append(result, prange)
+			prange = positionRange{Start: start, End: p.endAt(start)}
+		}
+	}
+	result = append(result, prange)
+	*p = PositionsBuilder{}
+	return Positions{ranges: result}
+}
+
+func (p *PositionsBuilder) endAt(start int) int {
+	return start + p.ranges[start]
+}
+
+// Positions represents a set of zero based positions for which to fetch
+// digits. The zero value contains no positions.
+type Positions struct {
+	ranges []positionRange
+}
+
+func (p Positions) limit() int {
+	length := len(p.ranges)
+	if length == 0 {
+		return 0
+	}
+	return p.ranges[length-1].End
+}
+
+func (p Positions) filter() *positionsFilter {
+	return &positionsFilter{ranges: p.ranges}
 }
 
 // Sequence represents a sequence of possibly non contiguous digits.
@@ -170,7 +202,7 @@ func FindAll(s Sequence, pattern []int) []int {
 
 // GetDigits gets the digits from s found at the zero based positions
 // in p.
-func GetDigits(s Sequence, p *Positions) Digits {
+func GetDigits(s Sequence, p Positions) Digits {
 	return asDigits(newPart(s, p))
 }
 
@@ -548,7 +580,7 @@ func (m Mantissa) Fprint(w io.Writer, maxDigits int, options ...Option) (
 	settings := &printerSettings{missingDigit: '.'}
 	return fprint(
 		w,
-		newPart(m, new(Positions).AddRange(0, maxDigits)),
+		newPart(m, new(PositionsBuilder).AddRange(0, maxDigits).Build()),
 		mutateSettings(options, settings))
 }
 
@@ -561,7 +593,7 @@ func (m Mantissa) At(posit int) int {
 	if posit < 0 {
 		return -1
 	}
-	return GetDigits(m, new(Positions).Add(posit)).At(posit)
+	return GetDigits(m, new(PositionsBuilder).Add(posit).Build()).At(posit)
 }
 
 func (m Mantissa) positDigitIter() func() positDigit {
@@ -818,24 +850,25 @@ type part interface {
 
 type lazyPart struct {
 	sequence  Sequence
-	positions *Positions
+	positions Positions
 }
 
-func newPart(sequence Sequence, positions *Positions) part {
+func newPart(sequence Sequence, positions Positions) part {
 	return &lazyPart{sequence: sequence, positions: positions}
 }
 
 func (p *lazyPart) limit() int {
-	return p.positions.limit
+	return p.positions.limit()
 }
 
 func (p *lazyPart) positDigitIter() func() positDigit {
 	filter := p.positions.filter()
 	iter := p.sequence.positDigitIter()
 	pd := iter()
+	limit := p.limit()
 	return func() positDigit {
 		result := invalidPositDigit
-		for pd.Valid() && pd.Posit < p.positions.limit && !result.Valid() {
+		for pd.Valid() && pd.Posit < limit && !result.Valid() {
 			if filter.Includes(pd.Posit) {
 				result = pd
 			}
@@ -876,9 +909,13 @@ func find(s Sequence, pattern []int) func() int {
 	return kmp(s.positDigitIter(), pattern)
 }
 
+type positionRange struct {
+	Start int
+	End   int
+}
+
 type positionsFilter struct {
-	starts     []int
-	ranges     map[int]int
+	ranges     []positionRange
 	startIndex int
 	limit      int
 }
@@ -889,12 +926,8 @@ func (p *positionsFilter) Includes(posit int) bool {
 }
 
 func (p *positionsFilter) update(posit int) {
-	for p.startIndex < len(p.starts) && p.starts[p.startIndex] <= posit {
-		start := p.starts[p.startIndex]
-		localLimit := start + p.ranges[start]
-		if localLimit > p.limit {
-			p.limit = localLimit
-		}
+	for p.startIndex < len(p.ranges) && p.ranges[p.startIndex].Start <= posit {
+		p.limit = p.ranges[p.startIndex].End
 		p.startIndex++
 	}
 }

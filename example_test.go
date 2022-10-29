@@ -67,9 +67,9 @@ func ExampleGetDigits() {
 	// sqrt(7) = 0.264575131106459...*10^1
 	n := sqroot.Sqrt(7)
 
-	var positions sqroot.Positions
-	positions.AddRange(0, 3).Add(4).Add(10)
-	digits := sqroot.GetDigits(n.Mantissa(), &positions)
+	var pb sqroot.PositionsBuilder
+	pb.AddRange(0, 3).Add(4).Add(10)
+	digits := sqroot.GetDigits(n.Mantissa(), pb.Build())
 	iter := digits.Iterator()
 	for posit := iter(); posit != -1; posit = iter() {
 		fmt.Printf("Position: %d; Digit: %d\n", posit, digits.At(posit))
@@ -144,9 +144,9 @@ func ExampleDigits_Print() {
 	// Find the square root of 2.
 	n := sqroot.Sqrt(2)
 
-	var p sqroot.Positions
-	p.AddRange(200, 210).AddRange(500, 510).AddRange(1000, 1010)
-	digits := sqroot.GetDigits(n.Mantissa(), &p)
+	var pb sqroot.PositionsBuilder
+	pb.AddRange(200, 210).AddRange(500, 510).AddRange(1000, 1010)
+	digits := sqroot.GetDigits(n.Mantissa(), pb.Build())
 	digits.Print(sqroot.DigitsPerRow(10))
 	// Output:
 	//  200  70109 55997
