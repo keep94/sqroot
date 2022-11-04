@@ -335,14 +335,14 @@ func (d Digits) At(posit int) int {
 // in this instance from lowest to highest. When there are no more positions,
 // the returned function returns -1.
 func (d Digits) Iterator() func() int {
-	return d.IteratorAt(0)
+	return d.iteratorAtIndex(0)
 }
 
 // Reverse returns a function that generates all the zero based positions
 // in this instance from highest to lowest. When there are no more positions,
 // the returned function returns -1.
 func (d Digits) Reverse() func() int {
-	return d.ReverseAt(d.Max() + 1)
+	return d.reverseAtIndex(len(d.posits))
 }
 
 // IteratorAt returns a function that generates all the zero based
@@ -351,14 +351,7 @@ func (d Digits) Reverse() func() int {
 func (d Digits) IteratorAt(posit int) func() int {
 	index := sort.Search(
 		len(d.posits), func(x int) bool { return d.posits[x] >= posit })
-	return func() int {
-		if index == len(d.posits) {
-			return -1
-		}
-		result := d.posits[index]
-		index++
-		return result
-	}
+	return d.iteratorAtIndex(index)
 }
 
 // ReverseAt returns a function that generates all the zero based positions
@@ -366,15 +359,8 @@ func (d Digits) IteratorAt(posit int) func() int {
 // there are no more positions, the returned function returns -1.
 func (d Digits) ReverseAt(posit int) func() int {
 	index := sort.Search(
-		len(d.posits), func(x int) bool { return d.posits[x] >= posit }) - 1
-	return func() int {
-		if index == -1 {
-			return -1
-		}
-		result := d.posits[index]
-		index--
-		return result
-	}
+		len(d.posits), func(x int) bool { return d.posits[x] >= posit })
+	return d.reverseAtIndex(index)
 }
 
 // Min returns the minimum position in this instance. If this instance
@@ -431,6 +417,29 @@ func (d Digits) limit() int {
 		return 0
 	}
 	return d.posits[len(d.posits)-1] + 1
+}
+
+func (d Digits) iteratorAtIndex(index int) func() int {
+	return func() int {
+		if index == len(d.posits) {
+			return -1
+		}
+		result := d.posits[index]
+		index++
+		return result
+	}
+}
+
+func (d Digits) reverseAtIndex(index int) func() int {
+	index--
+	return func() int {
+		if index == -1 {
+			return -1
+		}
+		result := d.posits[index]
+		index--
+		return result
+	}
 }
 
 func (d Digits) positDigitIter() func() positDigit {
