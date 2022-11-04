@@ -220,23 +220,6 @@ func (f *formatter) addLeadingZeros(count int) {
 	fmt.Fprint(f.writer, strings.Repeat("0", count))
 }
 
-type digitAt struct {
-	digits map[int]int
-	posits []int
-}
-
-func (d *digitAt) CanConsume() bool {
-	return true
-}
-
-func (d *digitAt) Consume(pd positDigit) {
-	if d.digits == nil {
-		d.digits = make(map[int]int)
-	}
-	d.digits[pd.Posit] = pd.Digit
-	d.posits = append(d.posits, pd.Posit)
-}
-
 type positDigit struct {
 	Posit int
 	Digit int

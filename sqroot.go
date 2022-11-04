@@ -103,7 +103,7 @@ func (p *PositionsBuilder) Build() Positions {
 	if !p.unsorted {
 		result := p.ranges
 		*p = PositionsBuilder{}
-		return Positions{ranges: result}
+		return createPositions(result)
 	}
 	sort.Slice(
 		p.ranges,
@@ -117,13 +117,22 @@ func (p *PositionsBuilder) Build() Positions {
 		appendNotBefore(prange, &result)
 	}
 	*p = PositionsBuilder{}
-	return Positions{ranges: result}
+	return createPositions(result)
 }
 
 // Positions represents a set of zero based positions for which to fetch
 // digits. The zero value contains no positions.
 type Positions struct {
 	ranges []positionRange
+	count  int
+}
+
+func createPositions(ranges []positionRange) Positions {
+	count := 0
+	for _, pr := range ranges {
+		count += (pr.End - pr.Start)
+	}
+	return Positions{ranges: ranges, count: count}
 }
 
 func (p Positions) limit() int {
@@ -200,7 +209,16 @@ func FindAll(s Sequence, pattern []int) []int {
 // GetDigits gets the digits from s found at the zero based positions
 // in p.
 func GetDigits(s Sequence, p Positions) Digits {
-	return asDigits(newPart(s, p))
+	d, ok := s.(Digits)
+	if ok && p.count < d.Len()+len(p.ranges) {
+
+		// Optimization: Just choose what we want instead of iterating
+		// over all of s.
+		return d.pick(p)
+	}
+	var builder digitsBuilder
+	sendPositDigits(newPart(s, p), &builder)
+	return builder.Build()
 }
 
 // Digits holds the digits found at selected positions of a Mantissa so
@@ -455,6 +473,19 @@ func (d Digits) positDigitIter() func() positDigit {
 	}
 }
 
+func (d Digits) pick(p Positions) Digits {
+	var builder digitsBuilder
+	for _, pr := range p.ranges {
+		for posit := pr.Start; posit < pr.End; posit++ {
+			digit := d.At(posit)
+			if digit != -1 {
+				builder.unsafeAddDigit(posit, digit)
+			}
+		}
+	}
+	return builder.Build()
+}
+
 func readVersion(text []byte) (string, int, error) {
 	idx := bytes.Index(text, []byte(":"))
 	if idx == -1 {
@@ -486,6 +517,14 @@ type digitsBuilder struct {
 	posits []int
 }
 
+func (d *digitsBuilder) CanConsume() bool {
+	return true
+}
+
+func (d *digitsBuilder) Consume(pd positDigit) {
+	d.unsafeAddDigit(pd.Posit, pd.Digit)
+}
+
 func (d *digitsBuilder) AddDigit(posit int, digit int) error {
 	if posit < 0 {
 		return fmt.Errorf(
@@ -502,11 +541,7 @@ func (d *digitsBuilder) AddDigit(posit int, digit int) error {
 			posit,
 		)
 	}
-	if d.digits == nil {
-		d.digits = make(map[int]int)
-	}
-	d.digits[posit] = digit
-	d.posits = append(d.posits, posit)
+	d.unsafeAddDigit(posit, digit)
 	return nil
 }
 
@@ -515,6 +550,14 @@ func (d *digitsBuilder) Build() Digits {
 	d.digits = nil
 	d.posits = nil
 	return result
+}
+
+func (d *digitsBuilder) unsafeAddDigit(posit int, digit int) {
+	if d.digits == nil {
+		d.digits = make(map[int]int)
+	}
+	d.digits[posit] = digit
+	d.posits = append(d.posits, posit)
 }
 
 // Mantissa represents the mantissa of a square root. Non zero Mantissas are
@@ -900,12 +943,6 @@ func sendPositDigits(s Sequence, consumer consume2.Consumer[positDigit]) {
 		}
 		consumer.Consume(pd)
 	}
-}
-
-func asDigits(s Sequence) Digits {
-	consumer := new(digitAt)
-	sendPositDigits(s, consumer)
-	return Digits{digits: consumer.digits, posits: consumer.posits}
 }
 
 func find(s Sequence, pattern []int) func() int {

@@ -1025,9 +1025,22 @@ func TestGetDigitsFromDigits2(t *testing.T) {
 	var pb PositionsBuilder
 	pb.AddRange(100, 200).AddRange(300, 400).AddRange(500, 600)
 	digits := GetDigits(m, pb.Build())
-	pb.AddRange(0, 101).AddRange(200, 301).Add(500)
+
+	// force GetDigits to do a full scan rather than picking
+	pb.AddRange(0, 101).AddRange(200, 301).Add(500).AddRange(1000, 2000000000)
 	digits = GetDigits(digits, pb.Build())
 	expected := GetDigits(m, pb.Add(100).Add(300).Add(500).Build())
+	assert.Equal(t, expected.Sprint(), digits.Sprint())
+}
+
+func TestGetDigitsFromDigitsPick(t *testing.T) {
+	m := Sqrt(2).Mantissa()
+	var pb PositionsBuilder
+	pb.AddRange(100, 200).AddRange(300, 400).AddRange(500, 600)
+	digits := GetDigits(m, pb.Build())
+	pb.Add(153).Add(200)
+	digits = GetDigits(digits, pb.Build())
+	expected := GetDigits(m, pb.Add(153).Build())
 	assert.Equal(t, expected.Sprint(), digits.Sprint())
 }
 
@@ -1052,6 +1065,26 @@ func TestDigitsNone(t *testing.T) {
 	m := Sqrt(2).Mantissa()
 	var positions Positions
 	assert.Zero(t, GetDigits(m, positions))
+}
+
+func TestDigitsNoneZeroMantissa(t *testing.T) {
+	var m Mantissa
+	var p Positions
+	var pb PositionsBuilder
+	assert.Zero(t, GetDigits(m, p))
+	assert.Zero(t, GetDigits(m, pb.AddRange(0, 100).Build()))
+}
+
+func TestDigitsNoneFromDigits(t *testing.T) {
+	m := Sqrt(2).Mantissa()
+	var pb PositionsBuilder
+	digits := GetDigits(m, pb.AddRange(0, 1000).Build())
+	assert.Equal(t, 1000, digits.Len())
+	var zeroPosits Positions
+	zeroDigits := GetDigits(digits, zeroPosits)
+	assert.Zero(t, zeroDigits)
+	assert.Zero(t, GetDigits(zeroDigits, zeroPosits))
+	assert.Zero(t, GetDigits(zeroDigits, pb.AddRange(0, 100).Build()))
 }
 
 func TestDigitsZero(t *testing.T) {
@@ -1265,6 +1298,7 @@ func TestPositionsBuilder(t *testing.T) {
 	}
 	assert.Equal(t, expected, p.ranges)
 	assert.Equal(t, 26, p.limit())
+	assert.Equal(t, 17, p.count)
 }
 
 func TestPositionsBuilderSorted(t *testing.T) {
@@ -1287,11 +1321,17 @@ func TestPositionsBuilderSorted(t *testing.T) {
 	}
 	assert.Equal(t, expected, p.ranges)
 	assert.Equal(t, 200, p.limit())
+	assert.Equal(t, 113, p.count)
 }
 
 func TestPositionsBuilderNegative(t *testing.T) {
 	var pb PositionsBuilder
 	pb.Add(-1)
+	assert.Zero(t, pb.Build())
+}
+
+func TestPositionsBuilderZero(t *testing.T) {
+	var pb PositionsBuilder
 	assert.Zero(t, pb.Build())
 }
 
