@@ -660,17 +660,6 @@ func (m Mantissa) positDigitIter() func() positDigit {
 	}
 }
 
-func (m Mantissa) send(consumer consume2.Consumer[int]) {
-	iter := m.Iterator()
-	for consumer.CanConsume() {
-		digit := iter()
-		if digit == -1 {
-			return
-		}
-		consumer.Consume(digit)
-	}
-}
-
 // Number represents a square root value. The zero value for Number
 // corresponds to 0. A Number is of the form mantissa * 10^exponent where
 // mantissa is between 0.1 inclusive and 1.0 exclusive. Like Mantissa, a
@@ -863,7 +852,9 @@ func (f formatSpec) PrintNumber(w io.Writer, m Mantissa, exponent int) {
 
 func (f formatSpec) printFixed(w io.Writer, m Mantissa, exponent int) {
 	formatter := newFormatter(w, f.sigDigits, exponent, f.exactDigitCount)
-	m.send(formatter)
+	consumer := consume2.Map[positDigit, int](
+		formatter, func(pd positDigit) int { return pd.Digit })
+	sendPositDigits(m, consumer)
 	formatter.Finish()
 }
 
