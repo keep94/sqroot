@@ -486,80 +486,6 @@ func (d Digits) pick(p Positions) Digits {
 	return builder.Build()
 }
 
-func readVersion(text []byte) (string, int, error) {
-	idx := bytes.Index(text, []byte(":"))
-	if idx == -1 {
-		return "", 0, errors.New("sqroot: Digits.UnmarhalText: Can't read version")
-	}
-	return string(text[:idx]), idx + 1, nil
-}
-
-func readPositiveInt(text []byte, i int) (int, int, error) {
-	result := 0
-	for i < len(text) {
-		if text[i] == ']' {
-			if i+1 == len(text) {
-				return 0, 0, errors.New(unmarshalTextUnexpectedEnd)
-			}
-			return result, i + 1, nil
-		} else if text[i] >= '0' && text[i] <= '9' {
-			result = result*10 + int(text[i]-'0')
-		} else {
-			return 0, 0, fmt.Errorf("sqroot: Digits.UnmarshalText unexpected character in text: %c", text[i])
-		}
-		i++
-	}
-	return 0, 0, errors.New(unmarshalTextUnexpectedEnd)
-}
-
-type digitsBuilder struct {
-	digits map[int]int
-	posits []int
-}
-
-func (d *digitsBuilder) CanConsume() bool {
-	return true
-}
-
-func (d *digitsBuilder) Consume(pd positDigit) {
-	d.unsafeAddDigit(pd.Posit, pd.Digit)
-}
-
-func (d *digitsBuilder) AddDigit(posit int, digit int) error {
-	if posit < 0 {
-		return fmt.Errorf(
-			"sqroot: digitsBuilder.AddDigit: posit must be non-negative but was %d", posit)
-	}
-	if digit < 0 || digit > 9 {
-		return fmt.Errorf(
-			"sqroot: digitsBuilder.AddDigit: digit must be between 0 and 9 but was %d", digit)
-	}
-	if len(d.posits) > 0 && d.posits[len(d.posits)-1] >= posit {
-		return fmt.Errorf(
-			"sqroot: digitsBuilder.AddDigit: posit must be ever increasing was %d now %d",
-			d.posits[len(d.posits)-1],
-			posit,
-		)
-	}
-	d.unsafeAddDigit(posit, digit)
-	return nil
-}
-
-func (d *digitsBuilder) Build() Digits {
-	result := Digits{digits: d.digits, posits: d.posits}
-	d.digits = nil
-	d.posits = nil
-	return result
-}
-
-func (d *digitsBuilder) unsafeAddDigit(posit int, digit int) {
-	if d.digits == nil {
-		d.digits = make(map[int]int)
-	}
-	d.digits[posit] = digit
-	d.posits = append(d.posits, posit)
-}
-
 // Mantissa represents the mantissa of a square root. Non zero Mantissas are
 // between 0.1 inclusive and 1.0 exclusive. The number of digits of a
 // Mantissa can be infinite. The zero value for a Mantissa corresponds to 0.
@@ -769,6 +695,80 @@ func sqrtFrac(num, denom *big.Int) Number {
 	spec.num.Set(num)
 	spec.denom.Set(denom)
 	return Number{exponent: exp, mantissa: Mantissa{spec: spec}}
+}
+
+func readVersion(text []byte) (string, int, error) {
+	idx := bytes.Index(text, []byte(":"))
+	if idx == -1 {
+		return "", 0, errors.New("sqroot: Digits.UnmarhalText: Can't read version")
+	}
+	return string(text[:idx]), idx + 1, nil
+}
+
+func readPositiveInt(text []byte, i int) (int, int, error) {
+	result := 0
+	for i < len(text) {
+		if text[i] == ']' {
+			if i+1 == len(text) {
+				return 0, 0, errors.New(unmarshalTextUnexpectedEnd)
+			}
+			return result, i + 1, nil
+		} else if text[i] >= '0' && text[i] <= '9' {
+			result = result*10 + int(text[i]-'0')
+		} else {
+			return 0, 0, fmt.Errorf("sqroot: Digits.UnmarshalText unexpected character in text: %c", text[i])
+		}
+		i++
+	}
+	return 0, 0, errors.New(unmarshalTextUnexpectedEnd)
+}
+
+type digitsBuilder struct {
+	digits map[int]int
+	posits []int
+}
+
+func (d *digitsBuilder) CanConsume() bool {
+	return true
+}
+
+func (d *digitsBuilder) Consume(pd positDigit) {
+	d.unsafeAddDigit(pd.Posit, pd.Digit)
+}
+
+func (d *digitsBuilder) AddDigit(posit int, digit int) error {
+	if posit < 0 {
+		return fmt.Errorf(
+			"sqroot: digitsBuilder.AddDigit: posit must be non-negative but was %d", posit)
+	}
+	if digit < 0 || digit > 9 {
+		return fmt.Errorf(
+			"sqroot: digitsBuilder.AddDigit: digit must be between 0 and 9 but was %d", digit)
+	}
+	if len(d.posits) > 0 && d.posits[len(d.posits)-1] >= posit {
+		return fmt.Errorf(
+			"sqroot: digitsBuilder.AddDigit: posit must be ever increasing was %d now %d",
+			d.posits[len(d.posits)-1],
+			posit,
+		)
+	}
+	d.unsafeAddDigit(posit, digit)
+	return nil
+}
+
+func (d *digitsBuilder) Build() Digits {
+	result := Digits{digits: d.digits, posits: d.posits}
+	d.digits = nil
+	d.posits = nil
+	return result
+}
+
+func (d *digitsBuilder) unsafeAddDigit(posit int, digit int) {
+	if d.digits == nil {
+		d.digits = make(map[int]int)
+	}
+	d.digits[posit] = digit
+	d.posits = append(d.posits, posit)
 }
 
 type formatSpec struct {
