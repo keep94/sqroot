@@ -758,8 +758,7 @@ func (d *digitsBuilder) AddDigit(posit int, digit int) error {
 
 func (d *digitsBuilder) Build() Digits {
 	result := Digits{digits: d.digits, posits: d.posits}
-	d.digits = nil
-	d.posits = nil
+	*d = digitsBuilder{}
 	return result
 }
 
