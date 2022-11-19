@@ -62,6 +62,20 @@ func ExampleFindFirstN() {
 	// [0 2 144]
 }
 
+func ExampleFindLast() {
+	n := sqroot.Sqrt(2).WithSignificant(1000)
+	fmt.Println(sqroot.FindLast(n.Mantissa(), []int{1, 4}))
+	// Output:
+	// 945
+}
+
+func ExampleFindLastN() {
+	n := sqroot.Sqrt(2).WithSignificant(1000)
+	fmt.Println(sqroot.FindLastN(n.Mantissa(), []int{1, 4}, 3))
+	// Output:
+	// [945 916 631]
+}
+
 func ExampleGetDigits() {
 
 	// sqrt(7) = 0.264575131106459...*10^1

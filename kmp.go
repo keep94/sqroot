@@ -26,35 +26,71 @@ func zeroPattern(f func() positDigit) func() int {
 	}
 }
 
-func kmp(f func() positDigit, pattern []int) func() int {
-	table := ttable(pattern)
-	textIndex := 0
-	patternIndex := 0
+func kmp(f func() positDigit, pattern []int, reverse bool) func() int {
+	kernel := newKmpKernel(pattern)
+	direction := 1
+	if reverse {
+		direction = -1
+	}
+	expectedIndex := -1
 	return func() int {
 		for {
 			pd := f()
 			if !pd.Valid() {
 				return -1
 			}
-			if pd.Posit > textIndex {
-				patternIndex = 0
-				textIndex = pd.Posit
+			if pd.Posit != expectedIndex {
+				kernel.Reset()
 			}
-			if pd.Digit == pattern[patternIndex] {
-				textIndex++
-				patternIndex++
-				if patternIndex == len(pattern) {
-					result := textIndex - patternIndex
-					patternIndex = table[patternIndex]
-					return result
+			expectedIndex = pd.Posit + direction
+			if kernel.Visit(pd.Digit) {
+				if reverse {
+					return pd.Posit
 				}
-				continue
+				return pd.Posit + 1 - len(pattern)
 			}
-			for patternIndex != -1 && pattern[patternIndex] != pd.Digit {
-				patternIndex = table[patternIndex]
-			}
-			patternIndex++
-			textIndex++
 		}
 	}
+}
+
+type kmpKernel struct {
+	table        []int
+	pattern      []int
+	patternIndex int
+}
+
+func newKmpKernel(pattern []int) *kmpKernel {
+	return &kmpKernel{
+		table:   ttable(pattern),
+		pattern: pattern,
+	}
+}
+
+func (k *kmpKernel) Visit(digit int) bool {
+	if digit == k.pattern[k.patternIndex] {
+		k.patternIndex++
+		if k.patternIndex == len(k.pattern) {
+			k.patternIndex = k.table[k.patternIndex]
+			return true
+		}
+		return false
+	}
+	for k.patternIndex != -1 && k.pattern[k.patternIndex] != digit {
+		k.patternIndex = k.table[k.patternIndex]
+	}
+	k.patternIndex++
+	return false
+}
+
+func (k *kmpKernel) Reset() {
+	k.patternIndex = 0
+}
+
+func patternReverse(pattern []int) []int {
+	length := len(pattern)
+	result := make([]int, length)
+	for i := range pattern {
+		result[length-i-1] = pattern[i]
+	}
+	return result
 }
