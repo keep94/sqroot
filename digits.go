@@ -18,8 +18,8 @@ const (
 )
 
 // Digits holds the digits found at selected positions of a Mantissa so
-// that they can be quickly retrieved. The zero value is no digits.
-// Digits implements Sequence.
+// that they can be quickly retrieved. Retrieving any digit takes O(1) time.
+// The zero value is no digits. Digits implements Sequence.
 type Digits struct {
 	digits map[int]int
 	posits []int
@@ -40,6 +40,26 @@ func GetDigits(s Sequence, p Positions) Digits {
 	return builder.Build()
 }
 
+// WithStart returns a Digits like this one that only has positions greater
+// than or equal to start. Returned instance shares memory with this instance.
+// Therefore, to change only the starting position it is more efficient to use
+// WithStart than GetDigits.
+func (d Digits) WithStart(start int) Digits {
+	index := sort.Search(
+		len(d.posits), func(x int) bool { return d.posits[x] >= start })
+	return Digits{digits: d.digits, posits: d.posits[index:]}
+}
+
+// WithEnd returns a Digits like this one that only has positions less than
+// end. Returned instance shares memory with this instance. Therefore, to
+// change only the ending position it is more efficient to use WithEnd than
+// GetDigits.
+func (d Digits) WithEnd(end int) Digits {
+	index := sort.Search(
+		len(d.posits), func(x int) bool { return d.posits[x] >= end })
+	return Digits{digits: d.digits, posits: d.posits[:index]}
+}
+
 // MarshalBinary implements the encoding.BinaryMarshaler interface.
 func (d Digits) MarshalBinary() ([]byte, error) {
 	iter := d.Iterator()
@@ -58,7 +78,7 @@ func (d Digits) MarshalBinary() ([]byte, error) {
 			result = binary.AppendUvarint(result, uint64(delta)+109)
 		}
 		nextPosit = posit + 1
-		pair = 10*pair + uint64(d.At(posit))
+		pair = 10*pair + uint64(d.digits[posit])
 		if state == 1 {
 			result = binary.AppendUvarint(result, pair)
 			pair = 0
@@ -83,7 +103,7 @@ func (d Digits) MarshalText() ([]byte, error) {
 			result = append(result, byte(']'))
 			nextPosit = posit
 		}
-		result = append(result, byte('0'+d.At(posit)))
+		result = append(result, byte('0'+d.digits[posit]))
 		nextPosit++
 	}
 	return result, nil
@@ -153,6 +173,9 @@ func (d *Digits) UnmarshalText(text []byte) error {
 // At returns the digit between 0 and 9 at the given zero based position.
 // If the digit at posit is unknown or if posit is negative, At returns -1.
 func (d Digits) At(posit int) int {
+	if len(d.posits) == 0 || posit < d.posits[0] || posit > d.posits[len(d.posits)-1] {
+		return -1
+	}
 	digit, ok := d.digits[posit]
 	if !ok {
 		return -1
@@ -164,32 +187,29 @@ func (d Digits) At(posit int) int {
 // in this instance from lowest to highest. When there are no more positions,
 // the returned function returns -1.
 func (d Digits) Iterator() func() int {
-	return d.iteratorAtIndex(0)
+	index := 0
+	return func() int {
+		if index == len(d.posits) {
+			return -1
+		}
+		result := d.posits[index]
+		index++
+		return result
+	}
 }
 
 // Reverse returns a function that generates all the zero based positions
 // in this instance from highest to lowest. When there are no more positions,
 // the returned function returns -1.
 func (d Digits) Reverse() func() int {
-	return d.reverseAtIndex(len(d.posits))
-}
-
-// IteratorAt returns a function that generates all the zero based
-// positions in this instance from lowest to highest starting at posit.
-// When there are no more positions, the returned function returns -1.
-func (d Digits) IteratorAt(posit int) func() int {
-	index := sort.Search(
-		len(d.posits), func(x int) bool { return d.posits[x] >= posit })
-	return d.iteratorAtIndex(index)
-}
-
-// ReverseAt returns a function that generates all the zero based positions
-// in this instance from highest to lowest that come before posit. When
-// there are no more positions, the returned function returns -1.
-func (d Digits) ReverseAt(posit int) func() int {
-	index := sort.Search(
-		len(d.posits), func(x int) bool { return d.posits[x] >= posit })
-	return d.reverseAtIndex(index)
+	index := len(d.posits)
+	return func() int {
+		if index == 0 {
+			return -1
+		}
+		index--
+		return d.posits[index]
+	}
 }
 
 // Min returns the minimum position in this instance. If this instance
@@ -246,29 +266,6 @@ func (d Digits) limit() int {
 		return 0
 	}
 	return d.posits[len(d.posits)-1] + 1
-}
-
-func (d Digits) iteratorAtIndex(index int) func() int {
-	return func() int {
-		if index == len(d.posits) {
-			return -1
-		}
-		result := d.posits[index]
-		index++
-		return result
-	}
-}
-
-func (d Digits) reverseAtIndex(index int) func() int {
-	index--
-	return func() int {
-		if index == -1 {
-			return -1
-		}
-		result := d.posits[index]
-		index--
-		return result
-	}
 }
 
 func (d Digits) positDigitIter() func() positDigit {

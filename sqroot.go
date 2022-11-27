@@ -19,7 +19,9 @@ const (
 // Mantissa represents the mantissa of a square root. Non zero Mantissas are
 // between 0.1 inclusive and 1.0 exclusive. The number of digits of a
 // Mantissa can be infinite. The zero value for a Mantissa corresponds to 0.
-// Mantissa implements Sequence.
+// Mantissa computes its digits lazily on demand each time. Computing the
+// first N digits of a Mantissa takes O(N^2) time. Mantissa implements
+// Sequence.
 type Mantissa struct {
 	spec mantissaSpec
 }
@@ -29,6 +31,14 @@ type Mantissa struct {
 // Mantissa down toward zero when necessary.
 func (m Mantissa) WithSignificant(limit int) Mantissa {
 	return Mantissa{spec: withLimit(m.spec, limit)}
+}
+
+// Digits returns all the digits of this Mantissa. If this Mantissa has an
+// infinite number of digits, Digits runs forever.
+func (m Mantissa) Digits() Digits {
+	var builder digitsBuilder
+	sendPositDigits(m, &builder)
+	return builder.Build()
 }
 
 // Format prints this Mantissa with the f, F, g, G, e, E verbs. The verbs work
