@@ -1063,6 +1063,7 @@ func TestDigits(t *testing.T) {
 	assert.Equal(t, 5, digits.At(15))
 	assert.Equal(t, 7, digits.At(25))
 	assert.Equal(t, 4, digits.At(50))
+	assert.Equal(t, -1, digits.At(26))
 	iter := digits.Iterator()
 	assert.Equal(t, 15, iter())
 	assert.Equal(t, 25, iter())
@@ -1406,7 +1407,6 @@ func TestPositionsBuilder(t *testing.T) {
 	}
 	assert.Equal(t, expected, p.ranges)
 	assert.Equal(t, 26, p.limit())
-	assert.Equal(t, 17, p.count)
 }
 
 func TestPositionsBuilderSorted(t *testing.T) {
@@ -1429,7 +1429,6 @@ func TestPositionsBuilderSorted(t *testing.T) {
 	}
 	assert.Equal(t, expected, p.ranges)
 	assert.Equal(t, 200, p.limit())
-	assert.Equal(t, 113, p.count)
 }
 
 func TestPositionsBuilderNegative(t *testing.T) {

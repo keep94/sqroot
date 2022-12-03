@@ -49,7 +49,7 @@ func (p *PositionsBuilder) Build() Positions {
 	if !p.unsorted {
 		result := p.ranges
 		*p = PositionsBuilder{}
-		return createPositions(result)
+		return Positions{ranges: result}
 	}
 	sort.Slice(
 		p.ranges,
@@ -63,22 +63,13 @@ func (p *PositionsBuilder) Build() Positions {
 		appendNotBefore(prange, &result)
 	}
 	*p = PositionsBuilder{}
-	return createPositions(result)
+	return Positions{ranges: result}
 }
 
 // Positions represents a set of zero based positions for which to fetch
 // digits. The zero value contains no positions.
 type Positions struct {
 	ranges []positionRange
-	count  int
-}
-
-func createPositions(ranges []positionRange) Positions {
-	count := 0
-	for _, pr := range ranges {
-		count += (pr.End - pr.Start)
-	}
-	return Positions{ranges: ranges, count: count}
 }
 
 func (p Positions) limit() int {

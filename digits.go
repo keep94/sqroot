@@ -29,10 +29,10 @@ type Digits struct {
 // in p.
 func GetDigits(s Sequence, p Positions) Digits {
 	d, ok := s.(Digits)
-	if ok && p.count < d.Len()+len(p.ranges) {
+	if ok {
 
 		// Optimization: Just choose what we want instead of iterating
-		// over all of s.
+		// over all of s since Digits supports random access.
 		return d.pick(p)
 	}
 	var builder digitsBuilder
@@ -312,12 +312,7 @@ func (d Digits) findLastN(pattern []int, n int) []int {
 func (d Digits) pick(p Positions) Digits {
 	var builder digitsBuilder
 	for _, pr := range p.ranges {
-		for posit := pr.Start; posit < pr.End; posit++ {
-			digit := d.At(posit)
-			if digit != -1 {
-				builder.unsafeAddDigit(posit, digit)
-			}
-		}
+		sendPositDigits(d.WithStart(pr.Start).WithEnd(pr.End), &builder)
 	}
 	return builder.Build()
 }
