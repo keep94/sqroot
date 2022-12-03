@@ -84,9 +84,9 @@ func ExampleGetDigits() {
 	var pb sqroot.PositionsBuilder
 	pb.AddRange(0, 3).Add(4).Add(10)
 	digits := sqroot.GetDigits(n.Mantissa(), pb.Build())
-	iter := digits.Iterator()
-	for posit := iter(); posit != -1; posit = iter() {
-		fmt.Printf("Position: %d; Digit: %d\n", posit, digits.At(posit))
+	iter := digits.Items()
+	for digit, ok := iter(); ok; digit, ok = iter() {
+		fmt.Printf("Position: %d; Digit: %d\n", digit.Position, digit.Value)
 	}
 	// Output:
 	// Position: 0; Digit: 2
