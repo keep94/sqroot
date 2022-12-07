@@ -1064,30 +1064,12 @@ func TestDigits(t *testing.T) {
 	assert.Equal(t, 7, digits.At(25))
 	assert.Equal(t, 4, digits.At(50))
 	assert.Equal(t, -1, digits.At(26))
-	iter := digits.Iterator()
-	assert.Equal(t, 15, iter())
-	assert.Equal(t, 25, iter())
-	assert.Equal(t, 50, iter())
-	assert.Equal(t, -1, iter())
-	assert.Equal(t, -1, iter())
-	iter = digits.WithStart(25).Iterator()
-	assert.Equal(t, 25, iter())
-	assert.Equal(t, 50, iter())
-	assert.Equal(t, -1, iter())
+	checkFullIter(t, digits.Items(), 15, 5, 25, 7, 50, 4)
+	checkFullIter(t, digits.WithStart(25).Items(), 25, 7, 50, 4)
 	assert.Equal(t, 15, digits.Min())
 	assert.Equal(t, 50, digits.Max())
-	iter = digits.Reverse()
-	assert.Equal(t, 50, iter())
-	assert.Equal(t, 25, iter())
-	assert.Equal(t, 15, iter())
-	assert.Equal(t, -1, iter())
-	assert.Equal(t, -1, iter())
-	iter = digits.WithEnd(50).Reverse()
-	assert.Equal(t, 25, iter())
-	assert.Equal(t, 15, iter())
-	assert.Equal(t, -1, iter())
-	checkFullIter(t, digits.Items(), 15, 5, 25, 7, 50, 4)
 	checkFullIter(t, digits.ReverseItems(), 50, 4, 25, 7, 15, 5)
+	checkFullIter(t, digits.WithEnd(50).ReverseItems(), 25, 7, 15, 5)
 }
 
 func TestGetDigitsFromDigits(t *testing.T) {
@@ -1130,16 +1112,8 @@ func TestDigitsFinite(t *testing.T) {
 	assert.Equal(t, 5, digits.At(15))
 	assert.Equal(t, 7, digits.At(25))
 	assert.Equal(t, -1, digits.At(50))
-	iter := digits.Iterator()
-	assert.Equal(t, 15, iter())
-	assert.Equal(t, 25, iter())
-	assert.Equal(t, -1, iter())
-	assert.Equal(t, -1, iter())
-	iter = digits.Reverse()
-	assert.Equal(t, 25, iter())
-	assert.Equal(t, 15, iter())
-	assert.Equal(t, -1, iter())
-	assert.Equal(t, -1, iter())
+	checkFullIter(t, digits.Items(), 15, 5, 25, 7)
+	checkFullIter(t, digits.ReverseItems(), 25, 7, 15, 5)
 }
 
 func TestDigitsNone(t *testing.T) {
@@ -1169,10 +1143,12 @@ func TestDigitsNoneFromDigits(t *testing.T) {
 
 func TestDigitsZero(t *testing.T) {
 	var digits Digits
-	iter := digits.Iterator()
-	assert.Equal(t, -1, iter())
-	iter = digits.Reverse()
-	assert.Equal(t, -1, iter())
+	iter := digits.Items()
+	_, ok := iter()
+	assert.False(t, ok)
+	iter = digits.ReverseItems()
+	_, ok = iter()
+	assert.False(t, ok)
 	assert.Equal(t, -1, digits.At(0))
 	assert.Empty(t, digits.Sprint())
 	assert.Equal(t, -1, digits.Min())
@@ -1458,11 +1434,11 @@ func TestDigitLookup(t *testing.T) {
 		pb.AddRange(find, find+3)
 	}
 	digits := GetDigits(n.Mantissa(), pb.Build())
-	iter := digits.Iterator()
+	iter := digits.Items()
 	count := 0
-	for posit := iter(); posit != -1; posit = iter() {
-		assert.Equal(t, pattern[count%3], digits.At(posit))
-		assert.Equal(t, finds[count/3]+count%3, posit)
+	for digit, ok := iter(); ok; digit, ok = iter() {
+		assert.Equal(t, pattern[count%3], digit.Value)
+		assert.Equal(t, finds[count/3]+count%3, digit.Position)
 		count++
 	}
 	assert.Equal(t, 7*3, count)
@@ -1502,20 +1478,11 @@ func (f funcMantissaSpec) Iterator() func() int {
 
 func checkFullIter(t *testing.T, iter func() (Digit, bool), positionDigits ...int) {
 	t.Helper()
-	index := 0
+	var actual []int
 	for digit, ok := iter(); ok; digit, ok = iter() {
-		if index == len(positionDigits) {
-			t.Error("Iterator has extra items in it")
-			return
-		}
-		assert.Equal(t, positionDigits[index], digit.Position)
-		assert.Equal(t, positionDigits[index+1], digit.Value)
-		index += 2
+		actual = append(actual, digit.Position, digit.Value)
 	}
-	if index != len(positionDigits) {
-		t.Error("Unexpected end of values in iterator")
-		return
-	}
+	assert.Equal(t, positionDigits, actual)
 	_, ok := iter()
 	assert.False(t, ok)
 }

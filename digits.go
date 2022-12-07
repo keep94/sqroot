@@ -197,35 +197,6 @@ func (d Digits) At(posit int) int {
 	return d.digits[index].Digit
 }
 
-// Iterator returns a function that generates all the zero based positions
-// in this instance from lowest to highest. When there are no more positions,
-// the returned function returns -1.
-func (d Digits) Iterator() func() int {
-	index := 0
-	return func() int {
-		if index == len(d.digits) {
-			return -1
-		}
-		result := d.digits[index].Posit
-		index++
-		return result
-	}
-}
-
-// Reverse returns a function that generates all the zero based positions
-// in this instance from highest to lowest. When there are no more positions,
-// the returned function returns -1.
-func (d Digits) Reverse() func() int {
-	index := len(d.digits)
-	return func() int {
-		if index == 0 {
-			return -1
-		}
-		index--
-		return d.digits[index].Posit
-	}
-}
-
 // Items returns a function that generates all the digits in this instance
 // from lowest to highest position. When there are no more digits,
 // the returned function returns false.
