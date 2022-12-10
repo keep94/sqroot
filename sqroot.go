@@ -105,10 +105,8 @@ func (m Mantissa) Fprint(w io.Writer, maxDigits int, options ...Option) (
 // is more efficient to use the GetDigits function to get a Digits instance
 // than it is to call At multiple times.
 func (m Mantissa) At(posit int) int {
-	if posit < 0 {
-		return -1
-	}
-	return GetDigits(m, new(PositionsBuilder).Add(posit).Build()).At(posit)
+	var pb PositionsBuilder
+	return GetDigits(m, pb.Add(posit).Build()).At(posit)
 }
 
 func (m Mantissa) positDigitIter() func() positDigit {
