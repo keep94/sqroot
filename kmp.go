@@ -16,17 +16,17 @@ func ttable(pattern []int) []int {
 	return result
 }
 
-func zeroPattern(f func() positDigit) func() int {
+func zeroPattern(f func() (Digit, bool)) func() int {
 	return func() int {
-		pd := f()
-		if !pd.Valid() {
+		d, ok := f()
+		if !ok {
 			return -1
 		}
-		return pd.Posit
+		return d.Position
 	}
 }
 
-func kmp(f func() positDigit, pattern []int, reverse bool) func() int {
+func kmp(f func() (Digit, bool), pattern []int, reverse bool) func() int {
 	kernel := newKmpKernel(pattern)
 	direction := 1
 	if reverse {
@@ -35,19 +35,19 @@ func kmp(f func() positDigit, pattern []int, reverse bool) func() int {
 	expectedIndex := -1
 	return func() int {
 		for {
-			pd := f()
-			if !pd.Valid() {
+			d, ok := f()
+			if !ok {
 				return -1
 			}
-			if pd.Posit != expectedIndex {
+			if d.Position != expectedIndex {
 				kernel.Reset()
 			}
-			expectedIndex = pd.Posit + direction
-			if kernel.Visit(pd.Digit) {
+			expectedIndex = d.Position + direction
+			if kernel.Visit(d.Value) {
 				if reverse {
-					return pd.Posit
+					return d.Position
 				}
-				return pd.Posit + 1 - len(pattern)
+				return d.Position + 1 - len(pattern)
 			}
 		}
 	}

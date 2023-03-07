@@ -13,11 +13,11 @@ import (
 // the 7th digit is a 9; the 8th digit is a 5.
 // Both Digits and Mantissa implement Sequence.
 type Sequence interface {
-	positDigitIter() func() positDigit
+	digitIter() func() (Digit, bool)
 }
 
 type part interface {
-	positDigitIter() func() positDigit
+	digitIter() func() (Digit, bool)
 	limit() int
 }
 
@@ -34,37 +34,37 @@ func (p *lazyPart) limit() int {
 	return p.positions.limit()
 }
 
-func (p *lazyPart) positDigitIter() func() positDigit {
+func (p *lazyPart) digitIter() func() (Digit, bool) {
 	filter := p.positions.filter()
-	iter := p.sequence.positDigitIter()
-	pd := iter()
+	iter := p.sequence.digitIter()
+	d, ok := iter()
 	limit := p.limit()
-	return func() positDigit {
-		result := invalidPositDigit
-		for pd.Valid() && pd.Posit < limit && !result.Valid() {
-			if filter.Includes(pd.Posit) {
-				result = pd
+	return func() (result Digit, hasResult bool) {
+		for ok && d.Position < limit && !hasResult {
+			if filter.Includes(d.Position) {
+				result = d
+				hasResult = true
 			}
-			pd = iter()
+			d, ok = iter()
 		}
-		return result
+		return
 	}
 }
 
 func fprint(
 	w io.Writer, part part, settings *printerSettings) (n int, err error) {
 	p := newPrinter(w, part.limit(), settings)
-	sendPositDigits(part, p)
+	sendDigits(part, p)
 	return p.byteCount, p.err
 }
 
-func sendPositDigits(s Sequence, consumer consume2.Consumer[positDigit]) {
-	iter := s.positDigitIter()
+func sendDigits(s Sequence, consumer consume2.Consumer[Digit]) {
+	iter := s.digitIter()
 	for consumer.CanConsume() {
-		pd := iter()
-		if !pd.Valid() {
+		d, ok := iter()
+		if !ok {
 			return
 		}
-		consumer.Consume(pd)
+		consumer.Consume(d)
 	}
 }

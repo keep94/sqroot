@@ -7,6 +7,16 @@ import (
 	"strings"
 )
 
+// Digit represents a single digit in a Digits instance.
+type Digit struct {
+
+	// The 0 based position of the digit.
+	Position int
+
+	// The value of the digit. Always between 0 and 9.
+	Value int
+}
+
 type printer struct {
 	rawPrinter
 	missingDigit rune
@@ -20,16 +30,16 @@ func newPrinter(
 	return &result
 }
 
-func (p *printer) Consume(pd positDigit) {
-	if p.index < pd.Posit {
+func (p *printer) Consume(d Digit) {
+	if p.index < d.Position {
 		if p.digitsPerRow > 0 && p.digitCountSpec != "" {
-			p.skipRowsFor(pd.Posit)
+			p.skipRowsFor(d.Position)
 		}
-		for p.index < pd.Posit {
+		for p.index < d.Position {
 			p.rawPrinter.Consume(p.missingDigit)
 		}
 	}
-	p.rawPrinter.Consume('0' + rune(pd.Digit))
+	p.rawPrinter.Consume('0' + rune(d.Value))
 }
 
 func (p *printer) skipRowsFor(nextPosit int) {
@@ -219,14 +229,3 @@ func (f *formatter) addLeadingZeros(count int) {
 	fmt.Fprint(f.writer, ".")
 	fmt.Fprint(f.writer, strings.Repeat("0", count))
 }
-
-type positDigit struct {
-	Posit int
-	Digit int
-}
-
-func (p positDigit) Valid() bool {
-	return p.Posit >= 0
-}
-
-var invalidPositDigit = positDigit{Posit: -1}

@@ -6,11 +6,11 @@ package sqroot
 // Pattern is a sequence of digits between 0 and 9.
 func Find(s Sequence, pattern []int) func() int {
 	if len(pattern) == 0 {
-		return zeroPattern(s.positDigitIter())
+		return zeroPattern(s.digitIter())
 	}
 	patternCopy := make([]int, len(pattern))
 	copy(patternCopy, pattern)
-	return kmp(s.positDigitIter(), patternCopy, false)
+	return kmp(s.digitIter(), patternCopy, false)
 }
 
 // FindFirst finds the zero based index of the first match of pattern in s.
@@ -75,9 +75,9 @@ func FindLastN(s Sequence, pattern []int, n int) []int {
 
 func find(s Sequence, pattern []int) func() int {
 	if len(pattern) == 0 {
-		return zeroPattern(s.positDigitIter())
+		return zeroPattern(s.digitIter())
 	}
-	return kmp(s.positDigitIter(), pattern, false)
+	return kmp(s.digitIter(), pattern, false)
 }
 
 func findLastN(s Sequence, pattern []int, n int) []int {

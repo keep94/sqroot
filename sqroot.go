@@ -37,7 +37,7 @@ func (m Mantissa) WithSignificant(limit int) Mantissa {
 // infinite number of digits, Digits runs forever.
 func (m Mantissa) Digits() Digits {
 	var builder digitsBuilder
-	sendPositDigits(m, &builder)
+	sendDigits(m, &builder)
 	return builder.Build()
 }
 
@@ -109,18 +109,18 @@ func (m Mantissa) At(posit int) int {
 	return GetDigits(m, pb.Add(posit).Build()).At(posit)
 }
 
-func (m Mantissa) positDigitIter() func() positDigit {
+func (m Mantissa) digitIter() func() (Digit, bool) {
 	iter := m.Iterator()
 	digit := iter()
 	index := 0
-	return func() positDigit {
+	return func() (dt Digit, ok bool) {
 		if digit == -1 {
-			return invalidPositDigit
+			return
 		}
-		result := positDigit{Posit: index, Digit: digit}
+		result := Digit{Position: index, Value: digit}
 		digit = iter()
 		index++
-		return result
+		return result, true
 	}
 }
 
@@ -316,9 +316,9 @@ func (f formatSpec) PrintNumber(w io.Writer, m Mantissa, exponent int) {
 
 func (f formatSpec) printFixed(w io.Writer, m Mantissa, exponent int) {
 	formatter := newFormatter(w, f.sigDigits, exponent, f.exactDigitCount)
-	consumer := consume2.Map[positDigit, int](
-		formatter, func(pd positDigit) int { return pd.Digit })
-	sendPositDigits(m, consumer)
+	consumer := consume2.Map[Digit, int](
+		formatter, func(d Digit) int { return d.Value })
+	sendDigits(m, consumer)
 	formatter.Finish()
 }
 

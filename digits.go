@@ -17,23 +17,13 @@ const (
 	unmarshalTextUnexpectedEnd = "sqroot: Digits.UnmarshalText hit unexpected end of text"
 )
 
-// Digit represents a single digit in a Digits instance.
-type Digit struct {
-
-	// The 0 based position of the digit.
-	Position int
-
-	// The value of the digit. Always between 0 and 9.
-	Value int
-}
-
 // Digits holds the digits found at selected positions of a Mantissa so
 // that they can be quickly retrieved. Retrieving any digit by position takes
 // O(log N) time where N is the total number of digits. Using Items() or
 // ReverseItems() to retrieve all the digits in order takes O(N) time.
 // The zero value is no digits. Digits implements Sequence.
 type Digits struct {
-	digits []positDigit
+	digits []Digit
 }
 
 // GetDigits gets the digits from s found at the zero based positions
@@ -52,7 +42,7 @@ func GetDigits(s Sequence, p Positions) Digits {
 		return d.pick(p)
 	}
 	var builder digitsBuilder
-	sendPositDigits(newPart(s, p), &builder)
+	sendDigits(newPart(s, p), &builder)
 	return builder.Build()
 }
 
@@ -62,7 +52,9 @@ func GetDigits(s Sequence, p Positions) Digits {
 // WithStart than GetDigits.
 func (d Digits) WithStart(start int) Digits {
 	index := sort.Search(
-		len(d.digits), func(x int) bool { return d.digits[x].Posit >= start })
+		len(d.digits),
+		func(x int) bool { return d.digits[x].Position >= start },
+	)
 	return Digits{digits: d.digits[index:]}
 }
 
@@ -72,7 +64,9 @@ func (d Digits) WithStart(start int) Digits {
 // GetDigits.
 func (d Digits) WithEnd(end int) Digits {
 	index := sort.Search(
-		len(d.digits), func(x int) bool { return d.digits[x].Posit >= end })
+		len(d.digits),
+		func(x int) bool { return d.digits[x].Position >= end },
+	)
 	return Digits{digits: d.digits[:index]}
 }
 
@@ -190,44 +184,27 @@ func (d *Digits) UnmarshalText(text []byte) error {
 // If the digit at posit is unknown or if posit is negative, At returns -1.
 func (d Digits) At(posit int) int {
 	index := sort.Search(
-		len(d.digits), func(x int) bool { return d.digits[x].Posit >= posit })
-	if index == len(d.digits) || d.digits[index].Posit != posit {
+		len(d.digits),
+		func(x int) bool { return d.digits[x].Position >= posit },
+	)
+	if index == len(d.digits) || d.digits[index].Position != posit {
 		return -1
 	}
-	return d.digits[index].Digit
+	return d.digits[index].Value
 }
 
 // Items returns a function that generates all the digits in this instance
 // from lowest to highest position. When there are no more digits,
 // the returned function returns false.
 func (d Digits) Items() func() (digit Digit, ok bool) {
-	index := 0
-	return func() (digit Digit, ok bool) {
-		if index == len(d.digits) {
-			return
-		}
-		result := Digit{
-			Position: d.digits[index].Posit, Value: d.digits[index].Digit}
-		index++
-		return result, true
-	}
+	return d.digitIter()
 }
 
 // ReverseItems returns a function that generates all the digits in this
 // instance from highest to lowest position. When there are no more digits,
 // the returned function returns false.
 func (d Digits) ReverseItems() func() (digit Digit, ok bool) {
-	index := len(d.digits)
-	return func() (digit Digit, ok bool) {
-		if index == 0 {
-			return
-		}
-		index--
-		return Digit{
-			Position: d.digits[index].Posit,
-			Value:    d.digits[index].Digit,
-		}, true
-	}
+	return d.reverseDigitIter()
 }
 
 // Min returns the minimum position in this instance. If this instance
@@ -236,7 +213,7 @@ func (d Digits) Min() int {
 	if len(d.digits) == 0 {
 		return -1
 	}
-	return d.digits[0].Posit
+	return d.digits[0].Position
 }
 
 // Max returns the maximum position in this instance. If this instance
@@ -245,7 +222,7 @@ func (d Digits) Max() int {
 	if len(d.digits) == 0 {
 		return -1
 	}
-	return d.digits[len(d.digits)-1].Posit
+	return d.digits[len(d.digits)-1].Position
 }
 
 // Len returns the number of digits in this instance.
@@ -283,37 +260,37 @@ func (d Digits) limit() int {
 	if len(d.digits) == 0 {
 		return 0
 	}
-	return d.digits[len(d.digits)-1].Posit + 1
+	return d.digits[len(d.digits)-1].Position + 1
 }
 
-func (d Digits) positDigitIter() func() positDigit {
+func (d Digits) digitIter() func() (Digit, bool) {
 	index := 0
-	return func() positDigit {
+	return func() (digit Digit, ok bool) {
 		if index == len(d.digits) {
-			return invalidPositDigit
+			return
 		}
 		result := d.digits[index]
 		index++
-		return result
+		return result, true
 	}
 }
 
-func (d Digits) reversePositDigitIter() func() positDigit {
+func (d Digits) reverseDigitIter() func() (Digit, bool) {
 	index := len(d.digits)
-	return func() positDigit {
+	return func() (digit Digit, ok bool) {
 		if index == 0 {
-			return invalidPositDigit
+			return
 		}
 		index--
-		return d.digits[index]
+		return d.digits[index], true
 	}
 }
 
 func (d Digits) rfind(pattern []int) func() int {
 	if len(pattern) == 0 {
-		return zeroPattern(d.reversePositDigitIter())
+		return zeroPattern(d.reverseDigitIter())
 	}
-	return kmp(d.reversePositDigitIter(), patternReverse(pattern), true)
+	return kmp(d.reverseDigitIter(), patternReverse(pattern), true)
 }
 
 func (d Digits) findLastN(pattern []int, n int) []int {
@@ -328,7 +305,7 @@ func (d Digits) findLastN(pattern []int, n int) []int {
 func (d Digits) pick(p Positions) Digits {
 	var builder digitsBuilder
 	for _, pr := range p.ranges {
-		sendPositDigits(d.WithStart(pr.Start).WithEnd(pr.End), &builder)
+		sendDigits(d.WithStart(pr.Start).WithEnd(pr.End), &builder)
 	}
 	return builder.Build()
 }
@@ -360,15 +337,15 @@ func readPositiveInt(text []byte, i int) (int, int, error) {
 }
 
 type digitsBuilder struct {
-	digits []positDigit
+	digits []Digit
 }
 
 func (d *digitsBuilder) CanConsume() bool {
 	return true
 }
 
-func (d *digitsBuilder) Consume(pd positDigit) {
-	d.digits = append(d.digits, pd)
+func (d *digitsBuilder) Consume(digit Digit) {
+	d.digits = append(d.digits, digit)
 }
 
 func (d *digitsBuilder) AddDigit(posit int, digit int) error {
@@ -380,14 +357,14 @@ func (d *digitsBuilder) AddDigit(posit int, digit int) error {
 		return fmt.Errorf(
 			"sqroot: digitsBuilder.AddDigit: digit must be between 0 and 9 but was %d", digit)
 	}
-	if len(d.digits) > 0 && d.digits[len(d.digits)-1].Posit >= posit {
+	if len(d.digits) > 0 && d.digits[len(d.digits)-1].Position >= posit {
 		return fmt.Errorf(
 			"sqroot: digitsBuilder.AddDigit: posit must be ever increasing was %d now %d",
-			d.digits[len(d.digits)-1].Posit,
+			d.digits[len(d.digits)-1].Position,
 			posit,
 		)
 	}
-	d.digits = append(d.digits, positDigit{Posit: posit, Digit: digit})
+	d.digits = append(d.digits, Digit{Position: posit, Value: digit})
 	return nil
 }
 
