@@ -1,0 +1,267 @@
+package sqroot
+
+import (
+	"errors"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+var (
+	// fakeMantissa = 0.12345678901234567890...
+	fakeMantissa = Mantissa{spec: funcMantissaSpec(
+		func() func() int {
+			i := 0
+			return func() int {
+				i++
+				return i % 10
+			}
+		})}
+
+	// fakeMantissaFiniteDigits = 0.123456789
+	fakeMantissaFiniteDigits = Mantissa{spec: funcMantissaSpec(
+		func() func() int {
+			i := 0
+			return func() int {
+				if i == 9 {
+					return -1
+				}
+				i++
+				return i
+			}
+		})}
+
+	// fakeMantissaShort = 0.123
+	fakeMantissaShort = Mantissa{spec: funcMantissaSpec(
+		func() func() int {
+			i := 0
+			return func() int {
+				if i == 3 {
+					return -1
+				}
+				i++
+				return i
+			}
+		})}
+)
+
+func TestPrintZeroDigits(t *testing.T) {
+	assert.Equal(t, "0", fakeMantissa.Sprint(0))
+	assert.Equal(t, "0", fakeMantissa.Sprint(-1))
+}
+
+func TestPrintNoOptions(t *testing.T) {
+	actual := fakeMantissa.Sprint(12)
+	expected := `0.123456789012`
+	assert.Equal(t, expected, actual)
+}
+
+func TestPrintLessThanOneRow(t *testing.T) {
+	actual := fakeMantissa.Sprint(12, ShowCount(true), DigitsPerRow(12))
+	expected := `0.123456789012`
+	assert.Equal(t, expected, actual)
+}
+
+func TestPrintColumns(t *testing.T) {
+	actual := fakeMantissa.Sprint(12, DigitsPerColumn(4))
+	expected := `0.1234 5678 9012`
+	assert.Equal(t, expected, actual)
+}
+
+func TestPrintColumnsShow(t *testing.T) {
+	actual := fakeMantissa.Sprint(
+		12, DigitsPerColumn(5), ShowCount(true))
+	expected := `0.12345 67890 12`
+	assert.Equal(t, expected, actual)
+}
+
+func TestPrinterRows10(t *testing.T) {
+	actual := fakeMantissa.Sprint(110, DigitsPerRow(10))
+	expected := `0.1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890`
+	assert.Equal(t, expected, actual)
+}
+
+func TestPrinterRows10Columns(t *testing.T) {
+	actual := fakeMantissa.Sprint(
+		110, DigitsPerRow(10), DigitsPerColumn(10))
+	expected := `0.1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890
+  1234567890`
+	assert.Equal(t, expected, actual)
+}
+
+func TestPrinterRows11Columns(t *testing.T) {
+	actual := fakeMantissa.Sprint(
+		110, DigitsPerRow(11), DigitsPerColumn(10))
+	expected := `0.1234567890 1
+  2345678901 2
+  3456789012 3
+  4567890123 4
+  5678901234 5
+  6789012345 6
+  7890123456 7
+  8901234567 8
+  9012345678 9
+  0123456789 0`
+	assert.Equal(t, expected, actual)
+}
+
+func TestPrinterRows10Show(t *testing.T) {
+	actual := fakeMantissa.Sprint(
+		110, DigitsPerRow(10), ShowCount(true))
+	expected := `   0.1234567890
+ 10  1234567890
+ 20  1234567890
+ 30  1234567890
+ 40  1234567890
+ 50  1234567890
+ 60  1234567890
+ 70  1234567890
+ 80  1234567890
+ 90  1234567890
+100  1234567890`
+	assert.Equal(t, expected, actual)
+}
+
+func TestPrinterRows10ColumnsShow(t *testing.T) {
+	actual := fakeMantissa.Sprint(
+		110, DigitsPerRow(10), DigitsPerColumn(10), ShowCount(true))
+	expected := `   0.1234567890
+ 10  1234567890
+ 20  1234567890
+ 30  1234567890
+ 40  1234567890
+ 50  1234567890
+ 60  1234567890
+ 70  1234567890
+ 80  1234567890
+ 90  1234567890
+100  1234567890`
+	assert.Equal(t, expected, actual)
+}
+
+func TestPrinterRows11ColumnsShow(t *testing.T) {
+	actual := fakeMantissa.Sprint(
+		110, DigitsPerRow(11), DigitsPerColumn(10), ShowCount(true))
+	expected := `  0.1234567890 1
+11  2345678901 2
+22  3456789012 3
+33  4567890123 4
+44  5678901234 5
+55  6789012345 6
+66  7890123456 7
+77  8901234567 8
+88  9012345678 9
+99  0123456789 0`
+	assert.Equal(t, expected, actual)
+}
+
+func TestPrinterRows11ColumnsShow109(t *testing.T) {
+	actual := fakeMantissa.Sprint(
+		109, DigitsPerRow(11), DigitsPerColumn(10), ShowCount(true))
+	expected := `  0.1234567890 1
+11  2345678901 2
+22  3456789012 3
+33  4567890123 4
+44  5678901234 5
+55  6789012345 6
+66  7890123456 7
+77  8901234567 8
+88  9012345678 9
+99  0123456789`
+	assert.Equal(t, expected, actual)
+}
+
+func TestPrinterRows11ColumnsShow111(t *testing.T) {
+	actual := fakeMantissa.Sprint(
+		111, DigitsPerRow(11), DigitsPerColumn(10), ShowCount(true))
+	expected := `   0.1234567890 1
+ 11  2345678901 2
+ 22  3456789012 3
+ 33  4567890123 4
+ 44  5678901234 5
+ 55  6789012345 6
+ 66  7890123456 7
+ 77  8901234567 8
+ 88  9012345678 9
+ 99  0123456789 0
+110  1`
+	assert.Equal(t, expected, actual)
+}
+
+func TestPrinterFewerDigits(t *testing.T) {
+	actual := fakeMantissaFiniteDigits.Sprint(
+		111, DigitsPerRow(11), DigitsPerColumn(10), ShowCount(true))
+	expected := `   0.123456789`
+	assert.Equal(t, expected, actual)
+}
+
+func TestPrinterNegative(t *testing.T) {
+	actual := fakeMantissa.Sprint(
+		-3, DigitsPerRow(10), ShowCount(true))
+	assert.Equal(t, "0", actual)
+}
+
+func TestPrinterCountBytes(t *testing.T) {
+	w := &maxBytesWriter{maxBytes: 10000}
+
+	// Prints 20 rows. Each row 10 columns 6 chars per column + (3+2) chars
+	// for the margin. 65*20-1=1299 bytes because last line doesn't get a
+	// line feed char.
+	n, err := fakeMantissa.Fprint(
+		w, 1000, DigitsPerRow(50), DigitsPerColumn(5), ShowCount(true))
+	assert.Equal(t, 1299, n)
+	assert.NoError(t, err)
+}
+
+func TestErrorAtAllStages(t *testing.T) {
+
+	// Force an error at each point of the printing
+	for i := 0; i < 1299; i++ {
+		w := &maxBytesWriter{maxBytes: i}
+		n, err := fakeMantissa.Fprint(
+			w, 1000, DigitsPerRow(50), DigitsPerColumn(5), ShowCount(true))
+		assert.Equal(t, i, n)
+		assert.Error(t, err)
+	}
+}
+
+type maxBytesWriter struct {
+	maxBytes     int
+	bytesWritten int
+}
+
+func (m *maxBytesWriter) Write(p []byte) (n int, err error) {
+	length := len(p)
+	if length <= m.maxBytes-m.bytesWritten {
+		m.bytesWritten += length
+		return length, nil
+	}
+	diff := m.maxBytes - m.bytesWritten
+	m.bytesWritten += diff
+	return diff, errors.New("Ran out of space")
+}
+
+type funcMantissaSpec func() func() int
+
+func (f funcMantissaSpec) Iterator() func() int {
+	return f()
+}
