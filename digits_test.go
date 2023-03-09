@@ -37,7 +37,6 @@ func TestGetDigitsFromDigits2(t *testing.T) {
 	pb.AddRange(100, 200).AddRange(300, 400).AddRange(500, 600)
 	digits := GetDigits(m, pb.Build())
 
-	// force GetDigits to do a full scan rather than picking
 	pb.AddRange(0, 101).AddRange(200, 301).Add(500).AddRange(1000, 2000000000)
 	digits = GetDigits(digits, pb.Build())
 	expected := GetDigits(m, pb.Add(100).Add(300).Add(500).Build())
