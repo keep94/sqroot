@@ -24,12 +24,12 @@ func TestFormatNoPrecisionCapital(t *testing.T) {
 }
 
 func TestFormatNotInfinite(t *testing.T) {
-	actual := fmt.Sprintf("%.14f", fakeMantissaFiniteDigits)
+	actual := fmt.Sprintf("%.14f", fakeMantissa.WithSignificant(9))
 	assert.Equal(t, "0.12345678900000", actual)
 }
 
 func TestFormatNotInfiniteNoPrecision(t *testing.T) {
-	actual := fmt.Sprintf("%f", fakeMantissaShort)
+	actual := fmt.Sprintf("%f", fakeMantissa.WithSignificant(3))
 	assert.Equal(t, "0.123000", actual)
 }
 
@@ -60,7 +60,7 @@ func TestFormatPrecisionSetToZero(t *testing.T) {
 
 func TestFormatWidthAndPrecisionNotInfinite(t *testing.T) {
 	var builder strings.Builder
-	n, err := fmt.Fprintf(&builder, "%-20.13f", fakeMantissaFiniteDigits)
+	n, err := fmt.Fprintf(&builder, "%-20.13f", fakeMantissa.WithSignificant(9))
 	assert.Equal(t, "0.1234567890000     ", builder.String())
 	assert.Equal(t, 20, n)
 	assert.NoError(t, err)
@@ -69,7 +69,7 @@ func TestFormatWidthAndPrecisionNotInfinite(t *testing.T) {
 func TestFormatWidthAndPrecisionNotInfiniteError(t *testing.T) {
 	for i := 0; i < 20; i++ {
 		w := &maxBytesWriter{maxBytes: i}
-		n, err := fmt.Fprintf(w, "%-20.13f", fakeMantissaFiniteDigits)
+		n, err := fmt.Fprintf(w, "%-20.13f", fakeMantissa.WithSignificant(9))
 		assert.Equal(t, i, n)
 		assert.Error(t, err)
 	}
@@ -86,12 +86,12 @@ func TestFormatNoPrecisionCapitalG(t *testing.T) {
 }
 
 func TestFormatNotInfiniteG14(t *testing.T) {
-	actual := fmt.Sprintf("%.14g", fakeMantissaFiniteDigits)
+	actual := fmt.Sprintf("%.14g", fakeMantissa.WithSignificant(9))
 	assert.Equal(t, "0.123456789", actual)
 }
 
 func TestFormatNotInfiniteG(t *testing.T) {
-	actual := fmt.Sprintf("%g", fakeMantissaFiniteDigits)
+	actual := fmt.Sprintf("%g", fakeMantissa.WithSignificant(9))
 	assert.Equal(t, "0.123456789", actual)
 }
 

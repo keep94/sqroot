@@ -17,32 +17,6 @@ var (
 				return i % 10
 			}
 		})}
-
-	// fakeMantissaFiniteDigits = 0.123456789
-	fakeMantissaFiniteDigits = Mantissa{spec: funcMantissaSpec(
-		func() func() int {
-			i := 0
-			return func() int {
-				if i == 9 {
-					return -1
-				}
-				i++
-				return i
-			}
-		})}
-
-	// fakeMantissaShort = 0.123
-	fakeMantissaShort = Mantissa{spec: funcMantissaSpec(
-		func() func() int {
-			i := 0
-			return func() int {
-				if i == 3 {
-					return -1
-				}
-				i++
-				return i
-			}
-		})}
 )
 
 func TestPrintZeroDigits(t *testing.T) {
@@ -208,7 +182,7 @@ func TestPrinterRows11ColumnsShow111(t *testing.T) {
 }
 
 func TestPrinterFewerDigits(t *testing.T) {
-	actual := fakeMantissaFiniteDigits.Sprint(
+	actual := fakeMantissa.WithSignificant(9).Sprint(
 		111, DigitsPerRow(11), DigitsPerColumn(10), ShowCount(true))
 	expected := `   0.123456789`
 	assert.Equal(t, expected, actual)
