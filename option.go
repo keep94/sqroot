@@ -6,15 +6,16 @@ type Option interface {
 	mutate(p *printerSettings)
 }
 
-// DigitsPerRow sets the number of digits per row. Zero means no separate rows.
+// DigitsPerRow sets the number of digits per row. Zero or negative means no
+// separate rows.
 func DigitsPerRow(count int) Option {
 	return optionFunc(func(p *printerSettings) {
 		p.digitsPerRow = count
 	})
 }
 
-// DigitsPerColumn sets the number of digits per column. Zero means no
-// separate columns.
+// DigitsPerColumn sets the number of digits per column. Zero or negative
+// means no separate columns.
 func DigitsPerColumn(count int) Option {
 	return optionFunc(func(p *printerSettings) {
 		p.digitsPerColumn = count
