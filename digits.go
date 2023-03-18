@@ -10,6 +10,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/keep94/consume2"
 )
 
 const (
@@ -42,7 +44,7 @@ func GetDigits(s Sequence, p Positions) Digits {
 		return d.pick(p)
 	}
 	var builder digitsBuilder
-	sendDigits(newPart(s, p), &builder)
+	consume2.FromGenerator[Digit](newPart(s, p).digitIter(), &builder)
 	return builder.Build()
 }
 
@@ -305,7 +307,8 @@ func (d Digits) findLastN(pattern []int, n int) []int {
 func (d Digits) pick(p Positions) Digits {
 	var builder digitsBuilder
 	for _, pr := range p.ranges {
-		sendDigits(d.WithStart(pr.Start).WithEnd(pr.End), &builder)
+		consume2.FromGenerator[Digit](
+			d.WithStart(pr.Start).WithEnd(pr.End).digitIter(), &builder)
 	}
 	return builder.Build()
 }

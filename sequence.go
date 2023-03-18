@@ -54,17 +54,6 @@ func (p *lazyPart) digitIter() func() (Digit, bool) {
 func fprint(
 	w io.Writer, part part, settings *printerSettings) (n int, err error) {
 	p := newPrinter(w, part.limit(), settings)
-	sendDigits(part, p)
+	consume2.FromGenerator[Digit](part.digitIter(), p)
 	return p.byteCount, p.err
-}
-
-func sendDigits(s Sequence, consumer consume2.Consumer[Digit]) {
-	iter := s.digitIter()
-	for consumer.CanConsume() {
-		d, ok := iter()
-		if !ok {
-			return
-		}
-		consumer.Consume(d)
-	}
 }

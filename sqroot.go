@@ -38,7 +38,7 @@ func (m Mantissa) WithSignificant(limit int) Mantissa {
 // infinite number of digits, Digits runs forever.
 func (m Mantissa) Digits() Digits {
 	var builder digitsBuilder
-	sendDigits(m, &builder)
+	consume2.FromGenerator[Digit](m.digitIter(), &builder)
 	return builder.Build()
 }
 
@@ -320,7 +320,7 @@ func (f formatSpec) printFixed(w io.Writer, m Mantissa, exponent int) {
 	formatter := newFormatter(w, f.sigDigits, exponent, f.exactDigitCount)
 	consumer := consume2.Map[Digit, int](
 		formatter, func(d Digit) int { return d.Value })
-	sendDigits(m, consumer)
+	consume2.FromGenerator(m.digitIter(), consumer)
 	formatter.Finish()
 }
 
