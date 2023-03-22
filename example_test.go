@@ -8,10 +8,10 @@ import (
 
 func ExampleSqrt() {
 
-	// Print the square root of 13 with 50 significant digits.
-	fmt.Printf("%.50g", sqroot.Sqrt(13))
+	// Print the square root of 13 with 100 significant digits.
+	fmt.Printf("%.100g", sqroot.Sqrt(13))
 	// Output:
-	// 3.6055512754639892931192212674704959462512965738452
+	// 3.605551275463989293119221267470495946251296573845246212710453056227166948293010445204619082018490717
 }
 
 func ExampleFind() {
