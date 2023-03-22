@@ -1,5 +1,9 @@
 package sqroot
 
+import (
+	"github.com/keep94/consume2"
+)
+
 // Find returns a function that returns the next zero based index of the
 // match for pattern in s. If s has a finite number of digits and there
 // are no more matches for pattern, the returned function returns -1.
@@ -29,24 +33,14 @@ func FindFirst(s Sequence, pattern []int) int {
 // number of digits, and there are not n matches available.
 // pattern is a sequence of digits between 0 and 9.
 func FindFirstN(s Sequence, pattern []int, n int) []int {
-	var result []int
-	iter := find(s, pattern)
-	for index := iter(); index != -1 && len(result) < n; index = iter() {
-		result = append(result, index)
-	}
-	return result
+	return asIntSlice(find(s, pattern), consume2.PSlice[int](0, n))
 }
 
 // FindAll finds all the matches of pattern in s and returns the zero based
 // index of each match. If s has an infinite number of digits, FindAll will
 // run forever. pattern is a sequence of digits between 0 and 9.
 func FindAll(s Sequence, pattern []int) []int {
-	var result []int
-	iter := find(s, pattern)
-	for index := iter(); index != -1; index = iter() {
-		result = append(result, index)
-	}
-	return result
+	return asIntSlice(find(s, pattern), consume2.Identity[int]())
 }
 
 // FindLast finds the zero based index of the last match of pattern in s.
@@ -68,7 +62,7 @@ func FindLast(s Sequence, pattern []int) int {
 func FindLastN(s Sequence, pattern []int, n int) []int {
 	d, ok := s.(Digits)
 	if ok {
-		return d.findLastN(pattern, n)
+		return asIntSlice(d.rfind(pattern), consume2.PSlice[int](0, n))
 	}
 	return findLastN(s, pattern, n)
 }
@@ -78,6 +72,12 @@ func find(s Sequence, pattern []int) func() int {
 		return zeroPattern(s.digitIter())
 	}
 	return kmp(s.digitIter(), pattern, false)
+}
+
+func asIntSlice(
+	gen func() int, pipeline consume2.Pipeline[int, int]) (result []int) {
+	consume2.FromIntGenerator(gen, pipeline.AppendTo(&result))
+	return
 }
 
 func findLastN(s Sequence, pattern []int, n int) []int {

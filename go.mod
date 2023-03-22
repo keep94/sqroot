@@ -3,7 +3,7 @@ module github.com/keep94/sqroot
 go 1.18
 
 require (
-	github.com/keep94/consume2 v0.5.0
+	github.com/keep94/consume2 v0.6.0
 	github.com/stretchr/testify v1.7.0
 )
 

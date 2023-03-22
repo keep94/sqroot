@@ -295,15 +295,6 @@ func (d Digits) rfind(pattern []int) func() int {
 	return kmp(d.reverseDigitIter(), patternReverse(pattern), true)
 }
 
-func (d Digits) findLastN(pattern []int, n int) []int {
-	var result []int
-	iter := d.rfind(pattern)
-	for index := iter(); index != -1 && len(result) < n; index = iter() {
-		result = append(result, index)
-	}
-	return result
-}
-
 func (d Digits) pick(p Positions) Digits {
 	var builder digitsBuilder
 	for _, pr := range p.ranges {
