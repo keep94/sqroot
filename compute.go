@@ -13,12 +13,20 @@ var (
 
 type mantissaSpec interface {
 	Iterator() func() int
+	At(index int) int
+	Memoize() bool
 }
 
 type sqrtSpec struct {
 	num   big.Int
 	denom big.Int
 }
+
+func (s *sqrtSpec) At(index int) int {
+	return simpleAt(s.Iterator(), index)
+}
+
+func (s *sqrtSpec) Memoize() bool { return false }
 
 func (s *sqrtSpec) Iterator() func() int {
 	incr := big.NewInt(1)
@@ -66,6 +74,17 @@ func withLimit(spec mantissaSpec, limit int) mantissaSpec {
 	return &limitSpec{delegate: spec, limit: limit}
 }
 
+func (l *limitSpec) At(index int) int {
+	if index >= l.limit {
+		return -1
+	}
+	return l.delegate.At(index)
+}
+
+func (l *limitSpec) Memoize() bool {
+	return l.delegate.Memoize()
+}
+
 func (l *limitSpec) Iterator() func() int {
 	count := 0
 	iter := l.delegate.Iterator()
@@ -76,6 +95,16 @@ func (l *limitSpec) Iterator() func() int {
 		count++
 		return iter()
 	}
+}
+
+func withMemoize(spec mantissaSpec) mantissaSpec {
+	if spec == nil {
+		return nil
+	}
+	if spec.Memoize() {
+		return spec
+	}
+	return newMemoizer(spec.Iterator())
 }
 
 func generateQuotientBase100(num, denom *big.Int) func() *big.Int {
@@ -89,4 +118,15 @@ func generateQuotientBase100(num, denom *big.Int) func() *big.Int {
 		group, _ := new(big.Int).DivMod(num, denom, num)
 		return group
 	}
+}
+
+func simpleAt(iter func() int, index int) int {
+	if index < 0 {
+		return -1
+	}
+	result := iter()
+	for i := 0; result != -1 && i < index; i++ {
+		result = iter()
+	}
+	return result
 }

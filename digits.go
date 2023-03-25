@@ -51,7 +51,8 @@ func GetDigits(s Sequence, p Positions) Digits {
 // WithStart returns a Digits like this one that only has positions greater
 // than or equal to start. Returned instance shares memory with this instance.
 // Therefore, to change only the starting position it is more efficient to use
-// WithStart than GetDigits.
+// WithStart than GetDigits. WithStart runs in O(log N) time where N is the
+// number of digits in this instance.
 func (d Digits) WithStart(start int) Digits {
 	index := sort.Search(
 		len(d.digits),
@@ -63,7 +64,8 @@ func (d Digits) WithStart(start int) Digits {
 // WithEnd returns a Digits like this one that only has positions less than
 // end. Returned instance shares memory with this instance. Therefore, to
 // change only the ending position it is more efficient to use WithEnd than
-// GetDigits.
+// GetDigits. WithEnd runs in O(log N) time where N is the number of digits
+// in this instance.
 func (d Digits) WithEnd(end int) Digits {
 	index := sort.Search(
 		len(d.digits),
@@ -184,6 +186,7 @@ func (d *Digits) UnmarshalText(text []byte) error {
 
 // At returns the digit between 0 and 9 at the given zero based position.
 // If the digit at posit is unknown or if posit is negative, At returns -1.
+// At runs in O(log N) time where N is the number of digits in this instance.
 func (d Digits) At(posit int) int {
 	index := sort.Search(
 		len(d.digits),

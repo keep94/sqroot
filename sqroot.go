@@ -19,9 +19,12 @@ const (
 // Mantissa represents the mantissa of a square root. Non zero Mantissas are
 // between 0.1 inclusive and 1.0 exclusive. The number of digits of a
 // Mantissa can be infinite. The zero value for a Mantissa corresponds to 0.
-// Mantissa computes its digits lazily on demand each time. Computing the
-// first N digits of a Mantissa takes O(N^2) time. Mantissa implements
-// Sequence.
+// By default, a Mantissa instance computes its digits lazily on demand each
+// time. Computing the first N digits of a Mantissa takes O(N^2) time. However
+// a Mantissa can be set to memoize its digits. Mantissa implements Sequence.
+// Mantissa supports assignment. If Mantissa x memoizes its digits and y is
+// assigned to x, then both x and y share the same memoization data. A
+// Mantissa instance is safe to use with multiple goroutines.
 type Mantissa struct {
 	spec mantissaSpec
 }
@@ -32,6 +35,13 @@ type Mantissa struct {
 // is negative.
 func (m Mantissa) WithSignificant(limit int) Mantissa {
 	return Mantissa{spec: withLimit(m.spec, limit)}
+}
+
+// WithMemoize returns a new Mantissa like this one that remembers all
+// previously computed digits. A Mantissa with memoize turned on uses much
+// more memory than a regular one.
+func (m Mantissa) WithMemoize() Mantissa {
+	return Mantissa{spec: withMemoize(m.spec)}
 }
 
 // Digits returns all the digits of this Mantissa. If this Mantissa has an
@@ -102,12 +112,28 @@ func (m Mantissa) Fprint(w io.Writer, maxDigits int, options ...Option) (
 
 // At returns the digit at the given 0 based position in this Mantissa. If
 // this Mantissa has posit or fewer digits, At returns -1. If posit is
-// negative, At returns -1. When fetching digits at multiple positions, it
-// is more efficient to use the GetDigits function to get a Digits instance
-// than it is to call At multiple times.
+// negative, At returns -1. By default, At has to compute all prior digits,
+// so computing the kth digit takes O(k^2) time best case. However with
+// memoization enabled, computing the kth digit takes O(1) time best case, but
+// memoization stores all computed digits in memory. GetDigits() is a good
+// alternative when only a few digits need to be computed because it stores
+// only the needed digits in memory while iterating through the digits of
+// the mantissa one time. With GetDigits(), computing k digits always takes
+// O(N^2) time where N is the largest digit position of the batch of digits
+// to be computed.
 func (m Mantissa) At(posit int) int {
-	var pb PositionsBuilder
-	return GetDigits(m, pb.Add(posit).Build()).At(posit)
+	if m.spec == nil {
+		return -1
+	}
+	return m.spec.At(posit)
+}
+
+// Memoize returns true if this Mantissa memoizes its digits.
+func (m Mantissa) Memoize() bool {
+	if m.spec == nil {
+		return true
+	}
+	return m.spec.Memoize()
 }
 
 func (m Mantissa) digitIter() func() (Digit, bool) {
@@ -128,7 +154,10 @@ func (m Mantissa) digitIter() func() (Digit, bool) {
 // Number represents a square root value. The zero value for Number
 // corresponds to 0. A Number is of the form mantissa * 10^exponent where
 // mantissa is between 0.1 inclusive and 1.0 exclusive. Like Mantissa, a
-// Number instance can represent an infinite number of digits.
+// Number instance can represent an infinite number of digits. Number
+// instances support assignment and are safe to use with multiple goroutines.
+// If Number x has a Mantissa that memoizes its digits and y is assigned to x,
+// then the Mantissas of both x and y share the same memoization data.
 type Number struct {
 	mantissa Mantissa
 	exponent int
@@ -143,10 +172,17 @@ func (n Number) WithSignificant(limit int) Number {
 	if m.spec == nil {
 		return Number{}
 	}
-	return Number{
-		mantissa: m,
-		exponent: n.exponent,
+	return Number{mantissa: m, exponent: n.exponent}
+}
+
+// WithMemoize returns a Number like this one that has a Mantissa that
+// remembers all previously computed digits.
+func (n Number) WithMemoize() Number {
+	m := n.mantissa.WithMemoize()
+	if m.spec == nil {
+		return Number{}
 	}
+	return Number{mantissa: m, exponent: n.exponent}
 }
 
 // Mantissa returns the Mantissa of this Number.

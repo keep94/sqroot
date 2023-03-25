@@ -239,3 +239,9 @@ type funcMantissaSpec func() func() int
 func (f funcMantissaSpec) Iterator() func() int {
 	return f()
 }
+
+func (f funcMantissaSpec) At(index int) int {
+	return simpleAt(f.Iterator(), index)
+}
+
+func (f funcMantissaSpec) Memoize() bool { return false }

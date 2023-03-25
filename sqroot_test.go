@@ -182,3 +182,23 @@ func TestAtFinite(t *testing.T) {
 	assert.Equal(t, 7, m.At(2))
 	assert.Equal(t, -1, m.At(3))
 }
+
+func TestZeroMantissa(t *testing.T) {
+	var m Mantissa
+	assert.Equal(t, -1, m.At(0))
+	assert.Zero(t, m.Digits())
+	assert.True(t, m.Memoize())
+	assert.Zero(t, m.WithMemoize())
+	assert.Zero(t, m.WithSignificant(5))
+	assert.Equal(t, -1, m.Iterator()())
+	assert.Equal(t, "0", m.String())
+}
+
+func TestZeroNumber(t *testing.T) {
+	var n Number
+	assert.Zero(t, n.WithSignificant(5))
+	assert.Zero(t, n.WithMemoize())
+	assert.Zero(t, n.Mantissa())
+	assert.Zero(t, n.Exponent())
+	assert.Equal(t, "0", n.String())
+}
