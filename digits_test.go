@@ -14,6 +14,8 @@ func TestDigits(t *testing.T) {
 	assert.Equal(t, 7, digits.At(25))
 	assert.Equal(t, 4, digits.At(50))
 	assert.Equal(t, -1, digits.At(26))
+	assert.Equal(t, -1, digits.At(51))
+	assert.Equal(t, -1, digits.At(14))
 	checkFullIter(t, digits.Items(), 15, 5, 25, 7, 50, 4)
 	checkFullIter(t, digits.WithStart(25).Items(), 25, 7, 50, 4)
 	assert.Equal(t, 15, digits.Min())
