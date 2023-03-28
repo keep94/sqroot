@@ -123,49 +123,49 @@ func TestPrintZero(t *testing.T) {
 
 func TestFormatZero(t *testing.T) {
 	var mantissa Mantissa
-	actual := fmt.Sprintf("%f", mantissa)
+	actual := fmt.Sprintf("%f", &mantissa)
 	assert.Equal(t, "0.000000", actual)
 }
 
 func TestFormatZeroPrecision(t *testing.T) {
 	var mantissa Mantissa
-	actual := fmt.Sprintf("%.5f", mantissa)
+	actual := fmt.Sprintf("%.5f", &mantissa)
 	assert.Equal(t, "0.00000", actual)
 }
 
 func TestFormatZeroWidth(t *testing.T) {
 	var mantissa Mantissa
-	actual := fmt.Sprintf("%4.0f", mantissa)
+	actual := fmt.Sprintf("%4.0f", &mantissa)
 	assert.Equal(t, "   0", actual)
 }
 
 func TestFormatZeroG(t *testing.T) {
 	var mantissa Mantissa
-	actual := fmt.Sprintf("%G", mantissa)
+	actual := fmt.Sprintf("%G", &mantissa)
 	assert.Equal(t, "0", actual)
 }
 
 func TestFormatZeroPrecisionG(t *testing.T) {
 	var mantissa Mantissa
-	actual := fmt.Sprintf("%.5G", mantissa)
+	actual := fmt.Sprintf("%.5G", &mantissa)
 	assert.Equal(t, "0", actual)
 }
 
 func TestFormatZeroZeroPrecisionG(t *testing.T) {
 	var mantissa Mantissa
-	actual := fmt.Sprintf("%.0G", mantissa)
+	actual := fmt.Sprintf("%.0G", &mantissa)
 	assert.Equal(t, "0", actual)
 }
 
 func TestFormatZeroV(t *testing.T) {
 	var mantissa Mantissa
-	actual := fmt.Sprintf("%5v", mantissa)
+	actual := fmt.Sprintf("%5v", &mantissa)
 	assert.Equal(t, "    0", actual)
 }
 
 func TestFormatZeroE(t *testing.T) {
 	var mantissa Mantissa
-	actual := fmt.Sprintf("%.5E", mantissa)
+	actual := fmt.Sprintf("%.5E", &mantissa)
 	assert.Equal(t, "0.00000E+00", actual)
 }
 
@@ -181,6 +181,6 @@ func TestPrint(t *testing.T) {
 
 func TestPrintNil(t *testing.T) {
 	var mantissa Mantissa
-	actual := fmt.Sprint(mantissa)
+	actual := fmt.Sprint(&mantissa)
 	assert.Equal(t, "0", actual)
 }

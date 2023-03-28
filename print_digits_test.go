@@ -109,7 +109,7 @@ func TestPrintPTooShort(t *testing.T) {
 func TestPrintPZero(t *testing.T) {
 	var m Mantissa
 	p := new(PositionsBuilder).AddRange(3, 5).Build()
-	digits := GetDigits(m, p)
+	digits := GetDigits(&m, p)
 	assert.Zero(t, digits)
 	assert.Empty(t, digits.Sprint())
 }

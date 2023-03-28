@@ -13,7 +13,7 @@ func TestNumberZeroValueString(t *testing.T) {
 }
 
 func TestNumberFPositiveExponent(t *testing.T) {
-	number := Number{mantissa: fakeMantissa, exponent: 5}
+	number := &Number{mantissa: fakeMantissa, exponent: 5}
 	actual := fmt.Sprintf("%f", number)
 	assert.Equal(t, "12345.678901", actual)
 	actual = fmt.Sprintf("%.1f", number)
@@ -23,13 +23,13 @@ func TestNumberFPositiveExponent(t *testing.T) {
 }
 
 func TestNumberFPositiveExponentFiniteDigits(t *testing.T) {
-	number := Number{mantissa: fakeMantissa.WithSignificant(9), exponent: 5}
+	number := &Number{mantissa: fakeMantissa.WithSignificant(9), exponent: 5}
 	actual := fmt.Sprintf("%F", number)
 	assert.Equal(t, "12345.678900", actual)
 }
 
 func TestNumberFNegExponent(t *testing.T) {
-	number := Number{mantissa: fakeMantissa, exponent: -5}
+	number := &Number{mantissa: fakeMantissa, exponent: -5}
 	actual := fmt.Sprintf("%f", number)
 	assert.Equal(t, "0.000001", actual)
 	actual = fmt.Sprintf("%.10f", number)
@@ -44,18 +44,18 @@ func TestNumberFNegExponent(t *testing.T) {
 
 func TestNumberFZero(t *testing.T) {
 	var number Number
-	actual := fmt.Sprintf("%f", number)
+	actual := fmt.Sprintf("%f", &number)
 	assert.Equal(t, "0.000000", actual)
-	actual = fmt.Sprintf("%.3f", number)
+	actual = fmt.Sprintf("%.3f", &number)
 	assert.Equal(t, "0.000", actual)
-	actual = fmt.Sprintf("%.1f", number)
+	actual = fmt.Sprintf("%.1f", &number)
 	assert.Equal(t, "0.0", actual)
-	actual = fmt.Sprintf("%.0f", number)
+	actual = fmt.Sprintf("%.0f", &number)
 	assert.Equal(t, "0", actual)
 }
 
 func TestNumberGPositiveExponent(t *testing.T) {
-	number := Number{mantissa: fakeMantissa, exponent: 5}
+	number := &Number{mantissa: fakeMantissa, exponent: 5}
 	actual := fmt.Sprintf("%g", number)
 	assert.Equal(t, "12345.67890123456", actual)
 	actual = fmt.Sprintf("%.8g", number)
@@ -69,7 +69,7 @@ func TestNumberGPositiveExponent(t *testing.T) {
 }
 
 func TestNumberGPositiveExponentShort(t *testing.T) {
-	number := Number{mantissa: fakeMantissa.WithSignificant(3), exponent: 5}
+	number := &Number{mantissa: fakeMantissa.WithSignificant(3), exponent: 5}
 	actual := fmt.Sprintf("%g", number)
 	assert.Equal(t, "12300", actual)
 	actual = fmt.Sprintf("%.5g", number)
@@ -79,13 +79,13 @@ func TestNumberGPositiveExponentShort(t *testing.T) {
 }
 
 func TestNumberGPositiveExponentFiniteDigits(t *testing.T) {
-	number := Number{mantissa: fakeMantissa.WithSignificant(9), exponent: 5}
+	number := &Number{mantissa: fakeMantissa.WithSignificant(9), exponent: 5}
 	actual := fmt.Sprintf("%G", number)
 	assert.Equal(t, "12345.6789", actual)
 }
 
 func TestNumberGNegExponent(t *testing.T) {
-	number := Number{mantissa: fakeMantissa, exponent: -3}
+	number := &Number{mantissa: fakeMantissa, exponent: -3}
 	actual := fmt.Sprintf("%g", number)
 	assert.Equal(t, "0.0001234567890123456", actual)
 	actual = fmt.Sprintf("%.8g", number)
@@ -96,43 +96,43 @@ func TestNumberGNegExponent(t *testing.T) {
 
 func TestNumberGZero(t *testing.T) {
 	var number Number
-	actual := fmt.Sprintf("%G", number)
+	actual := fmt.Sprintf("%G", &number)
 	assert.Equal(t, "0", actual)
-	actual = fmt.Sprintf("%.0g", number)
+	actual = fmt.Sprintf("%.0g", &number)
 	assert.Equal(t, "0", actual)
 }
 
 func TestNumberGLargePosExponent(t *testing.T) {
-	number := Number{mantissa: fakeMantissa, exponent: 7}
+	number := &Number{mantissa: fakeMantissa, exponent: 7}
 	actual := fmt.Sprintf("%G", number)
 	assert.Equal(t, "0.1234567890123456E+07", actual)
 	actual = fmt.Sprintf("%.8g", number)
 	assert.Equal(t, "0.12345678e+07", actual)
 	actual = fmt.Sprintf("%.0g", number)
 	assert.Equal(t, "0.1e+07", actual)
-	number = Number{mantissa: fakeMantissa, exponent: 6}
+	number = &Number{mantissa: fakeMantissa, exponent: 6}
 	actual = fmt.Sprintf("%.6g", number)
 	assert.Equal(t, "123456", actual)
-	number = Number{mantissa: fakeMantissa, exponent: 10}
+	number = &Number{mantissa: fakeMantissa, exponent: 10}
 	actual = fmt.Sprintf("%.10g", number)
 	assert.Equal(t, "0.1234567890e+10", actual)
 }
 
 func TestNumberGLargePosExponentFiniteDigits(t *testing.T) {
-	number := Number{
+	number := &Number{
 		mantissa: fakeMantissa.WithSignificant(9), exponent: 7}
 	actual := fmt.Sprintf("%g", number)
 	assert.Equal(t, "0.123456789e+07", actual)
 }
 
 func TestNumberGLargeNegExponent(t *testing.T) {
-	number := Number{mantissa: fakeMantissa, exponent: -4}
+	number := &Number{mantissa: fakeMantissa, exponent: -4}
 	actual := fmt.Sprintf("%G", number)
 	assert.Equal(t, "0.1234567890123456E-04", actual)
 }
 
 func TestNumberEPositiveExponent(t *testing.T) {
-	number := Number{mantissa: fakeMantissa, exponent: 5}
+	number := &Number{mantissa: fakeMantissa, exponent: 5}
 	actual := fmt.Sprintf("%e", number)
 	assert.Equal(t, "0.123456e+05", actual)
 	actual = fmt.Sprintf("%.1E", number)
@@ -142,13 +142,13 @@ func TestNumberEPositiveExponent(t *testing.T) {
 }
 
 func TestNumberEPositiveExponentFiniteDigits(t *testing.T) {
-	number := Number{mantissa: fakeMantissa.WithSignificant(9), exponent: 5}
+	number := &Number{mantissa: fakeMantissa.WithSignificant(9), exponent: 5}
 	actual := fmt.Sprintf("%.14e", number)
 	assert.Equal(t, "0.12345678900000e+05", actual)
 }
 
 func TestNumberENegExponent(t *testing.T) {
-	number := Number{mantissa: fakeMantissa, exponent: -5}
+	number := &Number{mantissa: fakeMantissa, exponent: -5}
 	actual := fmt.Sprintf("%e", number)
 	assert.Equal(t, "0.123456e-05", actual)
 	actual = fmt.Sprintf("%.1E", number)
@@ -159,16 +159,16 @@ func TestNumberENegExponent(t *testing.T) {
 
 func TestNumberEZero(t *testing.T) {
 	var number Number
-	actual := fmt.Sprintf("%E", number)
+	actual := fmt.Sprintf("%E", &number)
 	assert.Equal(t, "0.000000E+00", actual)
-	actual = fmt.Sprintf("%.1e", number)
+	actual = fmt.Sprintf("%.1e", &number)
 	assert.Equal(t, "0.0e+00", actual)
-	actual = fmt.Sprintf("%.0e", number)
+	actual = fmt.Sprintf("%.0e", &number)
 	assert.Equal(t, "0e+00", actual)
 }
 
 func TestNumberWidth(t *testing.T) {
-	number := Number{mantissa: fakeMantissa, exponent: 5}
+	number := &Number{mantissa: fakeMantissa, exponent: 5}
 	actual := fmt.Sprintf("%20v", number)
 	assert.Equal(t, "   12345.67890123456", actual)
 	actual = fmt.Sprintf("%16v", number)
@@ -182,24 +182,24 @@ func TestNumberWidth(t *testing.T) {
 }
 
 func TestNumberString(t *testing.T) {
-	number := Number{mantissa: fakeMantissa.WithSignificant(9), exponent: 6}
+	number := &Number{mantissa: fakeMantissa.WithSignificant(9), exponent: 6}
 	assert.Equal(t, "123456.789", number.String())
-	number = Number{mantissa: fakeMantissa, exponent: 6}
+	number = &Number{mantissa: fakeMantissa, exponent: 6}
 	assert.Equal(t, "123456.7890123456", number.String())
-	number = Number{mantissa: fakeMantissa, exponent: 7}
+	number = &Number{mantissa: fakeMantissa, exponent: 7}
 	assert.Equal(t, "0.1234567890123456e+07", number.String())
-	number = Number{mantissa: fakeMantissa, exponent: 11}
+	number = &Number{mantissa: fakeMantissa, exponent: 11}
 	assert.Equal(t, "0.1234567890123456e+11", number.String())
-	number = Number{mantissa: fakeMantissa, exponent: -3}
+	number = &Number{mantissa: fakeMantissa, exponent: -3}
 	assert.Equal(t, "0.0001234567890123456", number.String())
-	number = Number{mantissa: fakeMantissa, exponent: -4}
+	number = &Number{mantissa: fakeMantissa, exponent: -4}
 	assert.Equal(t, "0.1234567890123456e-04", number.String())
-	number = Number{}
+	number = &Number{}
 	assert.Equal(t, "0", number.String())
 }
 
 func TestNumberBadVerb(t *testing.T) {
-	number := Number{mantissa: fakeMantissa.WithSignificant(9), exponent: 5}
+	number := &Number{mantissa: fakeMantissa.WithSignificant(9), exponent: 5}
 	actual := fmt.Sprintf("%h", number)
 	assert.Equal(t, "%!h(number=12345.6789)", actual)
 }

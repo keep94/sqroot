@@ -77,8 +77,8 @@ func TestDigitsNoneZeroMantissa(t *testing.T) {
 	var m Mantissa
 	var p Positions
 	var pb PositionsBuilder
-	assert.Zero(t, GetDigits(m, p))
-	assert.Zero(t, GetDigits(m, pb.AddRange(0, 100).Build()))
+	assert.Zero(t, GetDigits(&m, p))
+	assert.Zero(t, GetDigits(&m, pb.AddRange(0, 100).Build()))
 }
 
 func TestDigitsNoneFromDigits(t *testing.T) {

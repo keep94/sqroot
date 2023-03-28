@@ -133,16 +133,16 @@ func TestFindLastNDigits2(t *testing.T) {
 
 func TestFindZeroMantissa(t *testing.T) {
 	var m Mantissa
-	assert.Equal(t, -1, FindFirst(m, []int{5}))
-	assert.Equal(t, -1, FindFirst(m, nil))
-	assert.Empty(t, FindFirstN(m, []int{5}, 3))
-	assert.Empty(t, FindFirstN(m, nil, 3))
-	assert.Empty(t, FindAll(m, []int{5}))
-	assert.Empty(t, FindAll(m, nil))
-	assert.Equal(t, -1, FindLast(m, []int{5}))
-	assert.Equal(t, -1, FindLast(m, nil))
-	assert.Empty(t, FindLastN(m, []int{5}, 3))
-	assert.Empty(t, FindLastN(m, nil, 3))
+	assert.Equal(t, -1, FindFirst(&m, []int{5}))
+	assert.Equal(t, -1, FindFirst(&m, nil))
+	assert.Empty(t, FindFirstN(&m, []int{5}, 3))
+	assert.Empty(t, FindFirstN(&m, nil, 3))
+	assert.Empty(t, FindAll(&m, []int{5}))
+	assert.Empty(t, FindAll(&m, nil))
+	assert.Equal(t, -1, FindLast(&m, []int{5}))
+	assert.Equal(t, -1, FindLast(&m, nil))
+	assert.Empty(t, FindLastN(&m, []int{5}, 3))
+	assert.Empty(t, FindLastN(&m, nil, 3))
 }
 
 func TestFindZeroDigits(t *testing.T) {

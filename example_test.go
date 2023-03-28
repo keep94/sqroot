@@ -174,8 +174,12 @@ func ExampleMantissa_At() {
 	n := sqroot.Sqrt(7)
 
 	fmt.Println(n.Mantissa().At(0))
+	fmt.Println(n.Mantissa().At(1))
+	fmt.Println(n.Mantissa().At(2))
 	// Output:
 	// 2
+	// 6
+	// 4
 }
 
 func ExampleNumber_WithSignificant() {
@@ -187,4 +191,21 @@ func ExampleNumber_WithSignificant() {
 	fmt.Println(sqroot.FindFirst(n.Mantissa(), []int{1, 1, 2}))
 	// Output:
 	// -1
+}
+
+func ExampleNumber_WithMemoize() {
+	n := sqroot.Sqrt(6).WithMemoize()
+
+	// Without memoization, the loop below takes 45 seconds to execute on a
+	// certain macbook pro because the At call has to compute all previous
+	// digits at each iteration. With memoization, the loop below runs in
+	// milliseconds on the same macbook pro because the mantissa of n remembers
+	// all of its previously computed digits.
+	sum := 0
+	for i := 0; i < 10000; i++ {
+		sum += n.Mantissa().At(i)
+	}
+	fmt.Println(sum)
+	// Output:
+	// 44707
 }

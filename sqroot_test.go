@@ -33,7 +33,8 @@ func Test3(t *testing.T) {
 
 func Test0(t *testing.T) {
 	n := Sqrt(0)
-	assert.Zero(t, n)
+	assert.Zero(t, *zeroNumber)
+	assert.Same(t, zeroNumber, n)
 	iter := n.Mantissa().Iterator()
 	assert.Equal(t, -1, iter())
 }
@@ -160,13 +161,9 @@ func TestWithSignificantPanics(t *testing.T) {
 	assert.Panics(t, func() { n.WithSignificant(-1) })
 }
 
-func TestWithSignificantZero(t *testing.T) {
-	var n Number
-	assert.Zero(t, n.WithSignificant(5))
-}
-
 func TestWithSignificantToZero(t *testing.T) {
-	assert.Zero(t, Sqrt(2).WithSignificant(0))
+	assert.Zero(t, *zeroNumber)
+	assert.Same(t, zeroNumber, Sqrt(2).WithSignificant(0))
 }
 
 func TestAt(t *testing.T) {
@@ -188,17 +185,29 @@ func TestZeroMantissa(t *testing.T) {
 	assert.Equal(t, -1, m.At(0))
 	assert.Zero(t, m.Digits())
 	assert.True(t, m.Memoize())
-	assert.Zero(t, m.WithMemoize())
-	assert.Zero(t, m.WithSignificant(5))
+	assert.Same(t, &m, m.WithMemoize())
+	assert.Same(t, &m, m.WithSignificant(5))
 	assert.Equal(t, -1, m.Iterator()())
 	assert.Equal(t, "0", m.String())
 }
 
 func TestZeroNumber(t *testing.T) {
 	var n Number
-	assert.Zero(t, n.WithSignificant(5))
-	assert.Zero(t, n.WithMemoize())
-	assert.Zero(t, n.Mantissa())
+	assert.Same(t, &n, n.WithSignificant(5))
+	assert.Same(t, &n, n.WithMemoize())
+	assert.Zero(t, *zeroMantissa)
+	assert.Same(t, zeroMantissa, n.Mantissa())
 	assert.Zero(t, n.Exponent())
 	assert.Equal(t, "0", n.String())
+}
+
+func TestSameNumber(t *testing.T) {
+	n := Sqrt(6)
+	sixDigits := n.WithSignificant(6)
+	assert.Same(t, sixDigits, sixDigits.WithSignificant(6))
+	memoized := sixDigits.WithMemoize()
+	assert.Same(t, memoized, memoized.WithMemoize())
+	sevenDigits := memoized.WithSignificant(7)
+	assert.Same(t, sevenDigits, sevenDigits.WithSignificant(8))
+	assert.Same(t, sevenDigits, sevenDigits.WithMemoize())
 }

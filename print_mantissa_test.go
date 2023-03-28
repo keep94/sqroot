@@ -9,7 +9,7 @@ import (
 
 var (
 	// fakeMantissa = 0.12345678901234567890...
-	fakeMantissa = Mantissa{spec: funcMantissaSpec(
+	fakeMantissa = &Mantissa{spec: funcMantissaSpec(
 		func() func() int {
 			i := 0
 			return func() int {
