@@ -14,21 +14,19 @@ func TestMemoize(t *testing.T) {
 	assert.True(t, nm.Mantissa().Memoize())
 	assert.False(t, n.Mantissa().Memoize())
 	expected := fmt.Sprintf("%.10000g", n)
-	var actual1 string
-	var actual2 string
+	var actual [10]string
 	var wg sync.WaitGroup
-	wg.Add(2)
-	go func() {
-		actual1 = fmt.Sprintf("%.10000g", nm)
-		wg.Done()
-	}()
-	go func() {
-		actual2 = fmt.Sprintf("%.10000g", nm)
-		wg.Done()
-	}()
+	for i := 0; i < len(actual); i++ {
+		wg.Add(1)
+		go func(index int) {
+			actual[index] = fmt.Sprintf("%.10000g", nm)
+			wg.Done()
+		}(i)
+	}
 	wg.Wait()
-	assert.Equal(t, expected, actual1)
-	assert.Equal(t, expected, actual2)
+	for i := 0; i < len(actual); i++ {
+		assert.Equal(t, expected, actual[i])
+	}
 }
 
 func TestMemoizeAt(t *testing.T) {
@@ -66,7 +64,7 @@ func TestMemoizeAt(t *testing.T) {
 func TestMemoizeOutOfBounds(t *testing.T) {
 	n := Sqrt(111).WithSignificant(1000)
 	expectedDigits := n.Mantissa().Digits()
-	nm := n.WithMemoize().WithMemoize()
+	nm := n.WithMemoize()
 	assert.Equal(t, 2, nm.Exponent())
 	m := nm.Mantissa()
 	assert.Equal(t, -1, m.At(1000))
