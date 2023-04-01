@@ -107,7 +107,7 @@ func (m *Mantissa) Sprint(maxDigits int, options ...Option) string {
 // separate rows, no separate columns, and digit count turned off.
 func (m *Mantissa) Fprint(w io.Writer, maxDigits int, options ...Option) (
 	n int, err error) {
-	if m.spec == nil || maxDigits <= 0 {
+	if m.IsZero() || maxDigits <= 0 {
 		return fmt.Fprint(w, "0")
 	}
 	settings := &printerSettings{missingDigit: '.'}
@@ -142,6 +142,11 @@ func (m *Mantissa) IsMemoize() bool {
 		return true
 	}
 	return m.spec.IsMemoize()
+}
+
+// IsZero returns true if this Mantissa is zero.
+func (m *Mantissa) IsZero() bool {
+	return m.spec == nil
 }
 
 func (m *Mantissa) withSpec(newSpec mantissaSpec) *Mantissa {
@@ -231,6 +236,11 @@ func (n *Number) String() string {
 	fs := formatSpec{sigDigits: gPrecision, sci: bigExponent(n.exponent)}
 	fs.PrintNumber(&builder, n.Mantissa(), n.exponent)
 	return builder.String()
+}
+
+// IsZero returns true if this Number is zero.
+func (n *Number) IsZero() bool {
+	return n.Mantissa().IsZero()
 }
 
 func (n *Number) withMantissa(newMantissa *Mantissa) *Number {

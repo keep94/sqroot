@@ -183,6 +183,7 @@ func TestAtFinite(t *testing.T) {
 func TestZeroMantissa(t *testing.T) {
 	var m Mantissa
 	assert.Equal(t, -1, m.At(0))
+	assert.True(t, m.IsZero())
 	assert.Zero(t, m.Digits())
 	assert.True(t, m.IsMemoize())
 	assert.Same(t, &m, m.WithMemoize())
@@ -195,6 +196,7 @@ func TestZeroNumber(t *testing.T) {
 	var n Number
 	assert.Same(t, &n, n.WithSignificant(5))
 	assert.Same(t, &n, n.WithMemoize())
+	assert.True(t, n.IsZero())
 	assert.Zero(t, *zeroMantissa)
 	assert.Same(t, zeroMantissa, n.Mantissa())
 	assert.Zero(t, n.Exponent())
