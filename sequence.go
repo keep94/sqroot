@@ -11,7 +11,7 @@ import (
 // be 375XXX695. The 0th digit is a 3; the 1st digit is a 7; the 2nd digit
 // is a 5; the 3rd, 4th, and 5th digits are unknown; the 6th digit is a 6;
 // the 7th digit is a 9; the 8th digit is a 5.
-// Both Digits and Mantissa implement Sequence.
+// Both Digits and Mantissa pointers implement Sequence.
 type Sequence interface {
 	digitIter() func() (Digit, bool)
 }

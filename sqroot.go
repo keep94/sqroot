@@ -26,9 +26,9 @@ var (
 // Mantissa can be infinite. The zero value for a Mantissa corresponds to 0.
 // By default, a Mantissa instance computes its digits lazily on demand each
 // time. Computing the first N digits of a Mantissa takes O(N^2) time. However
-// a Mantissa can be set to memoize its digits. Mantissa implements Sequence.
-// Mantissa instances do not support assignment. Mantissa instances are safe
-// to use with multiple goroutines.
+// a Mantissa can be set to memoize its digits. Mantissa pointers implement
+// Sequence. Mantissa instances do not support assignment. Mantissa instances
+// are safe to use with multiple goroutines.
 type Mantissa struct {
 	spec mantissaSpec
 }
@@ -44,9 +44,9 @@ func (m *Mantissa) WithSignificant(limit int) *Mantissa {
 	return m.withSpec(withLimit(m.spec, limit))
 }
 
-// WithMemoize returns a Mantissa like this one that remembers all previously
-// computed digits. WithMemoize will return m, if memoization is already
-// enabled for m.
+// WithMemoize returns a Mantissa like this one that remembers all of its
+// previously computed digits. WithMemoize will return m, if memoization is
+// already enabled for m.
 func (m *Mantissa) WithMemoize() *Mantissa {
 	return m.withSpec(withMemoize(m.spec))
 }
@@ -135,7 +135,8 @@ func (m *Mantissa) At(posit int) int {
 	return m.spec.At(posit)
 }
 
-// Memoize returns true if this Mantissa memoizes its digits.
+// Memoize returns true if this Mantissa memoizes its digits. If this
+// Mantissa is zero, Memoize always returns true.
 func (m *Mantissa) Memoize() bool {
 	if m.spec == nil {
 		return true
@@ -191,8 +192,8 @@ func (n *Number) WithSignificant(limit int) *Number {
 }
 
 // WithMemoize returns a Number like this one that has a Mantissa that
-// remembers all previously computed digits. WithMemoize returns n, if the
-// mantissa of n already memoizes its digits.
+// remembers all of its previously computed digits. WithMemoize returns n, if
+// the mantissa of n already memoizes its digits.
 func (n *Number) WithMemoize() *Number {
 	return n.withMantissa(n.Mantissa().WithMemoize())
 }
