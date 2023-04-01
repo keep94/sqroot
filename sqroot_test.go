@@ -21,6 +21,8 @@ func TestMantissaReusable(t *testing.T) {
 
 func Test2(t *testing.T) {
 	n := Sqrt(2)
+	assert.False(t, n.IsZero())
+	assert.False(t, n.Mantissa().IsZero())
 	assert.Equal(t, 1, n.Exponent())
 	assert.Equal(t, "0.1414213562", n.Mantissa().Sprint(10))
 }
