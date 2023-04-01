@@ -37,7 +37,7 @@ func (m *memoizer) At(index int) int {
 	return data[index]
 }
 
-func (m *memoizer) Memoize() bool { return true }
+func (m *memoizer) IsMemoize() bool { return true }
 
 func (m *memoizer) Iterator() func() int {
 	posit := 0

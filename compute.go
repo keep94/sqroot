@@ -14,7 +14,7 @@ var (
 type mantissaSpec interface {
 	Iterator() func() int
 	At(index int) int
-	Memoize() bool
+	IsMemoize() bool
 }
 
 type sqrtSpec struct {
@@ -26,7 +26,7 @@ func (s *sqrtSpec) At(index int) int {
 	return simpleAt(s.Iterator(), index)
 }
 
-func (s *sqrtSpec) Memoize() bool { return false }
+func (s *sqrtSpec) IsMemoize() bool { return false }
 
 func (s *sqrtSpec) Iterator() func() int {
 	incr := big.NewInt(1)
@@ -81,8 +81,8 @@ func (l *limitSpec) At(index int) int {
 	return l.delegate.At(index)
 }
 
-func (l *limitSpec) Memoize() bool {
-	return l.delegate.Memoize()
+func (l *limitSpec) IsMemoize() bool {
+	return l.delegate.IsMemoize()
 }
 
 func (l *limitSpec) Iterator() func() int {
@@ -101,7 +101,7 @@ func withMemoize(spec mantissaSpec) mantissaSpec {
 	if spec == nil {
 		return nil
 	}
-	if spec.Memoize() {
+	if spec.IsMemoize() {
 		return spec
 	}
 	return newMemoizer(spec.Iterator())

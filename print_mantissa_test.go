@@ -244,4 +244,4 @@ func (f funcMantissaSpec) At(index int) int {
 	return simpleAt(f.Iterator(), index)
 }
 
-func (f funcMantissaSpec) Memoize() bool { return false }
+func (f funcMantissaSpec) IsMemoize() bool { return false }

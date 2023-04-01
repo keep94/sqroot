@@ -135,13 +135,13 @@ func (m *Mantissa) At(posit int) int {
 	return m.spec.At(posit)
 }
 
-// Memoize returns true if this Mantissa memoizes its digits. If this
-// Mantissa is zero, Memoize always returns true.
-func (m *Mantissa) Memoize() bool {
+// IsMemoize returns true if this Mantissa memoizes its digits. If this
+// Mantissa is zero, IsMemoize always returns true.
+func (m *Mantissa) IsMemoize() bool {
 	if m.spec == nil {
 		return true
 	}
-	return m.spec.Memoize()
+	return m.spec.IsMemoize()
 }
 
 func (m *Mantissa) withSpec(newSpec mantissaSpec) *Mantissa {

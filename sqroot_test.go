@@ -184,7 +184,7 @@ func TestZeroMantissa(t *testing.T) {
 	var m Mantissa
 	assert.Equal(t, -1, m.At(0))
 	assert.Zero(t, m.Digits())
-	assert.True(t, m.Memoize())
+	assert.True(t, m.IsMemoize())
 	assert.Same(t, &m, m.WithMemoize())
 	assert.Same(t, &m, m.WithSignificant(5))
 	assert.Equal(t, -1, m.Iterator()())

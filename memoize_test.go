@@ -11,8 +11,8 @@ import (
 func TestMemoize(t *testing.T) {
 	n := Sqrt(5)
 	nm := n.WithMemoize()
-	assert.True(t, nm.Mantissa().Memoize())
-	assert.False(t, n.Mantissa().Memoize())
+	assert.True(t, nm.Mantissa().IsMemoize())
+	assert.False(t, n.Mantissa().IsMemoize())
 	expected := fmt.Sprintf("%.10000g", n)
 	var actual [10]string
 	var wg sync.WaitGroup
