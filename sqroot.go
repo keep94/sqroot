@@ -247,7 +247,7 @@ func (n *Number) withMantissa(newMantissa *Mantissa) *Number {
 	if newMantissa == n.Mantissa() {
 		return n
 	}
-	if newMantissa.spec == nil {
+	if newMantissa.IsZero() {
 		return zeroNumber
 	}
 	return &Number{mantissa: newMantissa, exponent: n.exponent}
