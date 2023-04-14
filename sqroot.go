@@ -33,6 +33,23 @@ type Mantissa struct {
 	spec mantissaSpec
 }
 
+// WithStart returns this Mantissa as a Sequence without the first start
+// digits. WithStart panics if start is negative. If m memoizes its digits,
+// then the returned Sequence will also memoize its digits. Moreover, m and
+// the returned Sequence will share the same memoization data.
+func (m *Mantissa) WithStart(start int) Sequence {
+	if start < 0 {
+		panic("start must be non-negative.")
+	}
+	if start == 0 {
+		return m
+	}
+	return &mantissaWithStart{
+		mantissa: m,
+		start:    start,
+	}
+}
+
 // WithSignificant returns a Mantissa like this one that has no more than
 // limit significant digits. WithSignificant rounds the returned Mantissa
 // down toward zero when necessary. WithSignificant panics if limit is
@@ -84,10 +101,7 @@ func (m *Mantissa) String() string {
 // function runs out of Mantissa digits, it returns -1. If this
 // Mantissa is zero, the returned function always returns -1.
 func (m *Mantissa) Iterator() func() int {
-	if m.spec == nil {
-		return func() int { return -1 }
-	}
-	return m.spec.Iterator()
+	return m.iteratorFrom(0)
 }
 
 // Print works like Fprint and prints this Mantissa to stdout.
@@ -160,9 +174,12 @@ func (m *Mantissa) withSpec(newSpec mantissaSpec) *Mantissa {
 }
 
 func (m *Mantissa) digitIter() func() (Digit, bool) {
-	iter := m.Iterator()
+	return m.digitIterFrom(0)
+}
+
+func (m *Mantissa) digitIterFrom(index int) func() (Digit, bool) {
+	iter := m.iteratorFrom(index)
 	digit := iter()
-	index := 0
 	return func() (dt Digit, ok bool) {
 		if digit == -1 {
 			return
@@ -172,6 +189,13 @@ func (m *Mantissa) digitIter() func() (Digit, bool) {
 		index++
 		return result, true
 	}
+}
+
+func (m *Mantissa) iteratorFrom(index int) func() int {
+	if m.spec == nil {
+		return func() int { return -1 }
+	}
+	return m.spec.IteratorFrom(index)
 }
 
 // Number represents a square root value. The zero value for Number
@@ -405,4 +429,13 @@ func (f formatSpec) printSci(
 
 func bigExponent(exponent int) bool {
 	return exponent < -3 || exponent > 6
+}
+
+type mantissaWithStart struct {
+	mantissa *Mantissa
+	start    int
+}
+
+func (m *mantissaWithStart) digitIter() func() (Digit, bool) {
+	return m.mantissa.digitIterFrom(m.start)
 }

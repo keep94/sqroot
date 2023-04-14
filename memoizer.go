@@ -39,17 +39,19 @@ func (m *memoizer) At(index int) int {
 
 func (m *memoizer) IsMemoize() bool { return true }
 
-func (m *memoizer) Iterator() func() int {
-	posit := 0
-	data, ok := m.wait(posit)
+func (m *memoizer) IteratorFrom(index int) func() int {
+	if index < 0 {
+		panic("index must be non-negative")
+	}
+	data, ok := m.wait(index)
 	return func() int {
 		if !ok {
 			return -1
 		}
-		result := data[posit]
-		posit++
-		if posit == len(data) {
-			data, ok = m.wait(posit)
+		result := data[index]
+		index++
+		if index == len(data) {
+			data, ok = m.wait(index)
 		}
 		return result
 	}

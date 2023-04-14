@@ -12,7 +12,7 @@ var (
 )
 
 type mantissaSpec interface {
-	Iterator() func() int
+	IteratorFrom(index int) func() int
 	At(index int) int
 	IsMemoize() bool
 }
@@ -23,12 +23,16 @@ type sqrtSpec struct {
 }
 
 func (s *sqrtSpec) At(index int) int {
-	return simpleAt(s.Iterator(), index)
+	return simpleAt(s.iterator(), index)
+}
+
+func (s *sqrtSpec) IteratorFrom(index int) func() int {
+	return fastForward(s.iterator(), index)
 }
 
 func (s *sqrtSpec) IsMemoize() bool { return false }
 
-func (s *sqrtSpec) Iterator() func() int {
+func (s *sqrtSpec) iterator() func() int {
 	incr := big.NewInt(1)
 	remainder := big.NewInt(0)
 	radicanGroups := generateQuotientBase100(&s.num, &s.denom)
@@ -85,14 +89,16 @@ func (l *limitSpec) IsMemoize() bool {
 	return l.delegate.IsMemoize()
 }
 
-func (l *limitSpec) Iterator() func() int {
-	count := 0
-	iter := l.delegate.Iterator()
+func (l *limitSpec) IteratorFrom(index int) func() int {
+	if index > l.limit {
+		index = l.limit
+	}
+	iter := l.delegate.IteratorFrom(index)
 	return func() int {
-		if count == l.limit {
+		if index == l.limit {
 			return -1
 		}
-		count++
+		index++
 		return iter()
 	}
 }
@@ -104,7 +110,7 @@ func withMemoize(spec mantissaSpec) mantissaSpec {
 	if spec.IsMemoize() {
 		return spec
 	}
-	return newMemoizer(spec.Iterator())
+	return newMemoizer(spec.IteratorFrom(0))
 }
 
 func generateQuotientBase100(num, denom *big.Int) func() *big.Int {
@@ -124,9 +130,14 @@ func simpleAt(iter func() int, index int) int {
 	if index < 0 {
 		return -1
 	}
-	result := iter()
-	for i := 0; result != -1 && i < index; i++ {
-		result = iter()
+	return fastForward(iter, index)()
+}
+
+func fastForward(iter func() int, index int) func() int {
+	if index < 0 {
+		panic("index must be non-negative")
 	}
-	return result
+	for i := 0; i < index && iter() != -1; i++ {
+	}
+	return iter
 }

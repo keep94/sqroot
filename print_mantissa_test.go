@@ -236,12 +236,12 @@ func (m *maxBytesWriter) Write(p []byte) (n int, err error) {
 
 type funcMantissaSpec func() func() int
 
-func (f funcMantissaSpec) Iterator() func() int {
-	return f()
+func (f funcMantissaSpec) IteratorFrom(index int) func() int {
+	return fastForward(f(), index)
 }
 
 func (f funcMantissaSpec) At(index int) int {
-	return simpleAt(f.Iterator(), index)
+	return simpleAt(f(), index)
 }
 
 func (f funcMantissaSpec) IsMemoize() bool { return false }

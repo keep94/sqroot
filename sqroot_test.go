@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/keep94/consume2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -214,4 +215,73 @@ func TestSameNumber(t *testing.T) {
 	sevenDigits := memoized.WithSignificant(7)
 	assert.Same(t, sevenDigits, sevenDigits.WithSignificant(8))
 	assert.Same(t, sevenDigits, sevenDigits.WithMemoize())
+}
+
+func TestMantissaWithStart(t *testing.T) {
+	m := Sqrt(19).Mantissa()
+	pattern := getSequentialDigits(m, 500, 2)
+	assert.Less(t, FindFirst(m, pattern), 500)
+	expected := findFirstNAfter(m, 500, pattern, 3)
+	assert.Equal(t, 500, expected[0])
+	actual := FindFirstN(m.WithStart(500), pattern, 3)
+	assert.Equal(t, expected, actual)
+
+	firstTwoResults := FindFirstN(
+		m.WithSignificant(expected[2]+1).WithStart(500), pattern, 3)
+	assert.Equal(t, expected[:2], firstTwoResults)
+}
+
+func TestMantissaWithStartEmpty(t *testing.T) {
+	m := Sqrt(19).Mantissa()
+	s := m.WithSignificant(10).WithStart(300000)
+	assert.Empty(t, FindAll(s, nil))
+	s = m.WithSignificant(10).WithStart(10)
+	assert.Empty(t, FindAll(s, nil))
+}
+
+func TestMantissaWithStartNegative(t *testing.T) {
+	assert.Panics(t, func() { Sqrt(19).Mantissa().WithStart(-1) })
+}
+
+func TestMantissaWithStartZero(t *testing.T) {
+	m := Sqrt(19).Mantissa()
+	assert.Same(t, m, m.WithStart(0))
+}
+
+func TestFinitMantissaWithStart(t *testing.T) {
+	m := Sqrt(100489).Mantissa()
+	s := m.WithStart(1)
+	assert.Equal(t, []int{1}, FindAll(s, []int{1, 7}))
+	assert.Equal(t, []int{1}, FindAll(s, []int{1, 7}))
+	assert.Empty(t, FindAll(m.WithStart(2), []int{1, 7}))
+	assert.Empty(t, FindAll(m.WithStart(300000), []int{1, 7}))
+}
+
+func TestMantissaWithStartAndMemoize(t *testing.T) {
+	m := Sqrt(23).Mantissa()
+	pattern := getSequentialDigits(m, 500, 2)
+	assert.Less(t, FindFirst(m, pattern), 500)
+	expected := findFirstNAfter(m, 500, pattern, 3)
+	assert.Equal(t, 500, expected[0])
+	s := m.WithMemoize().WithStart(500)
+	assert.Equal(t, expected, FindFirstN(s, pattern, 3))
+	assert.Equal(t, expected, FindFirstN(s, pattern, 3))
+}
+
+func findFirstNAfter(m *Mantissa, start int, pattern []int, count int) []int {
+	pipeline := consume2.PFilter(func(x int) bool { return x >= start })
+	pipeline = consume2.Join(pipeline, consume2.PSlice[int](0, count))
+	var result []int
+	consume2.FromIntGenerator(Find(m, pattern), pipeline.AppendTo(&result))
+	return result
+}
+
+func getSequentialDigits(m *Mantissa, start, length int) []int {
+	var pb PositionsBuilder
+	digits := GetDigits(m, pb.AddRange(start, start+length).Build())
+	result := make([]int, 0, length)
+	for i := start; i < start+length; i++ {
+		result = append(result, digits.At(i))
+	}
+	return result
 }

@@ -118,6 +118,22 @@ func ExampleMantissa_Iterator() {
 	// 5
 }
 
+func ExampleMantissa_WithStart() {
+
+	// sqrt(29) = 5.3851648...
+	n := sqroot.Sqrt(29).WithSignificant(1000).WithMemoize()
+
+	// Find all occurrences of '85' in the first 1000 digits of sqrt(29)
+	fmt.Println(sqroot.FindAll(n.Mantissa(), []int{8, 5}))
+
+	// Find all occurrences of '85' in the first 1000 digits of sqrt(29)
+	// on or after position 800
+	fmt.Println(sqroot.FindAll(n.Mantissa().WithStart(800), []int{8, 5}))
+	// Output:
+	// [2 167 444 507 511 767 853 917 935 958]
+	// [853 917 935 958]
+}
+
 func ExampleMantissa_Print() {
 
 	// Find the square root of 2.
