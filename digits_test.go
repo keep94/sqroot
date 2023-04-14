@@ -82,7 +82,7 @@ func TestDigitsNoneZeroMantissa(t *testing.T) {
 }
 
 func TestDigitsNoneFromDigits(t *testing.T) {
-	digits := Sqrt(2).WithSignificant(1000).Mantissa().Digits()
+	digits := AllDigits(Sqrt(2).WithSignificant(1000).Mantissa())
 	assert.Equal(t, 1000, digits.Len())
 	var zeroPosits Positions
 	zeroDigits := GetDigits(digits, zeroPosits)
@@ -208,7 +208,7 @@ func TestDigitsText2(t *testing.T) {
 }
 
 func TestDigitsText3(t *testing.T) {
-	digits := Sqrt(2).WithSignificant(6).Mantissa().Digits()
+	digits := AllDigits(Sqrt(2).WithSignificant(6).Mantissa())
 	arr, err := digits.MarshalText()
 	assert.NoError(t, err)
 	assert.Equal(t, "v1:141421", string(arr))
@@ -245,7 +245,7 @@ func TestDigitsTextUnmarshalErrors(t *testing.T) {
 }
 
 func TestDigitsWithStartAndEnd(t *testing.T) {
-	digits := Sqrt(2).WithSignificant(1000).Mantissa().Digits()
+	digits := AllDigits(Sqrt(2).WithSignificant(1000).Mantissa())
 	assert.NotEqual(t, -1, digits.At(700))
 	assert.NotEqual(t, -1, digits.At(399))
 	digits = digits.WithStart(200).WithEnd(900)
@@ -262,7 +262,7 @@ func TestDigitsWithStartAndEnd(t *testing.T) {
 }
 
 func TestDigitsWithStartZero(t *testing.T) {
-	digits := Sqrt(2).WithSignificant(1000).Mantissa().Digits()
+	digits := AllDigits(Sqrt(2).WithSignificant(1000).Mantissa())
 	digits = digits.WithStart(1000)
 	assert.Equal(t, 0, digits.Len())
 	assert.Equal(t, -1, digits.Min())
@@ -271,7 +271,7 @@ func TestDigitsWithStartZero(t *testing.T) {
 }
 
 func TestDigitsWithEndZero(t *testing.T) {
-	digits := Sqrt(2).WithSignificant(1000).Mantissa().Digits()
+	digits := AllDigits(Sqrt(2).WithSignificant(1000).Mantissa())
 	digits = digits.WithEnd(0)
 	assert.Equal(t, 0, digits.Len())
 	assert.Equal(t, -1, digits.Min())

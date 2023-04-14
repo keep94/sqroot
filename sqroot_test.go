@@ -187,7 +187,7 @@ func TestZeroMantissa(t *testing.T) {
 	var m Mantissa
 	assert.Equal(t, -1, m.At(0))
 	assert.True(t, m.IsZero())
-	assert.Zero(t, m.Digits())
+	assert.Zero(t, AllDigits(&m))
 	assert.True(t, m.IsMemoize())
 	assert.Same(t, &m, m.WithMemoize())
 	assert.Same(t, &m, m.WithSignificant(5))
@@ -234,9 +234,9 @@ func TestMantissaWithStart(t *testing.T) {
 func TestMantissaWithStartEmpty(t *testing.T) {
 	m := Sqrt(19).Mantissa()
 	s := m.WithSignificant(10).WithStart(300000)
-	assert.Empty(t, FindAll(s, nil))
+	assert.Zero(t, AllDigits(s))
 	s = m.WithSignificant(10).WithStart(10)
-	assert.Empty(t, FindAll(s, nil))
+	assert.Zero(t, AllDigits(s))
 }
 
 func TestMantissaWithStartNegative(t *testing.T) {

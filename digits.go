@@ -48,6 +48,14 @@ func GetDigits(s Sequence, p Positions) Digits {
 	return builder.Build()
 }
 
+// AllDigits gets all digits from s. If s has an infinite number of digits,
+// AllDigits will run forever.
+func AllDigits(s Sequence) Digits {
+	var builder digitsBuilder
+	consume2.FromGenerator[Digit](s.digitIter(), &builder)
+	return builder.Build()
+}
+
 // WithStart returns a Digits like this one that only has positions greater
 // than or equal to start. Returned instance shares memory with this instance.
 // Therefore, to change only the starting position it is more efficient to use

@@ -115,7 +115,7 @@ func TestFindLastNDigits(t *testing.T) {
 }
 
 func TestFindLastNDigits2(t *testing.T) {
-	digits2 := Sqrt(5).WithSignificant(1300).Mantissa().Digits()
+	digits2 := AllDigits(Sqrt(5).WithSignificant(1300).Mantissa())
 	digits := digits2.WithEnd(1000)
 	hits := FindLastN(digits, []int{9, 7}, 3)
 	assert.Equal(t, []int{936, 718, 600}, hits)

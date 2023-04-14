@@ -31,7 +31,7 @@ func TestMemoize(t *testing.T) {
 
 func TestMemoizeAt(t *testing.T) {
 	n := Sqrt(7)
-	d := n.Mantissa().WithSignificant(10000).Digits()
+	d := AllDigits(n.Mantissa().WithSignificant(10000))
 	var expected, actual1, actual2 [10000]int
 	iter := d.Items()
 	i := 0
@@ -63,7 +63,7 @@ func TestMemoizeAt(t *testing.T) {
 
 func TestMemoizeOutOfBounds(t *testing.T) {
 	n := Sqrt(111).WithSignificant(1000)
-	expectedDigits := n.Mantissa().Digits()
+	expectedDigits := AllDigits(n.Mantissa())
 	nm := n.WithMemoize()
 	assert.Equal(t, 2, nm.Exponent())
 	m := nm.Mantissa()
@@ -71,12 +71,12 @@ func TestMemoizeOutOfBounds(t *testing.T) {
 	assert.Equal(t, -1, m.At(-1))
 	assert.Equal(t, expectedDigits.At(999), m.At(999))
 	assert.Equal(t, expectedDigits.At(0), m.At(0))
-	assert.Equal(t, expectedDigits.Sprint(), m.Digits().Sprint())
+	assert.Equal(t, expectedDigits.Sprint(), AllDigits(m).Sprint())
 }
 
 func TestMemoizeOutOfBounds2(t *testing.T) {
 	n := Sqrt(111)
-	expectedDigits := n.Mantissa().WithSignificant(1000).Digits()
+	expectedDigits := AllDigits(n.Mantissa().WithSignificant(1000))
 	nm := n.WithMemoize().WithSignificant(1000)
 	assert.Equal(t, 2, nm.Exponent())
 	m := nm.Mantissa()
@@ -84,5 +84,5 @@ func TestMemoizeOutOfBounds2(t *testing.T) {
 	assert.Equal(t, -1, m.At(-1))
 	assert.Equal(t, expectedDigits.At(999), m.At(999))
 	assert.Equal(t, expectedDigits.At(0), m.At(0))
-	assert.Equal(t, expectedDigits.Sprint(), m.Digits().Sprint())
+	assert.Equal(t, expectedDigits.Sprint(), AllDigits(m).Sprint())
 }

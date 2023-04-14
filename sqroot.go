@@ -68,14 +68,6 @@ func (m *Mantissa) WithMemoize() *Mantissa {
 	return m.withSpec(withMemoize(m.spec))
 }
 
-// Digits returns all the digits of this Mantissa. If this Mantissa has an
-// infinite number of digits, Digits runs forever.
-func (m *Mantissa) Digits() Digits {
-	var builder digitsBuilder
-	consume2.FromGenerator[Digit](m.digitIter(), &builder)
-	return builder.Build()
-}
-
 // Format prints this Mantissa with the f, F, g, G, e, E verbs. The verbs work
 // in the usual way except that they always round down. Because Mantissas can
 // have an infinite number of digits, g with no precision shows a max of 16
