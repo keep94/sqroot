@@ -272,31 +272,32 @@ func (n *Number) withMantissa(newMantissa *Mantissa) *Number {
 // Sqrt returns the square root of radican. Sqrt panics if radican is
 // negative.
 func Sqrt(radican int64) *Number {
-	return sqrtFrac(big.NewInt(radican), one)
+	return nRootFrac(big.NewInt(radican), one, newSqrtManager)
 }
 
 // SqrtRat returns the square root of num / denom. denom must be positive,
 // and num must be non-negative or else SqrtRat panics.
 func SqrtRat(num, denom int64) *Number {
-	return sqrtFrac(big.NewInt(num), big.NewInt(denom))
+	return nRootFrac(big.NewInt(num), big.NewInt(denom), newSqrtManager)
 }
 
 // SqrtBigInt returns the square root of radican. SqrtBigInt panics if
 // radican is negative.
 func SqrtBigInt(radican *big.Int) *Number {
-	return sqrtFrac(radican, one)
+	return nRootFrac(radican, one, newSqrtManager)
 }
 
 // SqrtBigRat returns the square root of radican. The denominator of radican
 // must be positive, and the numerator must be non-negative or else SqrtBigRat
 // panics.
 func SqrtBigRat(radican *big.Rat) *Number {
-	return sqrtFrac(radican.Num(), radican.Denom())
+	return nRootFrac(radican.Num(), radican.Denom(), newSqrtManager)
 }
 
-func sqrtFrac(num, denom *big.Int) *Number {
+func nRootFrac(num, denom *big.Int, newManager func() rootManager) *Number {
 	num = new(big.Int).Set(num)
 	denom = new(big.Int).Set(denom)
+	base := newManager().Base(new(big.Int))
 	if denom.Sign() <= 0 {
 		panic("Denominator must be positive")
 	}
@@ -309,19 +310,20 @@ func sqrtFrac(num, denom *big.Int) *Number {
 	exp := 0
 	for num.Cmp(denom) < 0 {
 		exp--
-		num.Mul(num, oneHundred)
+		num.Mul(num, base)
 	}
 	if exp < 0 {
 		exp++
-		num.Div(num, oneHundred)
+		num.Div(num, base)
 	}
 	for num.Cmp(denom) >= 0 {
 		exp++
-		denom.Mul(denom, oneHundred)
+		denom.Mul(denom, base)
 	}
-	spec := &sqrtSpec{}
+	spec := &nRootSpec{}
 	spec.num.Set(num)
 	spec.denom.Set(denom)
+	spec.newManager = newManager
 	return &Number{exponent: exp, mantissa: &Mantissa{spec: spec}}
 }
 
