@@ -5,10 +5,15 @@ import (
 )
 
 var (
-	oneHundred = big.NewInt(100)
-	two        = big.NewInt(2)
-	one        = big.NewInt(1)
-	ten        = big.NewInt(10)
+	one                  = big.NewInt(1)
+	two                  = big.NewInt(2)
+	six                  = big.NewInt(6)
+	ten                  = big.NewInt(10)
+	fortyFive            = big.NewInt(45)
+	fiftyFour            = big.NewInt(54)
+	oneHundred           = big.NewInt(100)
+	oneHundredSeventyOne = big.NewInt(171)
+	oneThousand          = big.NewInt(1000)
 )
 
 type rootManager interface {
@@ -169,4 +174,32 @@ func (s sqrtManager) NextDigit(incr *big.Int) {
 
 func (s sqrtManager) Base(result *big.Int) *big.Int {
 	return result.Set(oneHundred)
+}
+
+type cubeRootManager struct {
+	incr2 big.Int
+}
+
+func newCubeRootManager() rootManager {
+	result := &cubeRootManager{}
+	result.incr2.Set(six)
+	return result
+}
+
+func (c *cubeRootManager) Next(incr *big.Int) {
+	incr.Add(incr, &c.incr2)
+	c.incr2.Add(&c.incr2, six)
+}
+
+func (c *cubeRootManager) NextDigit(incr *big.Int) {
+	var temp big.Int
+	incr.Mul(incr, oneHundred)
+	incr.Sub(incr, temp.Mul(&c.incr2, fortyFive))
+	incr.Add(incr, oneHundredSeventyOne)
+
+	c.incr2.Mul(&c.incr2, ten).Sub(&c.incr2, fiftyFour)
+}
+
+func (c *cubeRootManager) Base(result *big.Int) *big.Int {
+	return result.Set(oneThousand)
 }

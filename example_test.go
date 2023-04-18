@@ -9,9 +9,17 @@ import (
 func ExampleSqrt() {
 
 	// Print the square root of 13 with 100 significant digits.
-	fmt.Printf("%.100g", sqroot.Sqrt(13))
+	fmt.Printf("%.100g\n", sqroot.Sqrt(13))
 	// Output:
 	// 3.605551275463989293119221267470495946251296573845246212710453056227166948293010445204619082018490717
+}
+
+func ExampleCubeRoot() {
+
+	// Print the cube root of 3 with 100 significant digits.
+	fmt.Printf("%.100g\n", sqroot.CubeRoot(3))
+	// Output:
+	// 1.442249570307408382321638310780109588391869253499350577546416194541687596829997339854755479705645256
 }
 
 func ExampleFind() {
@@ -145,6 +153,7 @@ func ExampleMantissa_Print() {
 		sqroot.DigitsPerRow(50),
 		sqroot.DigitsPerColumn(5),
 		sqroot.ShowCount(true))
+	fmt.Println()
 	// Output:
 	// 10^1 *
 	//    0.14142 13562 37309 50488 01688 72420 96980 78569 67187 53769
@@ -178,6 +187,7 @@ func ExampleDigits_Print() {
 	pb.AddRange(200, 210).AddRange(500, 510).AddRange(1000, 1010)
 	digits := sqroot.GetDigits(n.Mantissa(), pb.Build())
 	digits.Print(sqroot.DigitsPerRow(10))
+	fmt.Println()
 	// Output:
 	//  200  70109 55997
 	//  500  35288 50926

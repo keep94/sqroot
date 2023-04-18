@@ -146,6 +146,44 @@ func TestSquareRootString(t *testing.T) {
 	assert.Equal(t, "3.162277660168379", number.String())
 }
 
+func TestCubeRoot2(t *testing.T) {
+	assert.Equal(t, "1.25992104989487", fmt.Sprintf("%.15g", CubeRoot(2)))
+}
+
+func TestCubeRoot2Big(t *testing.T) {
+	n := CubeRootBigInt(big.NewInt(2))
+	assert.Equal(t, "1.25992104989487", fmt.Sprintf("%.15g", n))
+}
+
+func TestCubeRoot35223040952(t *testing.T) {
+	n := CubeRoot(35223040952)
+	assert.Equal(t, "3278", n.String())
+	assert.Equal(t, 4, n.Exponent())
+	iter := n.Mantissa().Iterator()
+	assert.Equal(t, 3, iter())
+	assert.Equal(t, 2, iter())
+	assert.Equal(t, 7, iter())
+	assert.Equal(t, 8, iter())
+	assert.Equal(t, -1, iter())
+	assert.Equal(t, -1, iter())
+}
+
+func TestCubeRootRat(t *testing.T) {
+	n := CubeRootRat(35223040952, 8000)
+	assert.Equal(t, "163.9", n.String())
+}
+
+func TestCubeRootBigRat(t *testing.T) {
+	n := CubeRootBigRat(big.NewRat(35223040952, 8000))
+	assert.Equal(t, "163.9", n.String())
+}
+
+func TestCubeRootSmallRat(t *testing.T) {
+	n := CubeRootRat(2, 73952)
+	assert.Equal(t, -1, n.Exponent())
+	assert.Equal(t, "0.030016498129266", fmt.Sprintf("%.14g", n))
+}
+
 func TestNegDenom(t *testing.T) {
 	radican := big.NewRat(1, 700)
 	radican.Denom().SetInt64(-500)
