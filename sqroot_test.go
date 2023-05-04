@@ -231,6 +231,8 @@ func TestZeroMantissa(t *testing.T) {
 	assert.Same(t, &m, m.WithSignificant(5))
 	assert.Equal(t, -1, m.Iterator()())
 	assert.Equal(t, "0", m.String())
+	s := m.WithSignificant(2000000000).WithStart(1900000000)
+	assert.Zero(t, AllDigits(s))
 }
 
 func TestZeroNumber(t *testing.T) {
@@ -304,6 +306,17 @@ func TestMantissaWithStartAndMemoize(t *testing.T) {
 	s := m.WithMemoize().WithStart(500)
 	assert.Equal(t, expected, FindFirstN(s, pattern, 3))
 	assert.Equal(t, expected, FindFirstN(s, pattern, 3))
+}
+
+func TestMantissaGetDigits(t *testing.T) {
+	m := Sqrt(2).Mantissa()
+	var pb PositionsBuilder
+	for i := 0; i < 10000; i += 2 {
+		pb.Add(i)
+	}
+	p := pb.Build()
+	assert.Equal(
+		t, GetDigits(m, p).Sprint(), GetDigits(m.WithMemoize(), p).Sprint())
 }
 
 func findFirstNAfter(m *Mantissa, start int, pattern []int, count int) []int {

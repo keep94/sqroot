@@ -190,6 +190,14 @@ func (m *Mantissa) iteratorFrom(index int) func() int {
 	return m.spec.IteratorFrom(index)
 }
 
+func (m *Mantissa) enabled() bool {
+	return m.IsMemoize()
+}
+
+func (m *Mantissa) get(start, end int) Sequence {
+	return m.WithSignificant(end).WithStart(start)
+}
+
 // Number represents a square root value. The zero value for Number
 // corresponds to 0. A Number is of the form mantissa * 10^exponent where
 // mantissa is between 0.1 inclusive and 1.0 exclusive. Like Mantissa, a

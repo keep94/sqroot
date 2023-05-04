@@ -31,17 +31,21 @@ type Digits struct {
 // GetDigits gets the digits from s found at the zero based positions
 // in p.
 func GetDigits(s Sequence, p Positions) Digits {
-	d, ok := s.(Digits)
-	if ok {
+	r, ok := s.(randomAccess)
+	if ok && r.enabled() {
 
-		// Optimization: Just choose what we want instead of iterating
-		// over all of s since Digits supports random access. This can be
-		// several orders of magnitude faster if p is small relative to s.
-		// However if p is close to the size of s and highly fragmented,
-		// this can be an order of magnitude slower because of all the binary
-		// searching. Overall, this optimization is a win because usually p
-		// will be small or not highly fragmented.
-		return d.pick(p)
+		// Optimization: Just choose what we want instead of iterating over
+		// all of s. This can be several orders of magnitude faster if p is
+		// small relative to s. However if p is close to the size of s and
+		// highly fragmented, this can be an order of magnitude slower.
+		// Overall, this optimization is a win because usually p will be
+		// small or not highly fragmented.
+		var builder digitsBuilder
+		for _, pr := range p.ranges {
+			consume2.FromGenerator[Digit](
+				r.get(pr.Start, pr.End).digitIter(), &builder)
+		}
+		return builder.Build()
 	}
 	var builder digitsBuilder
 	consume2.FromGenerator[Digit](newPart(s, p).digitIter(), &builder)
@@ -306,13 +310,12 @@ func (d Digits) rfind(pattern []int) func() int {
 	return kmp(d.reverseDigitIter(), patternReverse(pattern), true)
 }
 
-func (d Digits) pick(p Positions) Digits {
-	var builder digitsBuilder
-	for _, pr := range p.ranges {
-		consume2.FromGenerator[Digit](
-			d.WithStart(pr.Start).WithEnd(pr.End).digitIter(), &builder)
-	}
-	return builder.Build()
+func (d Digits) enabled() bool {
+	return true
+}
+
+func (d Digits) get(start, end int) Sequence {
+	return d.WithStart(start).WithEnd(end)
 }
 
 func readVersion(text []byte) (string, int, error) {
@@ -377,4 +380,9 @@ func (d *digitsBuilder) Build() Digits {
 	result := Digits{digits: d.digits}
 	*d = digitsBuilder{}
 	return result
+}
+
+type randomAccess interface {
+	get(start, end int) Sequence
+	enabled() bool
 }
