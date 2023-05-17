@@ -1,11 +1,13 @@
 package sqroot
 
 import (
+	"math"
 	"sync"
 )
 
 const (
 	kMemoizerChunkSize = 100
+	kMaxChunks         = math.MaxInt / kMemoizerChunkSize
 )
 
 type memoizer struct {
@@ -37,6 +39,17 @@ func (m *memoizer) At(index int) int {
 	return data[index]
 }
 
+func (m *memoizer) FirstN(n int) []int {
+	if n <= 0 {
+		return nil
+	}
+	data, _ := m.wait(n - 1)
+	if len(data) > n {
+		return data[:n]
+	}
+	return data
+}
+
 func (m *memoizer) IsMemoize() bool { return true }
 
 func (m *memoizer) IteratorFrom(index int) func() int {
@@ -61,10 +74,16 @@ func (m *memoizer) wait(index int) ([]int, bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if !m.done && m.maxLength <= index {
-		m.maxLength = kMemoizerChunkSize * ((index / kMemoizerChunkSize) + 1)
+		chunkCount := index/kMemoizerChunkSize + 1
+
+		// Have to prevent integer overflow in case index = math.MaxInt - 1
+		if chunkCount > kMaxChunks {
+			chunkCount = kMaxChunks
+		}
+		m.maxLength = kMemoizerChunkSize * chunkCount
 		m.mustGrow.Signal()
 	}
-	for !m.done && len(m.data) <= index {
+	for !m.done && len(m.data) < m.maxLength {
 		m.updateAvailable.Wait()
 	}
 	return m.data, len(m.data) > index

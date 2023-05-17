@@ -26,6 +26,7 @@ type mantissaSpec interface {
 	IteratorFrom(index int) func() int
 	At(index int) int
 	IsMemoize() bool
+	FirstN(n int) []int
 }
 
 type nRootSpec struct {
@@ -43,6 +44,10 @@ func (n *nRootSpec) IteratorFrom(index int) func() int {
 }
 
 func (n *nRootSpec) IsMemoize() bool { return false }
+
+func (n *nRootSpec) FirstN(size int) []int {
+	panic("FirstN not supported")
+}
 
 func (n *nRootSpec) iterator() func() int {
 	manager := n.newManager()
@@ -129,6 +134,13 @@ func (l *limitSpec) IteratorFrom(index int) func() int {
 		index++
 		return iter()
 	}
+}
+
+func (l *limitSpec) FirstN(n int) []int {
+	if n > l.limit {
+		n = l.limit
+	}
+	return l.delegate.FirstN(n)
 }
 
 func withMemoize(spec mantissaSpec) mantissaSpec {

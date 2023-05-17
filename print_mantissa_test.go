@@ -245,3 +245,7 @@ func (f funcMantissaSpec) At(index int) int {
 }
 
 func (f funcMantissaSpec) IsMemoize() bool { return false }
+
+func (f funcMantissaSpec) FirstN(n int) []int {
+	panic("FirstN not supported")
+}

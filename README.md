@@ -5,7 +5,7 @@ A library to compute square roots to arbitrary precision.
 
 ### Examples
 
-Print the first 1000 digits of the square root of 2
+Print the first 1000 digits of the square root of 2.
 
 ```golang
 fmt.Printf("%.1000g\n", sqroot.Sqrt(2))

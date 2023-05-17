@@ -292,6 +292,10 @@ func (d Digits) digitIter() func() (Digit, bool) {
 	}
 }
 
+func (d Digits) canReverse() bool {
+	return true
+}
+
 func (d Digits) reverseDigitIter() func() (Digit, bool) {
 	index := len(d.digits)
 	return func() (digit Digit, ok bool) {
@@ -301,13 +305,6 @@ func (d Digits) reverseDigitIter() func() (Digit, bool) {
 		index--
 		return d.digits[index], true
 	}
-}
-
-func (d Digits) rfind(pattern []int) func() int {
-	if len(pattern) == 0 {
-		return zeroPattern(d.reverseDigitIter())
-	}
-	return kmp(d.reverseDigitIter(), patternReverse(pattern), true)
 }
 
 func (d Digits) enabled() bool {

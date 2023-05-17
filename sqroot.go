@@ -4,6 +4,7 @@ package sqroot
 import (
 	"fmt"
 	"io"
+	"math"
 	"math/big"
 	"os"
 	"strings"
@@ -169,6 +170,14 @@ func (m *Mantissa) digitIter() func() (Digit, bool) {
 	return m.digitIterFrom(0)
 }
 
+func (m *Mantissa) canReverse() bool {
+	return m.IsMemoize()
+}
+
+func (m *Mantissa) reverseDigitIter() func() (Digit, bool) {
+	return m.reverseDigitIterTo(0)
+}
+
 func (m *Mantissa) digitIterFrom(index int) func() (Digit, bool) {
 	iter := m.iteratorFrom(index)
 	digit := iter()
@@ -183,11 +192,30 @@ func (m *Mantissa) digitIterFrom(index int) func() (Digit, bool) {
 	}
 }
 
+func (m *Mantissa) reverseDigitIterTo(start int) func() (Digit, bool) {
+	digits := m.allDigits()
+	index := len(digits)
+	return func() (d Digit, ok bool) {
+		if index <= start {
+			return
+		}
+		index--
+		return Digit{Position: index, Value: digits[index]}, true
+	}
+}
+
 func (m *Mantissa) iteratorFrom(index int) func() int {
 	if m.spec == nil {
 		return func() int { return -1 }
 	}
 	return m.spec.IteratorFrom(index)
+}
+
+func (m *Mantissa) allDigits() []int {
+	if m.spec == nil {
+		return nil
+	}
+	return m.spec.FirstN(math.MaxInt)
 }
 
 func (m *Mantissa) enabled() bool {
@@ -466,4 +494,12 @@ type mantissaWithStart struct {
 
 func (m *mantissaWithStart) digitIter() func() (Digit, bool) {
 	return m.mantissa.digitIterFrom(m.start)
+}
+
+func (m *mantissaWithStart) canReverse() bool {
+	return m.mantissa.IsMemoize()
+}
+
+func (m *mantissaWithStart) reverseDigitIter() func() (Digit, bool) {
+	return m.mantissa.reverseDigitIterTo(m.start)
 }
