@@ -86,3 +86,26 @@ func TestMemoizeOutOfBounds2(t *testing.T) {
 	assert.Equal(t, expectedDigits.At(0), m.At(0))
 	assert.Equal(t, expectedDigits.Sprint(), AllDigits(m).Sprint())
 }
+
+func TestMemoizeOddBoundary(t *testing.T) {
+	n := Sqrt(97)
+	var pb PositionsBuilder
+	exdigits := GetDigits(n.Mantissa(), pb.AddRange(153, 158).Build())
+	n = n.WithSignificant(158).WithMemoize()
+	m := n.Mantissa()
+	assert.Equal(t, exdigits.At(153), m.At(153))
+	assert.Equal(t, exdigits.At(154), m.At(154))
+	assert.Equal(t, -1, m.At(158))
+	assert.Equal(t, exdigits.At(155), m.At(155))
+	assert.Equal(t, exdigits.At(156), m.At(156))
+	assert.Equal(t, exdigits.At(157), m.At(157))
+	start153 := m.WithStart(153)
+	assert.Equal(t, exdigits.Sprint(), AllDigits(start153).Sprint())
+	assert.Zero(t, AllDigits(m.WithStart(158)))
+	pattern := []int{m.At(153), m.At(154), m.At(155), m.At(156), m.At(157)}
+	assert.Equal(t, 153, FindFirst(start153, pattern))
+	assert.Equal(t, 153, FindLast(start153, pattern))
+	start154 := m.WithStart(154)
+	assert.Equal(t, -1, FindFirst(start154, pattern))
+	assert.Equal(t, -1, FindLast(start154, pattern))
+}
