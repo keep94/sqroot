@@ -97,6 +97,16 @@ func (m *Mantissa) Iterator() func() int {
 	return m.iteratorFrom(0)
 }
 
+// IteratorAt works like Iterator except that it starts at the 0-based
+// posit instead of at the beginning. In fact, calling IteratorAt(0) is
+// the same as calling Iterator(). If posit is negative, IteratorAt panics.
+func (m *Mantissa) IteratorAt(posit int) func() int {
+	if posit < 0 {
+		panic("posit must be non-negative")
+	}
+	return m.iteratorFrom(posit)
+}
+
 // Print works like Fprint and prints this Mantissa to stdout.
 func (m *Mantissa) Print(maxDigits int, options ...Option) (n int, err error) {
 	return m.Fprint(os.Stdout, maxDigits, options...)

@@ -82,6 +82,21 @@ func TestIteratorPersistence(t *testing.T) {
 	assert.Equal(t, 5, iter())
 }
 
+func TestIteratorAt(t *testing.T) {
+	m := Sqrt(100489).Mantissa()
+	iter := m.IteratorAt(3)
+	assert.Equal(t, -1, iter())
+	iter = m.IteratorAt(2)
+	assert.Equal(t, 7, iter())
+	assert.Equal(t, -1, iter())
+	iter = m.IteratorAt(0)
+	assert.Equal(t, 3, iter())
+	assert.Equal(t, 1, iter())
+	assert.Equal(t, 7, iter())
+	assert.Equal(t, -1, iter())
+	assert.Panics(t, func() { m.IteratorAt(-1) })
+}
+
 func TestNegative(t *testing.T) {
 	assert.Panics(t, func() { Sqrt(-1) })
 }

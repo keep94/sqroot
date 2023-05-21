@@ -106,7 +106,7 @@ func ExampleGetDigits() {
 
 func ExampleMantissa_Iterator() {
 
-	// sqrt(7) = 0.264575... * 10^1
+	// sqrt(7) = 0.26457513110... * 10^1
 	n := sqroot.Sqrt(7)
 
 	iter := n.Mantissa().Iterator()
@@ -124,6 +124,28 @@ func ExampleMantissa_Iterator() {
 	// 5
 	// 7
 	// 5
+}
+
+func ExampleMantissa_IteratorAt() {
+
+	// sqrt(7) = 0.26457513110... * 10^1
+	n := sqroot.Sqrt(7)
+
+	iter := n.Mantissa().IteratorAt(5)
+
+	fmt.Println(iter())
+	fmt.Println(iter())
+	fmt.Println(iter())
+	fmt.Println(iter())
+	fmt.Println(iter())
+	fmt.Println(iter())
+	// Output:
+	// 5
+	// 1
+	// 3
+	// 1
+	// 1
+	// 0
 }
 
 func ExampleMantissa_WithStart() {
