@@ -161,9 +161,6 @@ func simpleAt(iter func() int, index int) int {
 }
 
 func fastForward(iter func() int, index int) func() int {
-	if index < 0 {
-		panic("index must be non-negative")
-	}
 	for i := 0; i < index && iter() != -1; i++ {
 	}
 	return iter
