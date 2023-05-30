@@ -131,7 +131,7 @@ func ExampleMantissa_IteratorAt() {
 	// sqrt(7) = 0.26457513110... * 10^1
 	n := sqroot.Sqrt(7)
 
-	iter := n.Mantissa().IteratorAt(5)
+	iter := n.Mantissa().IteratorAt(4)
 
 	fmt.Println(iter())
 	fmt.Println(iter())
@@ -140,12 +140,12 @@ func ExampleMantissa_IteratorAt() {
 	fmt.Println(iter())
 	fmt.Println(iter())
 	// Output:
+	// 7
 	// 5
 	// 1
 	// 3
 	// 1
 	// 1
-	// 0
 }
 
 func ExampleMantissa_WithStart() {

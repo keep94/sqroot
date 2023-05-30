@@ -97,8 +97,8 @@ func (m *Mantissa) Iterator() func() int {
 	return m.iteratorFrom(0)
 }
 
-// IteratorAt works like Iterator except that it starts at the 0-based
-// posit instead of at the beginning. In fact, calling IteratorAt(0) is
+// IteratorAt works like Iterator except that it starts at the given 0-based
+// position instead of at the beginning. In fact, calling IteratorAt(0) is
 // the same as calling Iterator(). If posit is negative, IteratorAt panics.
 func (m *Mantissa) IteratorAt(posit int) func() int {
 	if posit < 0 {
