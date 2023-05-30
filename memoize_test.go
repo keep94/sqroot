@@ -16,7 +16,7 @@ func TestMemoize(t *testing.T) {
 	expected := fmt.Sprintf("%.10000g", n)
 	var actual [10]string
 	var wg sync.WaitGroup
-	for i := 0; i < len(actual); i++ {
+	for i := range actual {
 		wg.Add(1)
 		go func(index int) {
 			actual[index] = fmt.Sprintf("%.10000g", nm)
@@ -24,7 +24,7 @@ func TestMemoize(t *testing.T) {
 		}(i)
 	}
 	wg.Wait()
-	for i := 0; i < len(actual); i++ {
+	for i := range actual {
 		assert.Equal(t, expected, actual[i])
 	}
 }
