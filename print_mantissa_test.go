@@ -236,7 +236,7 @@ func (m *maxBytesWriter) Write(p []byte) (n int, err error) {
 
 type funcMantissaSpec func() func() int
 
-func (f funcMantissaSpec) IteratorFrom(index int) func() int {
+func (f funcMantissaSpec) IteratorAt(index int) func() int {
 	return fastForward(f(), index)
 }
 

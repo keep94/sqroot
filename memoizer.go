@@ -52,7 +52,7 @@ func (m *memoizer) FirstN(n int) []int {
 
 func (m *memoizer) IsMemoize() bool { return true }
 
-func (m *memoizer) IteratorFrom(index int) func() int {
+func (m *memoizer) IteratorAt(index int) func() int {
 	if index < 0 {
 		panic("index must be non-negative")
 	}

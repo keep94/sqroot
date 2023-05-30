@@ -23,7 +23,7 @@ type rootManager interface {
 }
 
 type mantissaSpec interface {
-	IteratorFrom(index int) func() int
+	IteratorAt(index int) func() int
 	At(index int) int
 	IsMemoize() bool
 	FirstN(n int) []int
@@ -39,7 +39,7 @@ func (n *nRootSpec) At(index int) int {
 	return simpleAt(n.iterator(), index)
 }
 
-func (n *nRootSpec) IteratorFrom(index int) func() int {
+func (n *nRootSpec) IteratorAt(index int) func() int {
 	return fastForward(n.iterator(), index)
 }
 
@@ -122,11 +122,11 @@ func (l *limitSpec) IsMemoize() bool {
 	return l.delegate.IsMemoize()
 }
 
-func (l *limitSpec) IteratorFrom(index int) func() int {
+func (l *limitSpec) IteratorAt(index int) func() int {
 	if index > l.limit {
 		index = l.limit
 	}
-	iter := l.delegate.IteratorFrom(index)
+	iter := l.delegate.IteratorAt(index)
 	return func() int {
 		if index == l.limit {
 			return -1
@@ -150,7 +150,7 @@ func withMemoize(spec mantissaSpec) mantissaSpec {
 	if spec.IsMemoize() {
 		return spec
 	}
-	return newMemoizer(spec.IteratorFrom(0))
+	return newMemoizer(spec.IteratorAt(0))
 }
 
 func simpleAt(iter func() int, index int) int {

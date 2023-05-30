@@ -94,7 +94,7 @@ func (m *Mantissa) String() string {
 // function runs out of Mantissa digits, it returns -1. If this
 // Mantissa is zero, the returned function always returns -1.
 func (m *Mantissa) Iterator() func() int {
-	return m.iteratorFrom(0)
+	return m.iteratorAt(0)
 }
 
 // IteratorAt works like Iterator except that it starts at the given 0-based
@@ -104,7 +104,7 @@ func (m *Mantissa) IteratorAt(posit int) func() int {
 	if posit < 0 {
 		panic("posit must be non-negative")
 	}
-	return m.iteratorFrom(posit)
+	return m.iteratorAt(posit)
 }
 
 // Print works like Fprint and prints this Mantissa to stdout.
@@ -177,7 +177,7 @@ func (m *Mantissa) withSpec(newSpec mantissaSpec) *Mantissa {
 }
 
 func (m *Mantissa) digitIter() func() (Digit, bool) {
-	return m.digitIterFrom(0)
+	return m.digitIterAt(0)
 }
 
 func (m *Mantissa) canReverse() bool {
@@ -188,8 +188,8 @@ func (m *Mantissa) reverseDigitIter() func() (Digit, bool) {
 	return m.reverseDigitIterTo(0)
 }
 
-func (m *Mantissa) digitIterFrom(index int) func() (Digit, bool) {
-	iter := m.iteratorFrom(index)
+func (m *Mantissa) digitIterAt(index int) func() (Digit, bool) {
+	iter := m.iteratorAt(index)
 	digit := iter()
 	return func() (dt Digit, ok bool) {
 		if digit == -1 {
@@ -214,11 +214,11 @@ func (m *Mantissa) reverseDigitIterTo(start int) func() (Digit, bool) {
 	}
 }
 
-func (m *Mantissa) iteratorFrom(index int) func() int {
+func (m *Mantissa) iteratorAt(index int) func() int {
 	if m.spec == nil {
 		return func() int { return -1 }
 	}
-	return m.spec.IteratorFrom(index)
+	return m.spec.IteratorAt(index)
 }
 
 func (m *Mantissa) allDigits() []int {
@@ -503,7 +503,7 @@ type mantissaWithStart struct {
 }
 
 func (m *mantissaWithStart) digitIter() func() (Digit, bool) {
-	return m.mantissa.digitIterFrom(m.start)
+	return m.mantissa.digitIterAt(m.start)
 }
 
 func (m *mantissaWithStart) canReverse() bool {
