@@ -83,7 +83,7 @@ func (m *memoizer) wait(index int) ([]int, bool) {
 		m.maxLength = kMemoizerChunkSize * chunkCount
 		m.mustGrow.Signal()
 	}
-	for !m.done && len(m.data) < m.maxLength {
+	for !m.done && len(m.data) <= index {
 		m.updateAvailable.Wait()
 	}
 	return m.data, len(m.data) > index
@@ -107,9 +107,9 @@ func (m *memoizer) setData(data []int, done bool) {
 
 func (m *memoizer) run() {
 	var data []int
-	for {
+	for i := 0; i < kMaxChunks; i++ {
 		m.waitToGrow()
-		for i := 0; i < kMemoizerChunkSize; i++ {
+		for j := 0; j < kMemoizerChunkSize; j++ {
 			x := m.iter()
 			if x == -1 {
 				m.setData(data, true)
@@ -119,4 +119,5 @@ func (m *memoizer) run() {
 		}
 		m.setData(data, false)
 	}
+	m.setData(data, true)
 }
