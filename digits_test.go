@@ -7,9 +7,8 @@ import (
 )
 
 func TestDigits(t *testing.T) {
-	m := Sqrt(2).Mantissa()
 	positions := new(PositionsBuilder).Add(25).Add(15).Add(50).Build()
-	digits := GetDigits(m, positions)
+	digits := GetDigits(Sqrt(2), positions)
 	assert.Equal(t, 5, digits.At(15))
 	assert.Equal(t, 7, digits.At(25))
 	assert.Equal(t, 4, digits.At(50))
@@ -25,41 +24,40 @@ func TestDigits(t *testing.T) {
 }
 
 func TestGetDigitsFromDigits(t *testing.T) {
-	m := Sqrt(2).Mantissa()
 	var pb PositionsBuilder
 	pb.AddRange(0, 100).AddRange(200, 300).AddRange(400, 500)
-	digits := GetDigits(m, pb.Build())
+	digits := GetDigits(Sqrt(2), pb.Build())
 	pb.AddRange(100, 200).AddRange(300, 400).AddRange(500, 600)
 	assert.Zero(t, GetDigits(digits, pb.Build()))
 }
 
 func TestGetDigitsFromDigits2(t *testing.T) {
-	m := Sqrt(2).Mantissa()
+	n := Sqrt(2)
 	var pb PositionsBuilder
 	pb.AddRange(100, 200).AddRange(300, 400).AddRange(500, 600)
-	digits := GetDigits(m, pb.Build())
+	digits := GetDigits(n, pb.Build())
 
 	pb.AddRange(0, 101).AddRange(200, 301).Add(500).AddRange(1000, 2000000000)
 	digits = GetDigits(digits, pb.Build())
-	expected := GetDigits(m, pb.Add(100).Add(300).Add(500).Build())
+	expected := GetDigits(n, pb.Add(100).Add(300).Add(500).Build())
 	assert.Equal(t, expected.Sprint(), digits.Sprint())
 }
 
 func TestGetDigitsFromDigitsPick(t *testing.T) {
-	m := Sqrt(2).Mantissa()
+	n := Sqrt(2)
 	var pb PositionsBuilder
 	pb.AddRange(100, 200).AddRange(300, 400).AddRange(500, 600)
-	digits := GetDigits(m, pb.Build())
+	digits := GetDigits(n, pb.Build())
 	pb.Add(153).Add(200)
 	digits = GetDigits(digits, pb.Build())
-	expected := GetDigits(m, pb.Add(153).Build())
+	expected := GetDigits(n, pb.Add(153).Build())
 	assert.Equal(t, expected.Sprint(), digits.Sprint())
 }
 
 func TestDigitsFinite(t *testing.T) {
-	m := Sqrt(2).WithSignificant(50).Mantissa()
+	n := Sqrt(2).WithSignificant(50)
 	positions := new(PositionsBuilder).Add(25).Add(15).Add(50).Build()
-	digits := GetDigits(m, positions)
+	digits := GetDigits(n, positions)
 	assert.Equal(t, 5, digits.At(15))
 	assert.Equal(t, 7, digits.At(25))
 	assert.Equal(t, -1, digits.At(50))
@@ -68,21 +66,20 @@ func TestDigitsFinite(t *testing.T) {
 }
 
 func TestDigitsNone(t *testing.T) {
-	m := Sqrt(2).Mantissa()
 	var positions Positions
-	assert.Zero(t, GetDigits(m, positions))
+	assert.Zero(t, GetDigits(Sqrt(2), positions))
 }
 
-func TestDigitsNoneZeroMantissa(t *testing.T) {
-	var m Mantissa
+func TestDigitsNoneZeroNumber(t *testing.T) {
+	var n Number
 	var p Positions
 	var pb PositionsBuilder
-	assert.Zero(t, GetDigits(&m, p))
-	assert.Zero(t, GetDigits(&m, pb.AddRange(0, 100).Build()))
+	assert.Zero(t, GetDigits(&n, p))
+	assert.Zero(t, GetDigits(&n, pb.AddRange(0, 100).Build()))
 }
 
 func TestDigitsNoneFromDigits(t *testing.T) {
-	digits := AllDigits(Sqrt(2).WithSignificant(1000).Mantissa())
+	digits := AllDigits(Sqrt(2).WithSignificant(1000))
 	assert.Equal(t, 1000, digits.Len())
 	var zeroPosits Positions
 	zeroDigits := GetDigits(digits, zeroPosits)
@@ -112,10 +109,10 @@ func TestDigitsZero(t *testing.T) {
 }
 
 func TestDigitsBinary(t *testing.T) {
-	mantissa := Sqrt(2).Mantissa()
+	n := Sqrt(2)
 	var pb PositionsBuilder
 	pb.AddRange(1000, 2000).AddRange(5000, 5999).AddRange(10000, 10999).Add(11000)
-	digits := GetDigits(mantissa, pb.Build())
+	digits := GetDigits(n, pb.Build())
 	arr, err := digits.MarshalBinary()
 	assert.Equal(t, 1509, len(arr))
 	assert.NoError(t, err)
@@ -125,10 +122,10 @@ func TestDigitsBinary(t *testing.T) {
 }
 
 func TestDigitsBinary2(t *testing.T) {
-	mantissa := Sqrt(2).Mantissa()
+	n := Sqrt(2)
 	var pb PositionsBuilder
 	pb.Add(50).Add(25).Add(15).Add(0).AddRange(100, 102)
-	digits := GetDigits(mantissa, pb.Build())
+	digits := GetDigits(n, pb.Build())
 	arr, err := digits.MarshalBinary()
 	assert.NoError(t, err)
 	var copy Digits
@@ -137,10 +134,10 @@ func TestDigitsBinary2(t *testing.T) {
 }
 
 func TestDigitsBinary3(t *testing.T) {
-	mantissa := Sqrt(2).Mantissa()
+	n := Sqrt(2)
 	var pb PositionsBuilder
 	pb.AddRange(0, 4).Add(26)
-	digits := GetDigits(mantissa, pb.Build())
+	digits := GetDigits(n, pb.Build())
 	arr, err := digits.MarshalBinary()
 	assert.NoError(t, err)
 	assert.Equal(t, 6, len(arr))
@@ -182,10 +179,10 @@ func TestDigitsBinaryUnmarshalErrors(t *testing.T) {
 }
 
 func TestDigitsText(t *testing.T) {
-	mantissa := Sqrt(2).Mantissa()
+	n := Sqrt(2)
 	var pb PositionsBuilder
 	pb.AddRange(0, 4).Add(26)
-	digits := GetDigits(mantissa, pb.Build())
+	digits := GetDigits(n, pb.Build())
 	arr, err := digits.MarshalText()
 	assert.NoError(t, err)
 	assert.Equal(t, "v1:1414[26]2", string(arr))
@@ -195,10 +192,10 @@ func TestDigitsText(t *testing.T) {
 }
 
 func TestDigitsText2(t *testing.T) {
-	mantissa := Sqrt(2).Mantissa()
+	n := Sqrt(2)
 	var pb PositionsBuilder
 	pb.AddRange(3, 6).AddRange(10, 12)
-	digits := GetDigits(mantissa, pb.Build())
+	digits := GetDigits(n, pb.Build())
 	arr, err := digits.MarshalText()
 	assert.NoError(t, err)
 	assert.Equal(t, "v1:[3]421[10]37", string(arr))
@@ -208,7 +205,7 @@ func TestDigitsText2(t *testing.T) {
 }
 
 func TestDigitsText3(t *testing.T) {
-	digits := AllDigits(Sqrt(2).WithSignificant(6).Mantissa())
+	digits := AllDigits(Sqrt(2).WithSignificant(6))
 	arr, err := digits.MarshalText()
 	assert.NoError(t, err)
 	assert.Equal(t, "v1:141421", string(arr))
@@ -245,7 +242,7 @@ func TestDigitsTextUnmarshalErrors(t *testing.T) {
 }
 
 func TestDigitsWithStartAndEnd(t *testing.T) {
-	digits := AllDigits(Sqrt(2).WithSignificant(1000).Mantissa())
+	digits := AllDigits(Sqrt(2).WithSignificant(1000))
 	assert.NotEqual(t, -1, digits.At(700))
 	assert.NotEqual(t, -1, digits.At(399))
 	digits = digits.WithStart(200).WithEnd(900)
@@ -262,7 +259,7 @@ func TestDigitsWithStartAndEnd(t *testing.T) {
 }
 
 func TestDigitsWithStartZero(t *testing.T) {
-	digits := AllDigits(Sqrt(2).WithSignificant(1000).Mantissa())
+	digits := AllDigits(Sqrt(2).WithSignificant(1000))
 	digits = digits.WithStart(1000)
 	assert.Equal(t, 0, digits.Len())
 	assert.Equal(t, -1, digits.Min())
@@ -271,7 +268,7 @@ func TestDigitsWithStartZero(t *testing.T) {
 }
 
 func TestDigitsWithEndZero(t *testing.T) {
-	digits := AllDigits(Sqrt(2).WithSignificant(1000).Mantissa())
+	digits := AllDigits(Sqrt(2).WithSignificant(1000))
 	digits = digits.WithEnd(0)
 	assert.Equal(t, 0, digits.Len())
 	assert.Equal(t, -1, digits.Min())
@@ -319,13 +316,13 @@ func TestDigitBuilderErrors(t *testing.T) {
 func TestDigitLookup(t *testing.T) {
 	n := Sqrt(11).WithSignificant(10000)
 	pattern := []int{4, 5, 7}
-	finds := FindAll(n.Mantissa(), pattern)
+	finds := FindAll(n, pattern)
 	assert.Len(t, finds, 7)
 	var pb PositionsBuilder
 	for _, find := range finds {
 		pb.AddRange(find, find+3)
 	}
-	digits := GetDigits(n.Mantissa(), pb.Build())
+	digits := GetDigits(n, pb.Build())
 	iter := digits.Items()
 	count := 0
 	for digit, ok := iter(); ok; digit, ok = iter() {
@@ -341,7 +338,7 @@ func TestFindWithDigits(t *testing.T) {
 	// '000' in Sqrt(5) at 424 569 3663 4506 4601 6113 7173 9110 9114
 	var pb PositionsBuilder
 	pb.AddRange(7173, 7176).AddRange(9110, 9117).AddRange(4500, 4600)
-	digits := GetDigits(n.Mantissa(), pb.Build())
+	digits := GetDigits(n, pb.Build())
 	finds := FindAll(digits, []int{0, 0, 0})
 	assert.Equal(t, []int{4506, 7173, 9110, 9114}, finds)
 }

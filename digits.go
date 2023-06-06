@@ -19,7 +19,7 @@ const (
 	unmarshalTextUnexpectedEnd = "sqroot: Digits.UnmarshalText hit unexpected end of text"
 )
 
-// Digits holds the digits found at selected positions of a Mantissa so
+// Digits holds the digits found at selected positions of a Number so
 // that they can be quickly retrieved. Retrieving any digit by position takes
 // O(log N) time where N is the total number of digits. Using Items() or
 // ReverseItems() to retrieve all the digits in order takes O(N) time.
@@ -274,10 +274,7 @@ func (d Digits) Fprint(w io.Writer, options ...Option) (n int, err error) {
 }
 
 func (d Digits) limit() int {
-	if len(d.digits) == 0 {
-		return 0
-	}
-	return d.digits[len(d.digits)-1].Position + 1
+	return d.Max() + 1
 }
 
 func (d Digits) digitIter() func() (Digit, bool) {

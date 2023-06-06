@@ -22,7 +22,7 @@ type rootManager interface {
 	Base(result *big.Int) *big.Int
 }
 
-type mantissaSpec interface {
+type numberSpec interface {
 	IteratorAt(index int) func() int
 	At(index int) int
 	IsMemoize() bool
@@ -90,15 +90,12 @@ func (n *nRootSpec) generateRadicanGroups() func() *big.Int {
 }
 
 type limitSpec struct {
-	delegate mantissaSpec
+	delegate numberSpec
 	limit    int
 }
 
-func withLimit(spec mantissaSpec, limit int) mantissaSpec {
-	if limit < 0 {
-		panic("limit must be non-negative")
-	}
-	if limit == 0 || spec == nil {
+func withLimit(spec numberSpec, limit int) numberSpec {
+	if limit <= 0 || spec == nil {
 		return nil
 	}
 	ls, ok := spec.(*limitSpec)
@@ -143,7 +140,7 @@ func (l *limitSpec) FirstN(n int) []int {
 	return l.delegate.FirstN(n)
 }
 
-func withMemoize(spec mantissaSpec) mantissaSpec {
+func withMemoize(spec numberSpec) numberSpec {
 	if spec == nil {
 		return nil
 	}

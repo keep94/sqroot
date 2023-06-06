@@ -14,21 +14,21 @@ fmt.Printf("%.1000g\n", sqroot.Sqrt(2))
 Print the 10,000th digit of the square root of 5.
 
 ```golang
-fmt.Println(sqroot.Sqrt(5).Mantissa().At(9999))
+fmt.Println(sqroot.Sqrt(5).At(9999))
 ```
 
 Print where the first 4 consecutive 0's start in the cube root of 7.
 
 ```golang
 fmt.Println(sqroot.FindFirst(
-    sqroot.CubeRoot(7).Mantissa(), []int{0, 0, 0, 0}))
+    sqroot.CubeRoot(7), []int{0, 0, 0, 0}))
 ```
 
 Print the location of the last 7 in the first 10,000 digits of the cube root of 11.
 
 ```golang
 fmt.Println(sqroot.FindLast(
-    sqroot.CubeRoot(11).WithSignificant(10000).Mantissa(),
+    sqroot.CubeRoot(11).WithSignificant(10000),
     []int{7}))
 ```
 

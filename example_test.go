@@ -28,7 +28,7 @@ func ExampleFind() {
 	n := sqroot.Sqrt(2)
 
 	// '14' matches at index 0, 2, 144, ...
-	matches := sqroot.Find(n.Mantissa(), []int{1, 4})
+	matches := sqroot.Find(n, []int{1, 4})
 
 	fmt.Println(matches())
 	fmt.Println(matches())
@@ -45,7 +45,7 @@ func ExampleFindAll() {
 	// We truncate significant digits to 146 so that FindAll terminates
 	n := sqroot.Sqrt(2).WithSignificant(146)
 
-	fmt.Println(sqroot.FindAll(n.Mantissa(), []int{1, 4}))
+	fmt.Println(sqroot.FindAll(n, []int{1, 4}))
 	// Output:
 	// [0 2 144]
 }
@@ -55,7 +55,7 @@ func ExampleFindFirst() {
 	// sqrt(3) = 0.1732050807... * 10^1
 	n := sqroot.Sqrt(3)
 
-	fmt.Println(sqroot.FindFirst(n.Mantissa(), []int{0, 5, 0, 8}))
+	fmt.Println(sqroot.FindFirst(n, []int{0, 5, 0, 8}))
 	// Output:
 	// 4
 }
@@ -65,21 +65,21 @@ func ExampleFindFirstN() {
 	// sqrt(2) = 0.14142135... * 10^1
 	n := sqroot.Sqrt(2)
 
-	fmt.Println(sqroot.FindFirstN(n.Mantissa(), []int{1, 4}, 3))
+	fmt.Println(sqroot.FindFirstN(n, []int{1, 4}, 3))
 	// Output:
 	// [0 2 144]
 }
 
 func ExampleFindLast() {
 	n := sqroot.Sqrt(2).WithSignificant(1000)
-	fmt.Println(sqroot.FindLast(n.Mantissa(), []int{1, 4}))
+	fmt.Println(sqroot.FindLast(n, []int{1, 4}))
 	// Output:
 	// 945
 }
 
 func ExampleFindLastN() {
 	n := sqroot.Sqrt(2).WithSignificant(1000)
-	fmt.Println(sqroot.FindLastN(n.Mantissa(), []int{1, 4}, 3))
+	fmt.Println(sqroot.FindLastN(n, []int{1, 4}, 3))
 	// Output:
 	// [945 916 631]
 }
@@ -91,7 +91,7 @@ func ExampleGetDigits() {
 
 	var pb sqroot.PositionsBuilder
 	pb.AddRange(0, 3).Add(4).Add(10)
-	digits := sqroot.GetDigits(n.Mantissa(), pb.Build())
+	digits := sqroot.GetDigits(n, pb.Build())
 	iter := digits.Items()
 	for digit, ok := iter(); ok; digit, ok = iter() {
 		fmt.Printf("Position: %d; Digit: %d\n", digit.Position, digit.Value)
@@ -104,12 +104,22 @@ func ExampleGetDigits() {
 	// Position: 10; Digit: 0
 }
 
-func ExampleMantissa_Iterator() {
+func ExampleNumber_Exponent() {
+
+	// sqrt(50176) = 0.224 * 10^3
+	n := sqroot.Sqrt(50176)
+
+	fmt.Println(n.Exponent())
+	// Output:
+	// 3
+}
+
+func ExampleNumber_Iterator() {
 
 	// sqrt(7) = 0.26457513110... * 10^1
 	n := sqroot.Sqrt(7)
 
-	iter := n.Mantissa().Iterator()
+	iter := n.Iterator()
 
 	fmt.Println(iter())
 	fmt.Println(iter())
@@ -126,12 +136,12 @@ func ExampleMantissa_Iterator() {
 	// 5
 }
 
-func ExampleMantissa_IteratorAt() {
+func ExampleNumber_IteratorAt() {
 
 	// sqrt(7) = 0.26457513110... * 10^1
 	n := sqroot.Sqrt(7)
 
-	iter := n.Mantissa().IteratorAt(4)
+	iter := n.IteratorAt(4)
 
 	fmt.Println(iter())
 	fmt.Println(iter())
@@ -148,33 +158,29 @@ func ExampleMantissa_IteratorAt() {
 	// 1
 }
 
-func ExampleMantissa_WithStart() {
+func ExampleNumber_WithStart() {
 
 	// sqrt(29) = 5.3851648...
 	n := sqroot.Sqrt(29).WithSignificant(1000).WithMemoize()
 
 	// Find all occurrences of '85' in the first 1000 digits of sqrt(29)
-	fmt.Println(sqroot.FindAll(n.Mantissa(), []int{8, 5}))
+	fmt.Println(sqroot.FindAll(n, []int{8, 5}))
 
 	// Find all occurrences of '85' in the first 1000 digits of sqrt(29)
 	// on or after position 800
-	fmt.Println(sqroot.FindAll(n.Mantissa().WithStart(800), []int{8, 5}))
+	fmt.Println(sqroot.FindAll(n.WithStart(800), []int{8, 5}))
 	// Output:
 	// [2 167 444 507 511 767 853 917 935 958]
 	// [853 917 935 958]
 }
 
-func ExampleMantissa_Print() {
+func ExampleNumber_Print() {
 
 	// Find the square root of 2.
 	n := sqroot.Sqrt(2)
 
 	fmt.Printf("10^%d *\n", n.Exponent())
-	n.Mantissa().Print(
-		1000,
-		sqroot.DigitsPerRow(50),
-		sqroot.DigitsPerColumn(5),
-		sqroot.ShowCount(true))
+	n.Print(1000)
 	fmt.Println()
 	// Output:
 	// 10^1 *
@@ -207,7 +213,7 @@ func ExampleDigits_Print() {
 
 	var pb sqroot.PositionsBuilder
 	pb.AddRange(200, 210).AddRange(500, 510).AddRange(1000, 1010)
-	digits := sqroot.GetDigits(n.Mantissa(), pb.Build())
+	digits := sqroot.GetDigits(n, pb.Build())
 	digits.Print(sqroot.DigitsPerRow(10))
 	fmt.Println()
 	// Output:
@@ -216,14 +222,14 @@ func ExampleDigits_Print() {
 	// 1000  20896 94633
 }
 
-func ExampleMantissa_At() {
+func ExampleNumber_At() {
 
 	// sqrt(7) = 0.264575131106459...*10^1
 	n := sqroot.Sqrt(7)
 
-	fmt.Println(n.Mantissa().At(0))
-	fmt.Println(n.Mantissa().At(1))
-	fmt.Println(n.Mantissa().At(2))
+	fmt.Println(n.At(0))
+	fmt.Println(n.At(1))
+	fmt.Println(n.At(2))
 	// Output:
 	// 2
 	// 6
@@ -236,7 +242,7 @@ func ExampleNumber_WithSignificant() {
 	n := sqroot.SqrtRat(100, 49).WithSignificant(10000)
 
 	// Instead of running forever, FindFirst returns -1 because n is truncated.
-	fmt.Println(sqroot.FindFirst(n.Mantissa(), []int{1, 1, 2}))
+	fmt.Println(sqroot.FindFirst(n, []int{1, 1, 2}))
 	// Output:
 	// -1
 }
@@ -247,11 +253,11 @@ func ExampleNumber_WithMemoize() {
 	// Without memoization, the loop below takes 45 seconds to execute on a
 	// certain macbook pro because the At call has to compute all previous
 	// digits at each iteration. With memoization, the loop below runs in
-	// milliseconds on the same macbook pro because the mantissa of n remembers
+	// milliseconds on the same macbook pro because n remembers
 	// all of its previously computed digits.
 	sum := 0
 	for i := 0; i < 10000; i++ {
-		sum += n.Mantissa().At(i)
+		sum += n.At(i)
 	}
 	fmt.Println(sum)
 	// Output:

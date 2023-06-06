@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	// fakeMantissa = 0.12345678901234567890...
-	fakeMantissa = &Mantissa{spec: funcMantissaSpec(
+	// fakeNumber = 0.12345678901234567890...
+	fakeNumber = &Number{spec: funcNumberSpec(
 		func() func() int {
 			i := 0
 			return func() int {
@@ -20,37 +20,38 @@ var (
 )
 
 func TestPrintZeroDigits(t *testing.T) {
-	assert.Equal(t, "0", fakeMantissa.Sprint(0))
-	assert.Equal(t, "0", fakeMantissa.Sprint(-1))
+	assert.Equal(t, "", fakeNumber.Sprint(0))
+	assert.Equal(t, "", fakeNumber.Sprint(-1))
 }
 
 func TestPrintNoOptions(t *testing.T) {
-	actual := fakeMantissa.Sprint(12)
-	expected := `0.123456789012`
+	actual := fakeNumber.Sprint(12)
+	expected := `0.12345 67890 12`
 	assert.Equal(t, expected, actual)
 }
 
 func TestPrintLessThanOneRow(t *testing.T) {
-	actual := fakeMantissa.Sprint(12, ShowCount(true), DigitsPerRow(12))
+	actual := fakeNumber.Sprint(12, DigitsPerRow(12), DigitsPerColumn(0))
 	expected := `0.123456789012`
 	assert.Equal(t, expected, actual)
 }
 
 func TestPrintColumns(t *testing.T) {
-	actual := fakeMantissa.Sprint(12, DigitsPerColumn(4))
+	actual := fakeNumber.Sprint(
+		12, DigitsPerColumn(4), DigitsPerRow(0), ShowCount(false))
 	expected := `0.1234 5678 9012`
 	assert.Equal(t, expected, actual)
 }
 
 func TestPrintColumnsShow(t *testing.T) {
-	actual := fakeMantissa.Sprint(
-		12, DigitsPerColumn(5), ShowCount(true))
+	actual := fakeNumber.Sprint(12, DigitsPerColumn(5), DigitsPerRow(0))
 	expected := `0.12345 67890 12`
 	assert.Equal(t, expected, actual)
 }
 
 func TestPrinterRows10(t *testing.T) {
-	actual := fakeMantissa.Sprint(110, DigitsPerRow(10))
+	actual := fakeNumber.Sprint(
+		110, DigitsPerRow(10), DigitsPerColumn(0), ShowCount(false))
 	expected := `0.1234567890
   1234567890
   1234567890
@@ -66,8 +67,8 @@ func TestPrinterRows10(t *testing.T) {
 }
 
 func TestPrinterRows10Columns(t *testing.T) {
-	actual := fakeMantissa.Sprint(
-		110, DigitsPerRow(10), DigitsPerColumn(10))
+	actual := fakeNumber.Sprint(
+		110, DigitsPerRow(10), DigitsPerColumn(10), ShowCount(false))
 	expected := `0.1234567890
   1234567890
   1234567890
@@ -83,8 +84,8 @@ func TestPrinterRows10Columns(t *testing.T) {
 }
 
 func TestPrinterRows11Columns(t *testing.T) {
-	actual := fakeMantissa.Sprint(
-		110, DigitsPerRow(11), DigitsPerColumn(10))
+	actual := fakeNumber.Sprint(
+		110, DigitsPerRow(11), DigitsPerColumn(10), ShowCount(false))
 	expected := `0.1234567890 1
   2345678901 2
   3456789012 3
@@ -99,8 +100,8 @@ func TestPrinterRows11Columns(t *testing.T) {
 }
 
 func TestPrinterRows10Show(t *testing.T) {
-	actual := fakeMantissa.Sprint(
-		110, DigitsPerRow(10), ShowCount(true))
+	actual := fakeNumber.Sprint(
+		110, DigitsPerRow(10), DigitsPerColumn(0))
 	expected := `   0.1234567890
  10  1234567890
  20  1234567890
@@ -116,7 +117,7 @@ func TestPrinterRows10Show(t *testing.T) {
 }
 
 func TestPrinterRows10ColumnsShow(t *testing.T) {
-	actual := fakeMantissa.Sprint(
+	actual := fakeNumber.Sprint(
 		110, DigitsPerRow(10), DigitsPerColumn(10), ShowCount(true))
 	expected := `   0.1234567890
  10  1234567890
@@ -133,7 +134,7 @@ func TestPrinterRows10ColumnsShow(t *testing.T) {
 }
 
 func TestPrinterRows11ColumnsShow(t *testing.T) {
-	actual := fakeMantissa.Sprint(
+	actual := fakeNumber.Sprint(
 		110, DigitsPerRow(11), DigitsPerColumn(10), ShowCount(true))
 	expected := `  0.1234567890 1
 11  2345678901 2
@@ -149,8 +150,8 @@ func TestPrinterRows11ColumnsShow(t *testing.T) {
 }
 
 func TestPrinterRows11ColumnsShow109(t *testing.T) {
-	actual := fakeMantissa.Sprint(
-		109, DigitsPerRow(11), DigitsPerColumn(10), ShowCount(true))
+	actual := fakeNumber.Sprint(
+		109, DigitsPerRow(11), DigitsPerColumn(10))
 	expected := `  0.1234567890 1
 11  2345678901 2
 22  3456789012 3
@@ -165,7 +166,7 @@ func TestPrinterRows11ColumnsShow109(t *testing.T) {
 }
 
 func TestPrinterRows11ColumnsShow111(t *testing.T) {
-	actual := fakeMantissa.Sprint(
+	actual := fakeNumber.Sprint(
 		111, DigitsPerRow(11), DigitsPerColumn(10), ShowCount(true))
 	expected := `   0.1234567890 1
  11  2345678901 2
@@ -182,16 +183,15 @@ func TestPrinterRows11ColumnsShow111(t *testing.T) {
 }
 
 func TestPrinterFewerDigits(t *testing.T) {
-	actual := fakeMantissa.WithSignificant(9).Sprint(
+	actual := fakeNumber.WithSignificant(9).Sprint(
 		111, DigitsPerRow(11), DigitsPerColumn(10), ShowCount(true))
 	expected := `   0.123456789`
 	assert.Equal(t, expected, actual)
 }
 
 func TestPrinterNegative(t *testing.T) {
-	actual := fakeMantissa.Sprint(
-		-3, DigitsPerRow(10), ShowCount(true))
-	assert.Equal(t, "0", actual)
+	actual := fakeNumber.Sprint(-3, DigitsPerRow(10), ShowCount(true))
+	assert.Equal(t, "", actual)
 }
 
 func TestPrinterCountBytes(t *testing.T) {
@@ -200,8 +200,7 @@ func TestPrinterCountBytes(t *testing.T) {
 	// Prints 20 rows. Each row 10 columns 6 chars per column + (3+2) chars
 	// for the margin. 65*20-1=1299 bytes because last line doesn't get a
 	// line feed char.
-	n, err := fakeMantissa.Fprint(
-		w, 1000, DigitsPerRow(50), DigitsPerColumn(5), ShowCount(true))
+	n, err := fakeNumber.Fprint(w, 1000)
 	assert.Equal(t, 1299, n)
 	assert.NoError(t, err)
 }
@@ -211,8 +210,7 @@ func TestErrorAtAllStages(t *testing.T) {
 	// Force an error at each point of the printing
 	for i := 0; i < 1299; i++ {
 		w := &maxBytesWriter{maxBytes: i}
-		n, err := fakeMantissa.Fprint(
-			w, 1000, DigitsPerRow(50), DigitsPerColumn(5), ShowCount(true))
+		n, err := fakeNumber.Fprint(w, 1000)
 		assert.Equal(t, i, n)
 		assert.Error(t, err)
 	}
@@ -234,18 +232,18 @@ func (m *maxBytesWriter) Write(p []byte) (n int, err error) {
 	return diff, errors.New("Ran out of space")
 }
 
-type funcMantissaSpec func() func() int
+type funcNumberSpec func() func() int
 
-func (f funcMantissaSpec) IteratorAt(index int) func() int {
+func (f funcNumberSpec) IteratorAt(index int) func() int {
 	return fastForward(f(), index)
 }
 
-func (f funcMantissaSpec) At(index int) int {
+func (f funcNumberSpec) At(index int) int {
 	return simpleAt(f(), index)
 }
 
-func (f funcMantissaSpec) IsMemoize() bool { return false }
+func (f funcNumberSpec) IsMemoize() bool { return false }
 
-func (f funcMantissaSpec) FirstN(n int) []int {
+func (f funcNumberSpec) FirstN(n int) []int {
 	panic("FirstN not supported")
 }

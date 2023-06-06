@@ -8,7 +8,7 @@ import (
 
 func TestPrintP(t *testing.T) {
 	p := new(PositionsBuilder).AddRange(5, 8).AddRange(45, 50).Build()
-	actual := GetDigits(fakeMantissa, p).Sprint(
+	actual := GetDigits(fakeNumber, p).Sprint(
 		DigitsPerRow(11), DigitsPerColumn(10))
 	expected := `  0......678.. .
 44  .67890`
@@ -18,7 +18,7 @@ func TestPrintP(t *testing.T) {
 func TestPrintP2(t *testing.T) {
 	var pb PositionsBuilder
 	p := pb.AddRange(0, 2).AddRange(3, 5).AddRange(8, 11).Build()
-	digits := GetDigits(fakeMantissa, p)
+	digits := GetDigits(fakeNumber, p)
 	actual := digits.Sprint(DigitsPerRow(11), DigitsPerColumn(10))
 	expected := `0.12.45...90 1`
 	assert.Equal(t, expected, actual)
@@ -27,7 +27,7 @@ func TestPrintP2(t *testing.T) {
 func TestPrintPGaps(t *testing.T) {
 	var pb PositionsBuilder
 	p := pb.AddRange(22, 44).AddRange(66, 77).Build()
-	digits := GetDigits(fakeMantissa, p)
+	digits := GetDigits(fakeNumber, p)
 	actual := digits.Sprint(DigitsPerRow(11), DigitsPerColumn(10))
 	expected := `22  3456789012 3
 33  4567890123 4
@@ -39,7 +39,7 @@ func TestPrintPGaps2(t *testing.T) {
 	var pb PositionsBuilder
 	pb.AddRange(0, 10).AddRange(11, 21).AddRange(33, 43).AddRange(66, 76)
 	p := pb.Build()
-	digits := GetDigits(fakeMantissa, p)
+	digits := GetDigits(fakeNumber, p)
 	actual := digits.Sprint(DigitsPerRow(11), DigitsPerColumn(10))
 	expected := `  0.1234567890 .
 11  2345678901 .
@@ -51,7 +51,7 @@ func TestPrintPGaps2(t *testing.T) {
 func TestPrintPGaps3(t *testing.T) {
 	var pb PositionsBuilder
 	p := pb.AddRange(21, 33).AddRange(65, 77).Build()
-	digits := GetDigits(fakeMantissa, p)
+	digits := GetDigits(fakeNumber, p)
 	actual := digits.Sprint(
 		DigitsPerRow(11), DigitsPerColumn(10), MissingDigit('-'))
 	expected := `11  ---------- 2
@@ -64,7 +64,7 @@ func TestPrintPGaps3(t *testing.T) {
 func TestPrintPNoShowCount(t *testing.T) {
 	var pb PositionsBuilder
 	p := pb.AddRange(21, 33).AddRange(65, 77).Build()
-	digits := GetDigits(fakeMantissa, p)
+	digits := GetDigits(fakeNumber, p)
 	actual := digits.Sprint(
 		DigitsPerRow(11), DigitsPerColumn(10), ShowCount(false))
 	expected := `0........... .
@@ -80,7 +80,7 @@ func TestPrintPNoShowCount(t *testing.T) {
 func TestPrintPNarrow(t *testing.T) {
 	var pb PositionsBuilder
 	p := pb.Add(3).Add(5).Add(8).Build()
-	digits := GetDigits(fakeMantissa, p)
+	digits := GetDigits(fakeNumber, p)
 	actual := digits.Sprint(DigitsPerRow(1))
 	expected := `3  4
 5  6
@@ -91,7 +91,7 @@ func TestPrintPNarrow(t *testing.T) {
 func TestPrintPDefaults(t *testing.T) {
 	var pb PositionsBuilder
 	p := pb.AddRange(0, 75).Build()
-	digits := GetDigits(fakeMantissa, p)
+	digits := GetDigits(fakeNumber, p)
 	actual := digits.Sprint()
 	expected := `  0.12345 67890 12345 67890 12345 67890 12345 67890 12345 67890
 50  12345 67890 12345 67890 12345`
@@ -101,15 +101,15 @@ func TestPrintPDefaults(t *testing.T) {
 func TestPrintPTooShort(t *testing.T) {
 	n := Sqrt(100489)
 	p := new(PositionsBuilder).AddRange(3, 5).Build()
-	digits := GetDigits(n.Mantissa(), p)
+	digits := GetDigits(n, p)
 	assert.Zero(t, digits)
 	assert.Empty(t, digits.Sprint())
 }
 
 func TestPrintPZero(t *testing.T) {
-	var m Mantissa
+	var n Number
 	p := new(PositionsBuilder).AddRange(3, 5).Build()
-	digits := GetDigits(&m, p)
+	digits := GetDigits(&n, p)
 	assert.Zero(t, digits)
 	assert.Empty(t, digits.Sprint())
 }

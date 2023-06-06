@@ -11,8 +11,8 @@ import (
 func TestMemoize(t *testing.T) {
 	n := Sqrt(5)
 	nm := n.WithMemoize()
-	assert.True(t, nm.Mantissa().IsMemoize())
-	assert.False(t, n.Mantissa().IsMemoize())
+	assert.True(t, nm.IsMemoize())
+	assert.False(t, n.IsMemoize())
 	expected := fmt.Sprintf("%.10000g", n)
 	var actual [10]string
 	var wg sync.WaitGroup
@@ -31,7 +31,7 @@ func TestMemoize(t *testing.T) {
 
 func TestMemoizeAt(t *testing.T) {
 	n := Sqrt(7)
-	d := AllDigits(n.Mantissa().WithSignificant(10000))
+	d := AllDigits(n.WithSignificant(10000))
 	var expected, actual1, actual2 [10000]int
 	iter := d.Items()
 	i := 0
@@ -43,16 +43,14 @@ func TestMemoizeAt(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(2)
 	go func() {
-		m := nm.Mantissa()
 		for i := 9999; i >= 0; i-- {
-			actual1[i] = m.At(i)
+			actual1[i] = nm.At(i)
 		}
 		wg.Done()
 	}()
 	go func() {
-		m := nm.Mantissa()
 		for i := 0; i < 10000; i++ {
-			actual2[i] = m.At(i)
+			actual2[i] = nm.At(i)
 		}
 		wg.Done()
 	}()
@@ -63,49 +61,46 @@ func TestMemoizeAt(t *testing.T) {
 
 func TestMemoizeOutOfBounds(t *testing.T) {
 	n := Sqrt(111).WithSignificant(1000)
-	expectedDigits := AllDigits(n.Mantissa())
+	expectedDigits := AllDigits(n)
 	nm := n.WithMemoize()
 	assert.Equal(t, 2, nm.Exponent())
-	m := nm.Mantissa()
-	assert.Equal(t, -1, m.At(1000))
-	assert.Equal(t, -1, m.At(-1))
-	assert.Equal(t, expectedDigits.At(999), m.At(999))
-	assert.Equal(t, expectedDigits.At(0), m.At(0))
-	assert.Equal(t, expectedDigits.Sprint(), AllDigits(m).Sprint())
+	assert.Equal(t, -1, nm.At(1000))
+	assert.Equal(t, -1, nm.At(-1))
+	assert.Equal(t, expectedDigits.At(999), nm.At(999))
+	assert.Equal(t, expectedDigits.At(0), nm.At(0))
+	assert.Equal(t, expectedDigits.Sprint(), AllDigits(nm).Sprint())
 }
 
 func TestMemoizeOutOfBounds2(t *testing.T) {
 	n := Sqrt(111)
-	expectedDigits := AllDigits(n.Mantissa().WithSignificant(1000))
+	expectedDigits := AllDigits(n.WithSignificant(1000))
 	nm := n.WithMemoize().WithSignificant(1000)
 	assert.Equal(t, 2, nm.Exponent())
-	m := nm.Mantissa()
-	assert.Equal(t, -1, m.At(1000))
-	assert.Equal(t, -1, m.At(-1))
-	assert.Equal(t, expectedDigits.At(999), m.At(999))
-	assert.Equal(t, expectedDigits.At(0), m.At(0))
-	assert.Equal(t, expectedDigits.Sprint(), AllDigits(m).Sprint())
+	assert.Equal(t, -1, nm.At(1000))
+	assert.Equal(t, -1, nm.At(-1))
+	assert.Equal(t, expectedDigits.At(999), nm.At(999))
+	assert.Equal(t, expectedDigits.At(0), nm.At(0))
+	assert.Equal(t, expectedDigits.Sprint(), AllDigits(nm).Sprint())
 }
 
 func TestMemoizeOddBoundary(t *testing.T) {
 	n := Sqrt(97)
 	var pb PositionsBuilder
-	exdigits := GetDigits(n.Mantissa(), pb.AddRange(153, 158).Build())
+	exdigits := GetDigits(n, pb.AddRange(153, 158).Build())
 	n = n.WithSignificant(158).WithMemoize()
-	m := n.Mantissa()
-	assert.Equal(t, exdigits.At(153), m.At(153))
-	assert.Equal(t, exdigits.At(154), m.At(154))
-	assert.Equal(t, -1, m.At(158))
-	assert.Equal(t, exdigits.At(155), m.At(155))
-	assert.Equal(t, exdigits.At(156), m.At(156))
-	assert.Equal(t, exdigits.At(157), m.At(157))
-	start153 := m.WithStart(153)
+	assert.Equal(t, exdigits.At(153), n.At(153))
+	assert.Equal(t, exdigits.At(154), n.At(154))
+	assert.Equal(t, -1, n.At(158))
+	assert.Equal(t, exdigits.At(155), n.At(155))
+	assert.Equal(t, exdigits.At(156), n.At(156))
+	assert.Equal(t, exdigits.At(157), n.At(157))
+	start153 := n.WithStart(153)
 	assert.Equal(t, exdigits.Sprint(), AllDigits(start153).Sprint())
-	assert.Zero(t, AllDigits(m.WithStart(158)))
-	pattern := []int{m.At(153), m.At(154), m.At(155), m.At(156), m.At(157)}
+	assert.Zero(t, AllDigits(n.WithStart(158)))
+	pattern := []int{n.At(153), n.At(154), n.At(155), n.At(156), n.At(157)}
 	assert.Equal(t, 153, FindFirst(start153, pattern))
 	assert.Equal(t, 153, FindLast(start153, pattern))
-	start154 := m.WithStart(154)
+	start154 := n.WithStart(154)
 	assert.Equal(t, -1, FindFirst(start154, pattern))
 	assert.Equal(t, -1, FindLast(start154, pattern))
 }

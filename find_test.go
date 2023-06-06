@@ -9,20 +9,20 @@ import (
 
 func TestFindFirstN(t *testing.T) {
 	number := Sqrt(5)
-	hits := FindFirstN(number.Mantissa(), []int{9, 7}, 3)
+	hits := FindFirstN(number, []int{9, 7}, 3)
 	assert.Equal(t, []int{7, 12, 59}, hits)
 }
 
 func TestFindAll(t *testing.T) {
 	number := Sqrt(5).WithSignificant(100)
-	hits := FindAll(number.Mantissa(), []int{9, 7})
+	hits := FindAll(number, []int{9, 7})
 	assert.Equal(t, []int{7, 12, 59}, hits)
 }
 
 func TestFind(t *testing.T) {
 	number := Sqrt(5)
 	pattern := []int{9, 7}
-	matches := Find(number.Mantissa(), pattern)
+	matches := Find(number, pattern)
 	pattern[0] = 2
 	pattern[1] = 3
 	assert.Equal(t, 7, matches())
@@ -32,30 +32,30 @@ func TestFind(t *testing.T) {
 
 func TestFindFirstNSingle(t *testing.T) {
 	number := Sqrt(11)
-	hits := FindFirstN(number.Mantissa(), []int{3}, 4)
+	hits := FindFirstN(number, []int{3}, 4)
 	assert.Equal(t, []int{0, 1, 10, 13}, hits)
 }
 
 func TestFindFirst(t *testing.T) {
 	number := Sqrt(2)
-	assert.Equal(t, 1, FindFirst(number.Mantissa(), []int{4, 1, 4}))
+	assert.Equal(t, 1, FindFirst(number, []int{4, 1, 4}))
 }
 
 func TestFindFirstNotThere(t *testing.T) {
 	number := Sqrt(100489)
-	assert.Equal(t, -1, FindFirst(number.Mantissa(), []int{5}))
+	assert.Equal(t, -1, FindFirst(number, []int{5}))
 }
 
 func TestFindEmptyPattern(t *testing.T) {
 	number := Sqrt(2)
-	hits := FindFirstN(number.Mantissa(), nil, 4)
+	hits := FindFirstN(number, nil, 4)
 	assert.Equal(t, []int{0, 1, 2, 3}, hits)
-	assert.Equal(t, 0, FindFirst(number.Mantissa(), nil))
+	assert.Equal(t, 0, FindFirst(number, nil))
 }
 
 func TestFindEmptyPatternIterator(t *testing.T) {
 	number := Sqrt(2).WithSignificant(4)
-	iter := Find(number.Mantissa(), nil)
+	iter := Find(number, nil)
 	assert.Equal(t, 0, iter())
 	assert.Equal(t, 1, iter())
 	assert.Equal(t, 2, iter())
@@ -70,7 +70,7 @@ func TestFindFirstNTrickyPattern(t *testing.T) {
 	assert.True(t, ok)
 	number := SqrtBigInt(radican)
 	hits := FindFirstN(
-		number.Mantissa(),
+		number,
 		[]int{1, 2, 2, 1, 2, 1, 2, 2, 1, 2, 2, 1},
 		3,
 	)
@@ -79,53 +79,53 @@ func TestFindFirstNTrickyPattern(t *testing.T) {
 
 func TestFindLast(t *testing.T) {
 	number := Sqrt(5).WithSignificant(1000)
-	assert.Equal(t, 936, FindLast(number.Mantissa(), []int{9, 7}))
-	assert.Equal(t, -1, FindLast(number.Mantissa(), []int{0, 1, 2, 3, 4}))
+	assert.Equal(t, 936, FindLast(number, []int{9, 7}))
+	assert.Equal(t, -1, FindLast(number, []int{0, 1, 2, 3, 4}))
 }
 
 func TestFindLastN(t *testing.T) {
 	number := Sqrt(5).WithSignificant(1000)
-	hits := FindLastN(number.Mantissa(), []int{9, 7}, 3)
+	hits := FindLastN(number, []int{9, 7}, 3)
 	assert.Equal(t, []int{936, 718, 600}, hits)
-	hits = FindLastN(number.Mantissa().WithStart(601), []int{9, 7}, 3)
+	hits = FindLastN(number.WithStart(601), []int{9, 7}, 3)
 	assert.Equal(t, []int{936, 718}, hits)
-	hits = FindLastN(number.Mantissa().WithStart(1001), []int{9, 7}, 3)
+	hits = FindLastN(number.WithStart(1001), []int{9, 7}, 3)
 	assert.Empty(t, hits)
-	hits = FindLastN(Sqrt(5).WithSignificant(1300).Mantissa(), []int{9, 7}, 3)
+	hits = FindLastN(Sqrt(5).WithSignificant(1300), []int{9, 7}, 3)
 	assert.Equal(t, []int{1276, 1221, 936}, hits)
-	hits = FindLastN(Sqrt(5).WithSignificant(0).Mantissa(), []int{9, 7}, 3)
+	hits = FindLastN(Sqrt(5).WithSignificant(0), []int{9, 7}, 3)
 	assert.Empty(t, hits)
-	hits = FindLastN(number.Mantissa(), nil, 4)
+	hits = FindLastN(number, nil, 4)
 	assert.Equal(t, []int{999, 998, 997, 996}, hits)
-	hits = FindLastN(number.Mantissa(), []int{1, 2, 3}, 3)
+	hits = FindLastN(number, []int{1, 2, 3}, 3)
 	assert.Equal(t, []int{815, 579}, hits)
-	hits = FindLastN(number.Mantissa(), []int{1, 2, 3}, 0)
+	hits = FindLastN(number, []int{1, 2, 3}, 0)
 	assert.Empty(t, hits)
 	short := Sqrt(1522756)
-	assert.Equal(t, 2, FindLast(short.Mantissa(), []int{3, 4}))
+	assert.Equal(t, 2, FindLast(short, []int{3, 4}))
 }
 
 func TestFindLastNMemoize(t *testing.T) {
 	n := Sqrt(5).WithMemoize()
-	hits := FindLastN(n.WithSignificant(1300).Mantissa(), []int{9, 7}, 3)
+	hits := FindLastN(n.WithSignificant(1300), []int{9, 7}, 3)
 	assert.Equal(t, []int{1276, 1221, 936}, hits)
-	hits = FindLastN(n.WithSignificant(0).Mantissa(), []int{9, 7}, 3)
+	hits = FindLastN(n.WithSignificant(0), []int{9, 7}, 3)
 	assert.Empty(t, hits)
-	m := n.WithSignificant(1000).Mantissa()
-	hits = FindLastN(m, []int{9, 7}, 3)
+	n1000 := n.WithSignificant(1000)
+	hits = FindLastN(n1000, []int{9, 7}, 3)
 	assert.Equal(t, []int{936, 718, 600}, hits)
-	hits = FindLastN(m.WithStart(601), []int{9, 7}, 3)
+	hits = FindLastN(n1000.WithStart(601), []int{9, 7}, 3)
 	assert.Equal(t, []int{936, 718}, hits)
-	hits = FindLastN(m.WithStart(1001), []int{9, 7}, 3)
+	hits = FindLastN(n1000.WithStart(1001), []int{9, 7}, 3)
 	assert.Empty(t, hits)
-	hits = FindLastN(m, nil, 4)
+	hits = FindLastN(n1000, nil, 4)
 	assert.Equal(t, []int{999, 998, 997, 996}, hits)
-	hits = FindLastN(m, []int{1, 2, 3}, 3)
+	hits = FindLastN(n1000, []int{1, 2, 3}, 3)
 	assert.Equal(t, []int{815, 579}, hits)
-	hits = FindLastN(m, []int{1, 2, 3}, 0)
+	hits = FindLastN(n1000, []int{1, 2, 3}, 0)
 	assert.Empty(t, hits)
 	short := Sqrt(1522756).WithMemoize()
-	assert.Equal(t, 2, FindLast(short.Mantissa(), []int{3, 4}))
+	assert.Equal(t, 2, FindLast(short, []int{3, 4}))
 }
 
 func TestFindLastNDigits(t *testing.T) {
@@ -146,7 +146,7 @@ func TestFindLastNDigits(t *testing.T) {
 }
 
 func TestFindLastNDigits2(t *testing.T) {
-	digits2 := AllDigits(Sqrt(5).WithSignificant(1300).Mantissa())
+	digits2 := AllDigits(Sqrt(5).WithSignificant(1300))
 	digits := digits2.WithEnd(1000)
 	hits := FindLastN(digits, []int{9, 7}, 3)
 	assert.Equal(t, []int{936, 718, 600}, hits)
@@ -162,18 +162,18 @@ func TestFindLastNDigits2(t *testing.T) {
 	assert.Equal(t, -1, FindLast(digits, []int{0, 1, 2, 3, 4}))
 }
 
-func TestFindZeroMantissa(t *testing.T) {
-	var m Mantissa
-	assert.Equal(t, -1, FindFirst(&m, []int{5}))
-	assert.Equal(t, -1, FindFirst(&m, nil))
-	assert.Empty(t, FindFirstN(&m, []int{5}, 3))
-	assert.Empty(t, FindFirstN(&m, nil, 3))
-	assert.Empty(t, FindAll(&m, []int{5}))
-	assert.Empty(t, FindAll(&m, nil))
-	assert.Equal(t, -1, FindLast(&m, []int{5}))
-	assert.Equal(t, -1, FindLast(&m, nil))
-	assert.Empty(t, FindLastN(&m, []int{5}, 3))
-	assert.Empty(t, FindLastN(&m, nil, 3))
+func TestFindZeroNumber(t *testing.T) {
+	var n Number
+	assert.Equal(t, -1, FindFirst(&n, []int{5}))
+	assert.Equal(t, -1, FindFirst(&n, nil))
+	assert.Empty(t, FindFirstN(&n, []int{5}, 3))
+	assert.Empty(t, FindFirstN(&n, nil, 3))
+	assert.Empty(t, FindAll(&n, []int{5}))
+	assert.Empty(t, FindAll(&n, nil))
+	assert.Equal(t, -1, FindLast(&n, []int{5}))
+	assert.Equal(t, -1, FindLast(&n, nil))
+	assert.Empty(t, FindLastN(&n, []int{5}, 3))
+	assert.Empty(t, FindLastN(&n, nil, 3))
 }
 
 func TestFindZeroDigits(t *testing.T) {
