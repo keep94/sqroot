@@ -282,13 +282,10 @@ func TestNumberWithStartEmpty(t *testing.T) {
 	assert.Zero(t, AllDigits(s))
 }
 
-func TestNumberWithStartNegative(t *testing.T) {
-	assert.Panics(t, func() { Sqrt(19).WithStart(-1) })
-}
-
-func TestNumberWithStartZero(t *testing.T) {
+func TestNumberWithStartZeroOrNegative(t *testing.T) {
 	n := Sqrt(19)
 	assert.Same(t, n, n.WithStart(0))
+	assert.Same(t, n, n.WithStart(-1))
 }
 
 func TestFiniteLengthNumberWithStart(t *testing.T) {

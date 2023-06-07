@@ -35,16 +35,12 @@ type Number struct {
 	exponent int
 }
 
-// WithStart returns this Number as a Sequence without the first start
-// significant digits. WithStart panics if start is negative. If n memoizes
-// its digits, then the returned Sequence will also memoize its digits.
-// Moreover, n and the returned Sequence will share the same memoization
-// data.
+// WithStart returns the digits of n that have positions greater than or
+// equal to start. If n memoizes its digits, then the returned Sequence
+// will also memoize its digits. Moreover, n and the returned Sequence will
+// share the same memoization data.
 func (n *Number) WithStart(start int) Sequence {
-	if start < 0 {
-		panic("start must be non-negative.")
-	}
-	if start == 0 {
+	if start <= 0 {
 		return n
 	}
 	return &numberWithStart{
