@@ -35,6 +35,57 @@ type Number struct {
 	exponent int
 }
 
+// Sqrt returns the square root of radican. Sqrt panics if radican is
+// negative.
+func Sqrt(radican int64) *Number {
+	return nRootFrac(big.NewInt(radican), one, newSqrtManager)
+}
+
+// SqrtRat returns the square root of num / denom. denom must be positive,
+// and num must be non-negative or else SqrtRat panics.
+func SqrtRat(num, denom int64) *Number {
+	return nRootFrac(big.NewInt(num), big.NewInt(denom), newSqrtManager)
+}
+
+// SqrtBigInt returns the square root of radican. SqrtBigInt panics if
+// radican is negative.
+func SqrtBigInt(radican *big.Int) *Number {
+	return nRootFrac(radican, one, newSqrtManager)
+}
+
+// SqrtBigRat returns the square root of radican. The denominator of radican
+// must be positive, and the numerator must be non-negative or else SqrtBigRat
+// panics.
+func SqrtBigRat(radican *big.Rat) *Number {
+	return nRootFrac(radican.Num(), radican.Denom(), newSqrtManager)
+}
+
+// CubeRoot returns the cube root of radican. CubeRoot panics if radican is
+// negative as Number can only hold positive results.
+func CubeRoot(radican int64) *Number {
+	return nRootFrac(big.NewInt(radican), one, newCubeRootManager)
+}
+
+// CubeRootRat returns the cube root of num / denom. Because Number can only
+// hold positive results, denom must be positive, and num must be non-negative
+// or else CubeRootRat panics.
+func CubeRootRat(num, denom int64) *Number {
+	return nRootFrac(big.NewInt(num), big.NewInt(denom), newCubeRootManager)
+}
+
+// CubeRootBigInt returns the cube root of radican. CubeRootBigInt panics if
+// radican is negative as Number can only hold positive results.
+func CubeRootBigInt(radican *big.Int) *Number {
+	return nRootFrac(radican, one, newCubeRootManager)
+}
+
+// CubeRootBigRat returns the cube root of radican. Because Number can only
+// hold positive results, the denominator of radican must be positive, and the
+// numerator must be non-negative or else CubeRootBigRat panics.
+func CubeRootBigRat(radican *big.Rat) *Number {
+	return nRootFrac(radican.Num(), radican.Denom(), newCubeRootManager)
+}
+
 // WithStart returns the digits of n that have positions greater than or
 // equal to start. If n memoizes its digits, then the returned Sequence
 // will also memoize its digits. Moreover, n and the returned Sequence will
@@ -253,57 +304,6 @@ func (n *Number) withSpec(newSpec numberSpec) *Number {
 		return zeroNumber
 	}
 	return &Number{spec: newSpec, exponent: n.exponent}
-}
-
-// Sqrt returns the square root of radican. Sqrt panics if radican is
-// negative.
-func Sqrt(radican int64) *Number {
-	return nRootFrac(big.NewInt(radican), one, newSqrtManager)
-}
-
-// SqrtRat returns the square root of num / denom. denom must be positive,
-// and num must be non-negative or else SqrtRat panics.
-func SqrtRat(num, denom int64) *Number {
-	return nRootFrac(big.NewInt(num), big.NewInt(denom), newSqrtManager)
-}
-
-// SqrtBigInt returns the square root of radican. SqrtBigInt panics if
-// radican is negative.
-func SqrtBigInt(radican *big.Int) *Number {
-	return nRootFrac(radican, one, newSqrtManager)
-}
-
-// SqrtBigRat returns the square root of radican. The denominator of radican
-// must be positive, and the numerator must be non-negative or else SqrtBigRat
-// panics.
-func SqrtBigRat(radican *big.Rat) *Number {
-	return nRootFrac(radican.Num(), radican.Denom(), newSqrtManager)
-}
-
-// CubeRoot returns the cube root of radican. CubeRoot panics if radican is
-// negative as Number can only hold positive results.
-func CubeRoot(radican int64) *Number {
-	return nRootFrac(big.NewInt(radican), one, newCubeRootManager)
-}
-
-// CubeRootRat returns the cube root of num / denom. Because Number can only
-// hold positive results, denom must be positive, and num must be non-negative
-// or else CubeRootRat panics.
-func CubeRootRat(num, denom int64) *Number {
-	return nRootFrac(big.NewInt(num), big.NewInt(denom), newCubeRootManager)
-}
-
-// CubeRootBigInt returns the cube root of radican. CubeRootBigInt panics if
-// radican is negative as Number can only hold positive results.
-func CubeRootBigInt(radican *big.Int) *Number {
-	return nRootFrac(radican, one, newCubeRootManager)
-}
-
-// CubeRootBigRat returns the cube root of radican. Because Number can only
-// hold positive results, the denominator of radican must be positive, and the
-// numerator must be non-negative or else CubeRootBigRat panics.
-func CubeRootBigRat(radican *big.Rat) *Number {
-	return nRootFrac(radican.Num(), radican.Denom(), newCubeRootManager)
 }
 
 func nRootFrac(num, denom *big.Int, newManager func() rootManager) *Number {
