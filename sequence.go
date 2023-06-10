@@ -14,8 +14,6 @@ import (
 // Both Digits and Number pointers implement Sequence.
 type Sequence interface {
 	digitIter() func() (Digit, bool)
-	reverseDigitIter() func() (Digit, bool)
-	canReverse() bool
 }
 
 type part interface {

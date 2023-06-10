@@ -60,17 +60,18 @@ func FindLast(s Sequence, pattern []int) int {
 // in returned array. If s has an infinite number of digits, FindLastN
 // will run forever. pattern is a sequence of digits between 0 and 9.
 func FindLastN(s Sequence, pattern []int, n int) []int {
-	if s.canReverse() {
-		return asIntSlice(rfind(s, pattern), consume2.PSlice[int](0, n))
+	r, ok := s.(reverseSequence)
+	if ok && r.canReverse() {
+		return asIntSlice(rfind(r, pattern), consume2.PSlice[int](0, n))
 	}
 	return findLastN(s, pattern, n)
 }
 
-func rfind(s Sequence, pattern []int) func() int {
+func rfind(r reverseSequence, pattern []int) func() int {
 	if len(pattern) == 0 {
-		return zeroPattern(s.reverseDigitIter())
+		return zeroPattern(r.reverseDigitIter())
 	}
-	return kmp(s.reverseDigitIter(), patternReverse(pattern), true)
+	return kmp(r.reverseDigitIter(), patternReverse(pattern), true)
 }
 
 func find(s Sequence, pattern []int) func() int {
@@ -112,4 +113,9 @@ func findLastN(s Sequence, pattern []int, n int) []int {
 		nposit++
 	}
 	return result
+}
+
+type reverseSequence interface {
+	canReverse() bool
+	reverseDigitIter() func() (Digit, bool)
 }
