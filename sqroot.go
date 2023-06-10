@@ -119,23 +119,27 @@ func (n *Number) IteratorAt(posit int) func() int {
 	return n.iteratorAt(posit)
 }
 
-// Print works like Fprint and prints the mantissa of this Number to stdout.
-func (n *Number) Print(maxDigits int, options ...Option) (written int, err error) {
-	return n.Fprint(os.Stdout, maxDigits, options...)
+// Print works like Fprint and prints digits of the mantissa of this Number
+// to stdout.
+func (n *Number) Print(p Positions, options ...Option) (
+	written int, err error) {
+	return n.Fprint(os.Stdout, p, options...)
 }
 
-// Sprint works like Fprint and prints the mantissa of this Number to a
-// string.
-func (n *Number) Sprint(maxDigits int, options ...Option) string {
+// Sprint works like Fprint and prints digits of the mantissa of this Number
+// to a string.
+func (n *Number) Sprint(p Positions, options ...Option) string {
 	var builder strings.Builder
-	n.Fprint(&builder, maxDigits, options...)
+	n.Fprint(&builder, p, options...)
 	return builder.String()
 }
 
-// Fprint prints the mantissa of this Number to w. Fprint returns the number
-// of bytes written and any error encountered. For options, the default is
-// 50 digits per row, 5 digits per column, and show digit count
-func (n *Number) Fprint(w io.Writer, maxDigits int, options ...Option) (
+// Fprint prints digits of the mantissa of this Number to w. Fprint returns
+// the number of bytes written and any error encountered. p contains the
+// positions of the digits to print. For options, the default is 50 digits
+// per row, 5 digits per column, show digit count, and period (.) for
+// missing digits.
+func (n *Number) Fprint(w io.Writer, p Positions, options ...Option) (
 	written int, err error) {
 	settings := &printerSettings{
 		digitsPerRow:    50,
@@ -143,23 +147,16 @@ func (n *Number) Fprint(w io.Writer, maxDigits int, options ...Option) (
 		showCount:       true,
 		missingDigit:    '.',
 	}
-	return fprint(
-		w,
-		newPart(n, new(PositionsBuilder).AddRange(0, maxDigits).Build()),
-		mutateSettings(options, settings))
+	printer := newPrinter(w, p.limit(), mutateSettings(options, settings))
+	fromSequenceWithPositions(n, p, printer)
+	return printer.byteCount, printer.err
 }
 
 // At returns the significant digit of n at the given 0 based position.
 // If n has posit or fewer significant digits, At returns -1. If posit is
 // negative, At returns -1. By default, At has to compute all prior digits,
 // so computing the kth digit takes O(k^2) time best case. However with
-// memoization enabled, computing the kth digit takes O(1) time best case,
-// but memoization stores all computed digits in memory. GetDigits() is a
-// good alternative when only a few digits need to be computed because it
-// stores only the needed digits in memory while iterating through the
-// digits one time. With GetDigits(), computing k digits always takes O(N^2)
-// time where N is the largest digit position of the batch of digits to be
-// computed.
+// memoization enabled, computing the kth digit takes O(1) time best case.
 func (n *Number) At(posit int) int {
 	if n.spec == nil {
 		return -1

@@ -13,10 +13,10 @@ func TestNumberReusable(t *testing.T) {
 	radican := big.NewInt(5)
 	n := SqrtBigInt(radican)
 	assert.Equal(t, 1, n.Exponent())
-	assert.Equal(t, "0.22360 679", n.Sprint(8))
+	assert.Equal(t, "0.22360 679", n.Sprint(UpTo(8)))
 	assert.Equal(t, big.NewInt(5), radican)
 	radican.SetInt64(7)
-	assert.Equal(t, "0.22360 679", n.Sprint(8))
+	assert.Equal(t, "0.22360 679", n.Sprint(UpTo(8)))
 	assert.Equal(t, big.NewInt(7), radican)
 }
 
@@ -24,13 +24,13 @@ func Test2(t *testing.T) {
 	n := Sqrt(2)
 	assert.False(t, n.IsZero())
 	assert.Equal(t, 1, n.Exponent())
-	assert.Equal(t, "0.14142 13562", n.Sprint(10))
+	assert.Equal(t, "0.14142 13562", n.Sprint(UpTo(10)))
 }
 
 func Test3(t *testing.T) {
 	n := Sqrt(3)
 	assert.Equal(t, 1, n.Exponent())
-	assert.Equal(t, "0.17320 50807", n.Sprint(10))
+	assert.Equal(t, "0.17320 50807", n.Sprint(UpTo(10)))
 }
 
 func Test0(t *testing.T) {
@@ -44,13 +44,13 @@ func Test0(t *testing.T) {
 func Test1(t *testing.T) {
 	n := Sqrt(1)
 	assert.Equal(t, 1, n.Exponent())
-	assert.Equal(t, "0.1", n.Sprint(10))
+	assert.Equal(t, "0.1", n.Sprint(UpTo(10)))
 }
 
 func Test100489(t *testing.T) {
 	n := Sqrt(100489)
 	assert.Equal(t, 3, n.Exponent())
-	assert.Equal(t, "0.317", n.Sprint(10))
+	assert.Equal(t, "0.317", n.Sprint(UpTo(10)))
 }
 
 func Test100489Iterator(t *testing.T) {
@@ -102,48 +102,48 @@ func TestNegative(t *testing.T) {
 func Test256(t *testing.T) {
 	n := Sqrt(256)
 	assert.Equal(t, 2, n.Exponent())
-	assert.Equal(t, "0.16", n.Sprint(10))
+	assert.Equal(t, "0.16", n.Sprint(UpTo(10)))
 }
 
 func Test40(t *testing.T) {
 	n := Sqrt(40)
 	assert.Equal(t, 1, n.Exponent())
-	assert.Equal(t, "0.63245 55320", n.Sprint(10))
+	assert.Equal(t, "0.63245 55320", n.Sprint(UpTo(10)))
 }
 
 func Test0026(t *testing.T) {
 	n := SqrtRat(2600, 1000000)
 	assert.Equal(t, -1, n.Exponent())
-	assert.Equal(t, "0.50990 19513", n.Sprint(10))
+	assert.Equal(t, "0.50990 19513", n.Sprint(UpTo(10)))
 }
 
 func Test026(t *testing.T) {
 	n := SqrtRat(26, 1000)
 	assert.Equal(t, 0, n.Exponent())
-	assert.Equal(t, "0.16124 51549", n.Sprint(10))
+	assert.Equal(t, "0.16124 51549", n.Sprint(UpTo(10)))
 }
 
 func Test2401Over400(t *testing.T) {
 	n := SqrtRat(2401, 4)
 	assert.Equal(t, 2, n.Exponent())
-	assert.Equal(t, "0.245", n.Sprint(10))
+	assert.Equal(t, "0.245", n.Sprint(UpTo(10)))
 }
 
 func Test3Over7(t *testing.T) {
 	n := SqrtRat(3, 7)
 	assert.Equal(t, 0, n.Exponent())
-	assert.Equal(t, "0.65465 36707 0797", n.Sprint(14))
+	assert.Equal(t, "0.65465 36707 0797", n.Sprint(UpTo(14)))
 }
 
 func Test3Over70000Reusable(t *testing.T) {
 	radican := big.NewRat(3, 70000)
 	n := SqrtBigRat(radican)
 	assert.Equal(t, -2, n.Exponent())
-	assert.Equal(t, "0.65465 36707 0797", n.Sprint(14))
+	assert.Equal(t, "0.65465 36707 0797", n.Sprint(UpTo(14)))
 	assert.Equal(t, big.NewRat(3, 70000), radican)
 	radican.Num().SetInt64(5)
 	radican.Denom().SetInt64(80000)
-	assert.Equal(t, "0.65465 36707 0797", n.Sprint(14))
+	assert.Equal(t, "0.65465 36707 0797", n.Sprint(UpTo(14)))
 	assert.Equal(t, big.NewInt(5), radican.Num())
 	assert.Equal(t, big.NewInt(80000), radican.Denom())
 }

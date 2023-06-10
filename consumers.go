@@ -8,6 +8,7 @@ import (
 )
 
 // Digit represents a single digit in a Digits instance.
+// Digit and Digits instances are needed only in rare cases.
 type Digit struct {
 
 	// The 0 based position of the digit.

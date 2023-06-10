@@ -1,8 +1,6 @@
 package sqroot
 
 import (
-	"io"
-
 	"github.com/keep94/consume2"
 )
 
@@ -16,27 +14,29 @@ type Sequence interface {
 	digitIter() func() (Digit, bool)
 }
 
-type part interface {
-	digitIter() func() (Digit, bool)
-	limit() int
+func fromSequenceWithPositions(
+	s Sequence, p Positions, consumer consume2.Consumer[Digit]) {
+	r, ok := s.(randomAccess)
+	if ok && r.enabled() {
+
+		// Optimization: Just choose what we want instead of iterating over
+		// all of s. This can be several orders of magnitude faster if p is
+		// small relative to s. However if p is close to the size of s and
+		// highly fragmented, this can be an order of magnitude slower.
+		// Overall, this optimization is a win because usually p will be
+		// small or not highly fragmented.
+		for _, pr := range p.ranges {
+			consume2.FromGenerator[Digit](
+				r.get(pr.Start, pr.End).digitIter(), consumer)
+		}
+	} else {
+		consume2.FromGenerator[Digit](iterateWithPositions(s, p), consumer)
+	}
 }
 
-type lazyPart struct {
-	sequence  Sequence
-	positions Positions
-}
-
-func newPart(sequence Sequence, positions Positions) part {
-	return &lazyPart{sequence: sequence, positions: positions}
-}
-
-func (p *lazyPart) limit() int {
-	return p.positions.limit()
-}
-
-func (p *lazyPart) digitIter() func() (Digit, bool) {
-	filter := p.positions.filter()
-	iter := p.sequence.digitIter()
+func iterateWithPositions(s Sequence, p Positions) func() (Digit, bool) {
+	filter := p.filter()
+	iter := s.digitIter()
 	d, ok := iter()
 	limit := p.limit()
 	return func() (result Digit, hasResult bool) {
@@ -51,9 +51,7 @@ func (p *lazyPart) digitIter() func() (Digit, bool) {
 	}
 }
 
-func fprint(
-	w io.Writer, part part, settings *printerSettings) (n int, err error) {
-	p := newPrinter(w, part.limit(), settings)
-	consume2.FromGenerator[Digit](part.digitIter(), p)
-	return p.byteCount, p.err
+type randomAccess interface {
+	get(start, end int) Sequence
+	enabled() bool
 }

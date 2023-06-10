@@ -20,10 +20,12 @@ const (
 )
 
 // Digits holds the digits found at selected positions of a Number so
-// that they can be quickly retrieved. Retrieving any digit by position takes
-// O(log N) time where N is the total number of digits. Using Items() or
-// ReverseItems() to retrieve all the digits in order takes O(N) time.
-// The zero value is no digits. Digits implements Sequence.
+// that they can be quickly retrieved. With Memoization available on
+// Number instances, Digits instances are needed only in rare cases.
+// Retrieving any digit by position takes O(log N) time where N is the
+// total number of digits. Using Items() or ReverseItems() to retrieve
+// all the digits in order takes O(N) time. The zero value is no digits.
+// Digits implements Sequence.
 type Digits struct {
 	digits []Digit
 }
@@ -31,24 +33,8 @@ type Digits struct {
 // GetDigits gets the digits from s found at the zero based positions
 // in p.
 func GetDigits(s Sequence, p Positions) Digits {
-	r, ok := s.(randomAccess)
-	if ok && r.enabled() {
-
-		// Optimization: Just choose what we want instead of iterating over
-		// all of s. This can be several orders of magnitude faster if p is
-		// small relative to s. However if p is close to the size of s and
-		// highly fragmented, this can be an order of magnitude slower.
-		// Overall, this optimization is a win because usually p will be
-		// small or not highly fragmented.
-		var builder digitsBuilder
-		for _, pr := range p.ranges {
-			consume2.FromGenerator[Digit](
-				r.get(pr.Start, pr.End).digitIter(), &builder)
-		}
-		return builder.Build()
-	}
 	var builder digitsBuilder
-	consume2.FromGenerator[Digit](newPart(s, p).digitIter(), &builder)
+	fromSequenceWithPositions(s, p, &builder)
 	return builder.Build()
 }
 
@@ -270,7 +256,9 @@ func (d Digits) Fprint(w io.Writer, options ...Option) (n int, err error) {
 		showCount:       true,
 		missingDigit:    '.',
 	}
-	return fprint(w, d, mutateSettings(options, settings))
+	p := newPrinter(w, d.limit(), mutateSettings(options, settings))
+	consume2.FromGenerator[Digit](d.digitIter(), p)
+	return p.byteCount, p.err
 }
 
 func (d Digits) limit() int {
@@ -374,9 +362,4 @@ func (d *digitsBuilder) Build() Digits {
 	result := Digits{digits: d.digits}
 	*d = digitsBuilder{}
 	return result
-}
-
-type randomAccess interface {
-	get(start, end int) Sequence
-	enabled() bool
 }

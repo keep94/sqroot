@@ -180,7 +180,7 @@ func ExampleNumber_Print() {
 	n := sqroot.Sqrt(2)
 
 	fmt.Printf("10^%d *\n", n.Exponent())
-	n.Print(1000)
+	n.Print(sqroot.UpTo(1000))
 	fmt.Println()
 	// Output:
 	// 10^1 *
@@ -204,6 +204,22 @@ func ExampleNumber_Print() {
 	// 850  71803 26802 47442 06292 69124 85905 21810 04459 84215 05911
 	// 900  20249 44134 17285 31478 10580 36033 71077 30918 28693 14710
 	// 950  17111 16839 16581 72688 94197 58716 58215 21282 29518 48847
+}
+
+func ExampleNumber_Print_positions() {
+
+	// Find the square root of 2.
+	n := sqroot.Sqrt(2)
+
+	var pb sqroot.PositionsBuilder
+	n.Print(
+		pb.AddRange(110, 120).AddRange(200, 220).Build(),
+		sqroot.DigitsPerRow(20),
+	)
+	fmt.Println()
+	// Output:
+	// 100  ..... ..... 30912 29702
+	// 200  70109 55997 16059 70274
 }
 
 func ExampleDigits_Print() {

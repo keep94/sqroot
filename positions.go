@@ -72,6 +72,18 @@ type Positions struct {
 	ranges []positionRange
 }
 
+// UpTo returns the positions from 0 up to but not including end.
+func UpTo(end int) Positions {
+	var pb PositionsBuilder
+	return pb.AddRange(0, end).Build()
+}
+
+// Between returns the positions from start up to but not including end.
+func Between(start, end int) Positions {
+	var pb PositionsBuilder
+	return pb.AddRange(start, end).Build()
+}
+
 func (p Positions) limit() int {
 	length := len(p.ranges)
 	if length == 0 {
