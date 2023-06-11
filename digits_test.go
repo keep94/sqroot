@@ -250,7 +250,6 @@ func TestDigitsWithStartAndEnd(t *testing.T) {
 	assert.Equal(t, 300, digits.Len())
 	assert.Equal(t, 400, digits.Min())
 	assert.Equal(t, 699, digits.Max())
-	assert.Equal(t, 700, digits.limit())
 	assert.Equal(t, -1, digits.At(700))
 	assert.Equal(t, -1, digits.At(399))
 	assert.NotEqual(t, -1, digits.At(400))

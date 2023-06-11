@@ -1,10 +1,23 @@
 package sqroot
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestFPrintP(t *testing.T) {
+	p := new(PositionsBuilder).AddRange(5, 8).AddRange(45, 50).Build()
+	d := GetDigits(fakeNumber, p)
+	var builder strings.Builder
+	num, err := d.Fprint(&builder, DigitsPerRow(11), DigitsPerColumn(10))
+	assert.Equal(t, 27, num)
+	assert.NoError(t, err)
+	expected := `  0......678.. .
+44  .67890`
+	assert.Equal(t, expected, builder.String())
+}
 
 func TestPrintP(t *testing.T) {
 	p := new(PositionsBuilder).AddRange(5, 8).AddRange(45, 50).Build()

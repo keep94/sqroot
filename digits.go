@@ -6,10 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"sort"
 	"strconv"
-	"strings"
 
 	"github.com/keep94/consume2"
 )
@@ -233,36 +231,22 @@ func (d Digits) Len() int {
 	return len(d.digits)
 }
 
-// Print works like Fprint printing this instance to stdout.
+// Print prints d to stdout. It is equivalent to
+// sqroot.Print(d, sqroot.UpTo(d.Max() + 1), options...)
 func (d Digits) Print(options ...Option) (n int, err error) {
-	return d.Fprint(os.Stdout, options...)
+	return Print(d, UpTo(d.Max()+1), options...)
 }
 
-// Sprint works like Fprint printing this instance to the returned string.
+// Sprint prints d to a string. It is equivalent to
+// sqroot.Sprint(d, sqroot.UpTo(d.Max() + 1), options...)
 func (d Digits) Sprint(options ...Option) string {
-	var builder strings.Builder
-	d.Fprint(&builder, options...)
-	return builder.String()
+	return Sprint(d, UpTo(d.Max()+1), options...)
 }
 
-// Fprint prints this instance to w and returns number of bytes written
-// and any error encountered. For options, the default is 50 digits per
-// row, 5 digits per column, show digit count, and period (.) for missing
-// digits.
+// Fprint prints d to w. It is equivalent to
+// sqroot.Fprint(w, d, sqroot.UpTo(d.Max() + 1), options...)
 func (d Digits) Fprint(w io.Writer, options ...Option) (n int, err error) {
-	settings := &printerSettings{
-		digitsPerRow:    50,
-		digitsPerColumn: 5,
-		showCount:       true,
-		missingDigit:    '.',
-	}
-	p := newPrinter(w, d.limit(), mutateSettings(options, settings))
-	consume2.FromGenerator[Digit](d.digitIter(), p)
-	return p.byteCount, p.err
-}
-
-func (d Digits) limit() int {
-	return d.Max() + 1
+	return Fprint(w, d, UpTo(d.Max()+1), options...)
 }
 
 func (d Digits) digitIter() func() (Digit, bool) {

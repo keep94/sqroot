@@ -6,7 +6,6 @@ import (
 	"io"
 	"math"
 	"math/big"
-	"os"
 	"strings"
 
 	"github.com/keep94/consume2"
@@ -117,39 +116,6 @@ func (n *Number) IteratorAt(posit int) func() int {
 		panic("posit must be non-negative")
 	}
 	return n.iteratorAt(posit)
-}
-
-// Print works like Fprint and prints digits of the mantissa of this Number
-// to stdout.
-func (n *Number) Print(p Positions, options ...Option) (
-	written int, err error) {
-	return n.Fprint(os.Stdout, p, options...)
-}
-
-// Sprint works like Fprint and prints digits of the mantissa of this Number
-// to a string.
-func (n *Number) Sprint(p Positions, options ...Option) string {
-	var builder strings.Builder
-	n.Fprint(&builder, p, options...)
-	return builder.String()
-}
-
-// Fprint prints digits of the mantissa of this Number to w. Fprint returns
-// the number of bytes written and any error encountered. p contains the
-// positions of the digits to print. For options, the default is 50 digits
-// per row, 5 digits per column, show digit count, and period (.) for
-// missing digits.
-func (n *Number) Fprint(w io.Writer, p Positions, options ...Option) (
-	written int, err error) {
-	settings := &printerSettings{
-		digitsPerRow:    50,
-		digitsPerColumn: 5,
-		showCount:       true,
-		missingDigit:    '.',
-	}
-	printer := newPrinter(w, p.limit(), mutateSettings(options, settings))
-	fromSequenceWithPositions(n, p, printer)
-	return printer.byteCount, printer.err
 }
 
 // At returns the significant digit of n at the given 0 based position.
