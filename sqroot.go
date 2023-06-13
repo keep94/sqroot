@@ -20,6 +20,13 @@ var (
 	zeroNumber = &Number{}
 )
 
+var (
+	_ reverseSequence  = (*Number)(nil)
+	_ reverseSequence  = (*numberWithStart)(nil)
+	_ subRangeSequence = (*Number)(nil)
+	_ subRangeSequence = (*numberWithStart)(nil)
+)
+
 // Number represents a square root value. The zero value for Number
 // corresponds to 0. A Number is of the form mantissa * 10^exponent where
 // mantissa is between 0.1 inclusive and 1.0 exclusive. A Number instance
@@ -251,11 +258,11 @@ func (n *Number) allDigits() []int {
 	return n.spec.FirstN(math.MaxInt)
 }
 
-func (n *Number) enabled() bool {
+func (n *Number) canSubRange() bool {
 	return n.IsMemoize()
 }
 
-func (n *Number) get(start, end int) Sequence {
+func (n *Number) subRange(start, end int) Sequence {
 	return n.WithSignificant(end).WithStart(start)
 }
 
@@ -413,4 +420,15 @@ func (n *numberWithStart) canReverse() bool {
 
 func (n *numberWithStart) reverseDigitIter() func() (Digit, bool) {
 	return n.number.reverseDigitIterTo(n.start)
+}
+
+func (n *numberWithStart) canSubRange() bool {
+	return n.number.IsMemoize()
+}
+
+func (n *numberWithStart) subRange(start, end int) Sequence {
+	if start < n.start {
+		start = n.start
+	}
+	return n.number.subRange(start, end)
 }

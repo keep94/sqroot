@@ -17,6 +17,11 @@ const (
 	unmarshalTextUnexpectedEnd = "sqroot: Digits.UnmarshalText hit unexpected end of text"
 )
 
+var (
+	_ reverseSequence  = Digits{}
+	_ subRangeSequence = Digits{}
+)
+
 // Digits holds the digits found at selected positions of a Number so
 // that they can be quickly retrieved. With Memoization available on
 // Number instances, Digits instances are needed only in rare cases.
@@ -276,11 +281,11 @@ func (d Digits) reverseDigitIter() func() (Digit, bool) {
 	}
 }
 
-func (d Digits) enabled() bool {
+func (d Digits) canSubRange() bool {
 	return true
 }
 
-func (d Digits) get(start, end int) Sequence {
+func (d Digits) subRange(start, end int) Sequence {
 	return d.WithStart(start).WithEnd(end)
 }
 

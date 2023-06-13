@@ -5,7 +5,6 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/keep94/consume2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -220,20 +219,6 @@ func TestWithSignificantToZero(t *testing.T) {
 	assert.Same(t, zeroNumber, Sqrt(2).WithSignificant(0))
 }
 
-func TestAt(t *testing.T) {
-	n := Sqrt(2)
-	assert.Equal(t, 5, n.At(15))
-	assert.Equal(t, 7, n.At(25))
-	assert.Equal(t, -1, n.At(-1))
-}
-
-func TestAtFinite(t *testing.T) {
-	n := Sqrt(100489)
-	assert.Equal(t, 3, n.At(0))
-	assert.Equal(t, 7, n.At(2))
-	assert.Equal(t, -1, n.At(3))
-}
-
 func TestZeroNumber(t *testing.T) {
 	var n Number
 	assert.Equal(t, -1, n.At(0))
@@ -260,20 +245,6 @@ func TestSameNumber(t *testing.T) {
 	assert.Same(t, sevenDigits, sevenDigits.WithMemoize())
 }
 
-func TestNumberWithStart(t *testing.T) {
-	n := Sqrt(19)
-	pattern := getSequentialDigits(n, 500, 2)
-	assert.Less(t, FindFirst(n, pattern), 500)
-	expected := findFirstNAfter(n, 500, pattern, 3)
-	assert.Equal(t, 500, expected[0])
-	actual := FindFirstN(n.WithStart(500), pattern, 3)
-	assert.Equal(t, expected, actual)
-
-	firstTwoResults := FindFirstN(
-		n.WithSignificant(expected[2]+1).WithStart(500), pattern, 3)
-	assert.Equal(t, expected[:2], firstTwoResults)
-}
-
 func TestNumberWithStartEmpty(t *testing.T) {
 	n := Sqrt(19)
 	s := n.WithSignificant(10).WithStart(300000)
@@ -288,51 +259,152 @@ func TestNumberWithStartZeroOrNegative(t *testing.T) {
 	assert.Same(t, n, n.WithStart(-1))
 }
 
-func TestFiniteLengthNumberWithStart(t *testing.T) {
+func TestNumberAt(t *testing.T) {
+	n := fakeNumber
+	assert.Equal(t, -1, n.At(-1))
+	assert.Equal(t, 3, n.At(322))
+	assert.Equal(t, 1, n.At(0))
+	assert.Equal(t, 2, n.At(1))
+	assert.Equal(t, 3, n.At(102))
+	assert.Equal(t, 0, n.At(399))
+}
+
+func TestNumberAtFiniteLength(t *testing.T) {
 	n := Sqrt(100489)
-	s := n.WithStart(1)
-	assert.Equal(t, []int{1}, FindAll(s, []int{1, 7}))
-	assert.Equal(t, []int{1}, FindAll(s, []int{1, 7}))
-	assert.Empty(t, FindAll(n.WithStart(2), []int{1, 7}))
-	assert.Empty(t, FindAll(n.WithStart(300000), []int{1, 7}))
+	assert.Equal(t, -1, n.At(-1))
+	assert.Equal(t, 7, n.At(2))
+	assert.Equal(t, 3, n.At(0))
+	assert.Equal(t, -1, n.At(3))
 }
 
-func TestNumberWithStartAndMemoize(t *testing.T) {
-	n := Sqrt(23)
-	pattern := getSequentialDigits(n, 500, 2)
-	assert.Less(t, FindFirst(n, pattern), 500)
-	expected := findFirstNAfter(n, 500, pattern, 3)
-	assert.Equal(t, 500, expected[0])
-	s := n.WithMemoize().WithStart(500)
-	assert.Equal(t, expected, FindFirstN(s, pattern, 3))
-	assert.Equal(t, expected, FindFirstN(s, pattern, 3))
+func TestNumberAtMemoize(t *testing.T) {
+	n := fakeNumber.WithMemoize()
+	assert.Equal(t, -1, n.At(-1))
+	assert.Equal(t, 3, n.At(322))
+	assert.Equal(t, 1, n.At(0))
+	assert.Equal(t, 2, n.At(1))
+	assert.Equal(t, 3, n.At(102))
+	assert.Equal(t, 0, n.At(399))
 }
 
-func TestNumberGetDigits(t *testing.T) {
-	n := Sqrt(2)
-	var pb PositionsBuilder
-	for i := 0; i < 10000; i += 2 {
-		pb.Add(i)
-	}
-	p := pb.Build()
-	assert.Equal(
-		t, GetDigits(n, p).Sprint(), GetDigits(n.WithMemoize(), p).Sprint())
+func TestNumberAtSig(t *testing.T) {
+	n := fakeNumber.WithSignificant(357)
+	assert.Equal(t, -1, n.At(-1))
+	assert.Equal(t, 3, n.At(322))
+	assert.Equal(t, 1, n.At(0))
+	assert.Equal(t, 4, n.At(303))
+	assert.Equal(t, 7, n.At(356))
+	assert.Equal(t, -1, n.At(357))
 }
 
-func findFirstNAfter(n *Number, start int, pattern []int, count int) []int {
-	pipeline := consume2.PFilter(func(x int) bool { return x >= start })
-	pipeline = consume2.Join(pipeline, consume2.PSlice[int](0, count))
-	var result []int
-	consume2.FromIntGenerator(Find(n, pattern), pipeline.AppendTo(&result))
-	return result
+func TestNumberAtSigMemoize(t *testing.T) {
+	n := fakeNumber.WithSignificant(357).WithMemoize()
+	assert.Equal(t, -1, n.At(-1))
+	assert.Equal(t, 3, n.At(322))
+	assert.Equal(t, 1, n.At(0))
+	assert.Equal(t, 4, n.At(303))
+	assert.Equal(t, 7, n.At(356))
+	assert.Equal(t, -1, n.At(357))
 }
 
-func getSequentialDigits(n *Number, start, length int) []int {
-	var pb PositionsBuilder
-	digits := GetDigits(n, pb.AddRange(start, start+length).Build())
-	result := make([]int, 0, length)
-	for i := start; i < start+length; i++ {
-		result = append(result, digits.At(i))
-	}
-	return result
+func TestNumberAtMemoizeSig(t *testing.T) {
+	n := fakeNumber.WithMemoize().WithSignificant(357)
+	assert.Equal(t, -1, n.At(-1))
+	assert.Equal(t, 3, n.At(322))
+	assert.Equal(t, 1, n.At(0))
+	assert.Equal(t, 4, n.At(303))
+	assert.Equal(t, 7, n.At(356))
+	assert.Equal(t, -1, n.At(357))
+}
+
+func TestNumberInterfaces(t *testing.T) {
+	n := fakeNumber
+	assertStartsAt(t, n, 0)
+	assert.False(t, hasReverse(n))
+	assert.False(t, hasSubRange(n))
+}
+
+func TestNumberInterfacesSig(t *testing.T) {
+	n := fakeNumber.WithSignificant(357)
+	assertRange(t, n, 0, 357)
+	assert.False(t, hasReverse(n))
+	assert.False(t, hasSubRange(n))
+}
+
+func TestNumberInterfacesMemoize(t *testing.T) {
+	n := fakeNumber.WithMemoize()
+	assertStartsAt(t, n, 0)
+	assert.True(t, hasReverse(n))
+	assert.True(t, hasSubRange(n))
+	assertRange(t, subRange(n, 62, 404), 62, 404)
+	assertEmpty(t, subRange(n, 62, 62))
+}
+
+func TestNumberInterfacesSigMemoize(t *testing.T) {
+	n := fakeNumber.WithSignificant(357).WithMemoize()
+	assertRange(t, n, 0, 357)
+	assert.True(t, hasReverse(n))
+	assert.True(t, hasSubRange(n))
+	assertRange(t, subRange(n, 62, 404), 62, 357)
+	assertEmpty(t, subRange(n, 62, 62))
+	assertEmpty(t, subRange(n, 357, 400))
+}
+
+func TestNumberInterfacesMemoizeSig(t *testing.T) {
+	n := fakeNumber.WithMemoize().WithSignificant(357)
+	assertRange(t, n, 0, 357)
+	assert.True(t, hasReverse(n))
+	assert.True(t, hasSubRange(n))
+	assertRange(t, subRange(n, 62, 404), 62, 357)
+	assertEmpty(t, subRange(n, 62, 62))
+	assertEmpty(t, subRange(n, 357, 400))
+}
+
+func TestWithStart(t *testing.T) {
+	n := fakeNumber
+	seq := n.WithStart(423)
+	assertStartsAt(t, seq, 423)
+	assert.False(t, hasReverse(seq))
+	assert.False(t, hasSubRange(seq))
+}
+
+func TestWithStartSig(t *testing.T) {
+	n := fakeNumber.WithSignificant(541)
+	seq := n.WithStart(423)
+	assertRange(t, seq, 423, 541)
+	assert.False(t, hasReverse(seq))
+	assert.False(t, hasSubRange(seq))
+	assertEmpty(t, n.WithStart(541))
+	assertEmpty(t, n.WithStart(542))
+}
+
+func TestWithStartMemoize(t *testing.T) {
+	n := fakeNumber.WithMemoize()
+	seq := n.WithStart(423)
+	assertStartsAt(t, seq, 423)
+	assert.True(t, hasReverse(seq))
+	assert.True(t, hasSubRange(seq))
+	assertRange(t, subRange(seq, 357, 504), 423, 504)
+}
+
+func TestWithStartSigMemoize(t *testing.T) {
+	n := fakeNumber.WithSignificant(541).WithMemoize()
+	seq := n.WithStart(423)
+	assertRange(t, seq, 423, 541)
+	assert.True(t, hasReverse(seq))
+	assert.True(t, hasSubRange(seq))
+	assertRange(t, subRange(seq, 357, 600), 423, 541)
+	assertEmpty(t, n.WithStart(541))
+	assertEmpty(t, n.WithStart(542))
+}
+
+func TestWithStartMemoizeSig(t *testing.T) {
+	n := fakeNumber.WithMemoize().WithSignificant(541)
+	seq := n.WithStart(423)
+	assertRange(t, seq, 423, 541)
+	assert.True(t, hasReverse(seq))
+	assert.True(t, hasSubRange(seq))
+	assertRange(t, subRange(seq, 357, 600), 423, 541)
+	assertEmpty(t, n.WithStart(541))
+	assertEmpty(t, n.WithStart(542))
 }

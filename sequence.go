@@ -50,8 +50,8 @@ func Print(s Sequence, p Positions, options ...Option) (
 
 func fromSequenceWithPositions(
 	s Sequence, p Positions, consumer consume2.Consumer[Digit]) {
-	r, ok := s.(randomAccess)
-	if ok && r.enabled() {
+	sr, ok := s.(subRangeSequence)
+	if ok && sr.canSubRange() {
 
 		// Optimization: Just choose what we want instead of iterating over
 		// all of s. This can be several orders of magnitude faster if p is
@@ -61,7 +61,7 @@ func fromSequenceWithPositions(
 		// small or not highly fragmented.
 		for _, pr := range p.ranges {
 			consume2.FromGenerator[Digit](
-				r.get(pr.Start, pr.End).digitIter(), consumer)
+				sr.subRange(pr.Start, pr.End).digitIter(), consumer)
 		}
 	} else {
 		consume2.FromGenerator[Digit](iterateWithPositions(s, p), consumer)
@@ -85,7 +85,7 @@ func iterateWithPositions(s Sequence, p Positions) func() (Digit, bool) {
 	}
 }
 
-type randomAccess interface {
-	get(start, end int) Sequence
-	enabled() bool
+type subRangeSequence interface {
+	subRange(start, end int) Sequence
+	canSubRange() bool
 }

@@ -28,101 +28,14 @@ func TestPrintP(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-func TestPrintP2(t *testing.T) {
+func TestPrintDigits(t *testing.T) {
 	var pb PositionsBuilder
-	p := pb.AddRange(0, 2).AddRange(3, 5).AddRange(8, 11).Build()
-	digits := GetDigits(fakeNumber, p)
-	actual := digits.Sprint(DigitsPerRow(11), DigitsPerColumn(10))
-	expected := `0.12.45...90 1`
+	p := pb.AddRange(100, 200).AddRange(300, 400).AddRange(500, 600).Build()
+	d := GetDigits(fakeNumber, p)
+	pb.AddRange(0, 101).AddRange(200, 300).AddRange(399, 500)
+	q := pb.AddRange(700, 800).Build()
+	actual := Sprint(d, q, DigitsPerRow(10))
+	expected := `100  1.... .....
+390  ..... ....0`
 	assert.Equal(t, expected, actual)
-}
-
-func TestPrintPGaps(t *testing.T) {
-	var pb PositionsBuilder
-	p := pb.AddRange(22, 44).AddRange(66, 77).Build()
-	digits := GetDigits(fakeNumber, p)
-	actual := digits.Sprint(DigitsPerRow(11), DigitsPerColumn(10))
-	expected := `22  3456789012 3
-33  4567890123 4
-66  7890123456 7`
-	assert.Equal(t, expected, actual)
-}
-
-func TestPrintPGaps2(t *testing.T) {
-	var pb PositionsBuilder
-	pb.AddRange(0, 10).AddRange(11, 21).AddRange(33, 43).AddRange(66, 76)
-	p := pb.Build()
-	digits := GetDigits(fakeNumber, p)
-	actual := digits.Sprint(DigitsPerRow(11), DigitsPerColumn(10))
-	expected := `  0.1234567890 .
-11  2345678901 .
-33  4567890123 .
-66  7890123456`
-	assert.Equal(t, expected, actual)
-}
-
-func TestPrintPGaps3(t *testing.T) {
-	var pb PositionsBuilder
-	p := pb.AddRange(21, 33).AddRange(65, 77).Build()
-	digits := GetDigits(fakeNumber, p)
-	actual := digits.Sprint(
-		DigitsPerRow(11), DigitsPerColumn(10), MissingDigit('-'))
-	expected := `11  ---------- 2
-22  3456789012 3
-55  ---------- 6
-66  7890123456 7`
-	assert.Equal(t, expected, actual)
-}
-
-func TestPrintPNoShowCount(t *testing.T) {
-	var pb PositionsBuilder
-	p := pb.AddRange(21, 33).AddRange(65, 77).Build()
-	digits := GetDigits(fakeNumber, p)
-	actual := digits.Sprint(
-		DigitsPerRow(11), DigitsPerColumn(10), ShowCount(false))
-	expected := `0........... .
-  .......... 2
-  3456789012 3
-  .......... .
-  .......... .
-  .......... 6
-  7890123456 7`
-	assert.Equal(t, expected, actual)
-}
-
-func TestPrintPNarrow(t *testing.T) {
-	var pb PositionsBuilder
-	p := pb.Add(3).Add(5).Add(8).Build()
-	digits := GetDigits(fakeNumber, p)
-	actual := digits.Sprint(DigitsPerRow(1))
-	expected := `3  4
-5  6
-8  9`
-	assert.Equal(t, expected, actual)
-}
-
-func TestPrintPDefaults(t *testing.T) {
-	var pb PositionsBuilder
-	p := pb.AddRange(0, 75).Build()
-	digits := GetDigits(fakeNumber, p)
-	actual := digits.Sprint()
-	expected := `  0.12345 67890 12345 67890 12345 67890 12345 67890 12345 67890
-50  12345 67890 12345 67890 12345`
-	assert.Equal(t, expected, actual)
-}
-
-func TestPrintPTooShort(t *testing.T) {
-	n := Sqrt(100489)
-	p := new(PositionsBuilder).AddRange(3, 5).Build()
-	digits := GetDigits(n, p)
-	assert.Zero(t, digits)
-	assert.Empty(t, digits.Sprint())
-}
-
-func TestPrintPZero(t *testing.T) {
-	var n Number
-	p := new(PositionsBuilder).AddRange(3, 5).Build()
-	digits := GetDigits(&n, p)
-	assert.Zero(t, digits)
-	assert.Empty(t, digits.Sprint())
 }
