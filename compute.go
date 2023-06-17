@@ -25,7 +25,6 @@ type rootManager interface {
 type numberSpec interface {
 	IteratorAt(index int) func() int
 	At(index int) int
-	IsMemoize() bool
 	FirstN(n int) []int
 }
 
@@ -35,21 +34,7 @@ type nRootSpec struct {
 	newManager func() rootManager
 }
 
-func (n *nRootSpec) At(index int) int {
-	return simpleAt(n.iterator(), index)
-}
-
-func (n *nRootSpec) IteratorAt(index int) func() int {
-	return fastForward(n.iterator(), index)
-}
-
-func (n *nRootSpec) IsMemoize() bool { return false }
-
-func (n *nRootSpec) FirstN(size int) []int {
-	panic("FirstN not supported")
-}
-
-func (n *nRootSpec) iterator() func() int {
+func (n *nRootSpec) Iterator() func() int {
 	manager := n.newManager()
 	base := manager.Base(new(big.Int))
 	incr := big.NewInt(1)
@@ -115,10 +100,6 @@ func (l *limitSpec) At(index int) int {
 	return l.delegate.At(index)
 }
 
-func (l *limitSpec) IsMemoize() bool {
-	return l.delegate.IsMemoize()
-}
-
 func (l *limitSpec) IteratorAt(index int) func() int {
 	if index > l.limit {
 		index = l.limit
@@ -140,27 +121,8 @@ func (l *limitSpec) FirstN(n int) []int {
 	return l.delegate.FirstN(n)
 }
 
-func withMemoize(spec numberSpec) numberSpec {
-	if spec == nil {
-		return nil
-	}
-	if spec.IsMemoize() {
-		return spec
-	}
-	return newMemoizer(spec.IteratorAt(0))
-}
-
-func simpleAt(iter func() int, index int) int {
-	if index < 0 {
-		return -1
-	}
-	return fastForward(iter, index)()
-}
-
-func fastForward(iter func() int, index int) func() int {
-	for i := 0; i < index && iter() != -1; i++ {
-	}
-	return iter
+func withMemoize(spec *nRootSpec) numberSpec {
+	return newMemoizer(spec.Iterator())
 }
 
 type sqrtManager struct {

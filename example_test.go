@@ -84,26 +84,6 @@ func ExampleFindLastN() {
 	// [945 916 631]
 }
 
-func ExampleGetDigits() {
-
-	// sqrt(7) = 0.264575131106459...*10^1
-	n := sqroot.Sqrt(7)
-
-	var pb sqroot.PositionsBuilder
-	pb.AddRange(0, 3).Add(4).Add(10)
-	digits := sqroot.GetDigits(n, pb.Build())
-	iter := digits.Items()
-	for digit, ok := iter(); ok; digit, ok = iter() {
-		fmt.Printf("Position: %d; Digit: %d\n", digit.Position, digit.Value)
-	}
-	// Output:
-	// Position: 0; Digit: 2
-	// Position: 1; Digit: 6
-	// Position: 2; Digit: 4
-	// Position: 4; Digit: 7
-	// Position: 10; Digit: 0
-}
-
 func ExampleNumber_Exponent() {
 
 	// sqrt(50176) = 0.224 * 10^3
@@ -161,7 +141,7 @@ func ExampleNumber_IteratorAt() {
 func ExampleNumber_WithStart() {
 
 	// sqrt(29) = 5.3851648...
-	n := sqroot.Sqrt(29).WithSignificant(1000).WithMemoize()
+	n := sqroot.Sqrt(29).WithSignificant(1000)
 
 	// Find all occurrences of '85' in the first 1000 digits of sqrt(29)
 	fmt.Println(sqroot.FindAll(n, []int{8, 5}))
@@ -219,22 +199,6 @@ func ExamplePrint_positions() {
 	// 200  70109 55997 16059 70274
 }
 
-func ExampleDigits_Print() {
-
-	// Find the square root of 2.
-	n := sqroot.Sqrt(2)
-
-	var pb sqroot.PositionsBuilder
-	pb.AddRange(200, 210).AddRange(500, 510).AddRange(1000, 1010)
-	digits := sqroot.GetDigits(n, pb.Build())
-	digits.Print(sqroot.DigitsPerRow(10))
-	fmt.Println()
-	// Output:
-	//  200  70109 55997
-	//  500  35288 50926
-	// 1000  20896 94633
-}
-
 func ExampleNumber_At() {
 
 	// sqrt(7) = 0.264575131106459...*10^1
@@ -258,21 +222,4 @@ func ExampleNumber_WithSignificant() {
 	fmt.Println(sqroot.FindFirst(n, []int{1, 1, 2}))
 	// Output:
 	// -1
-}
-
-func ExampleNumber_WithMemoize() {
-	n := sqroot.Sqrt(6).WithMemoize()
-
-	// Without memoization, the loop below takes 45 seconds to execute on a
-	// certain macbook pro because the At call has to compute all previous
-	// digits at each iteration. With memoization, the loop below runs in
-	// milliseconds on the same macbook pro because n remembers
-	// all of its previously computed digits.
-	sum := 0
-	for i := 0; i < 10000; i++ {
-		sum += n.At(i)
-	}
-	fmt.Println(sum)
-	// Output:
-	// 44707
 }

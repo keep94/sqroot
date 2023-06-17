@@ -9,14 +9,14 @@ import (
 
 var (
 	// fakeNumber = 0.12345678901234567890...
-	fakeNumber = &Number{spec: funcNumberSpec(
+	fakeNumber = &Number{spec: newMemoizer(
 		func() func() int {
 			i := 0
 			return func() int {
 				i++
 				return i % 10
 			}
-		})}
+		}())}
 )
 
 func TestPrintZeroDigits(t *testing.T) {
@@ -227,6 +227,18 @@ func TestPrinterWithPositions(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
+func TestPrinterWithPositions2(t *testing.T) {
+	var pb PositionsBuilder
+	actual := Sprint(
+		fakeNumber,
+		pb.AddRange(42, 48).AddRange(64, 68).Build(),
+		DigitsPerRow(10),
+		DigitsPerColumn(0))
+	expected := `40  ..345678..
+60  ....5678`
+	assert.Equal(t, expected, actual)
+}
+
 func TestPrinterFewerDigits(t *testing.T) {
 	actual := Sprint(
 		fakeNumber.WithSignificant(9),
@@ -278,20 +290,4 @@ func (m *maxBytesWriter) Write(p []byte) (n int, err error) {
 	diff := m.maxBytes - m.bytesWritten
 	m.bytesWritten += diff
 	return diff, errors.New("Ran out of space")
-}
-
-type funcNumberSpec func() func() int
-
-func (f funcNumberSpec) IteratorAt(index int) func() int {
-	return fastForward(f(), index)
-}
-
-func (f funcNumberSpec) At(index int) int {
-	return simpleAt(f(), index)
-}
-
-func (f funcNumberSpec) IsMemoize() bool { return false }
-
-func (f funcNumberSpec) FirstN(n int) []int {
-	panic("FirstN not supported")
 }

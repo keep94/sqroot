@@ -20,22 +20,11 @@ var (
 	zeroNumber = &Number{}
 )
 
-var (
-	_ reverseSequence  = (*Number)(nil)
-	_ reverseSequence  = (*numberWithStart)(nil)
-	_ subRangeSequence = (*Number)(nil)
-	_ subRangeSequence = (*numberWithStart)(nil)
-)
-
 // Number represents a square root value. The zero value for Number
 // corresponds to 0. A Number is of the form mantissa * 10^exponent where
 // mantissa is between 0.1 inclusive and 1.0 exclusive. A Number instance
-// can represent an infinite number of digits. By default, a Number
-// instance computes its digits lazily on demand each time. Computing the
-// first N digits of a Number takes O(N^2) time. However a Number can be
-// set to memoize its digits. Number pointers implement Sequence. Number
-// instances do not support assignment. Number instances are safe to use
-// with multiple goroutines.
+// can represent an infinite number of digits. Number pointers implement
+// Sequence. Number instances are safe to use with multiple goroutines.
 type Number struct {
 	spec     numberSpec
 	exponent int
@@ -93,9 +82,7 @@ func CubeRootBigRat(radican *big.Rat) *Number {
 }
 
 // WithStart returns the digits of n that have positions greater than or
-// equal to start. If n memoizes its digits, then the returned Sequence
-// will also memoize its digits. Moreover, n and the returned Sequence will
-// share the same memoization data.
+// equal to start.
 func (n *Number) WithStart(start int) Sequence {
 	if start <= 0 {
 		return n
@@ -127,9 +114,7 @@ func (n *Number) IteratorAt(posit int) func() int {
 
 // At returns the significant digit of n at the given 0 based position.
 // If n has posit or fewer significant digits, At returns -1. If posit is
-// negative, At returns -1. By default, At has to compute all prior digits,
-// so computing the kth digit takes O(k^2) time best case. However with
-// memoization enabled, computing the kth digit takes O(1) time best case.
+// negative, At returns -1.
 func (n *Number) At(posit int) int {
 	if n.spec == nil {
 		return -1
@@ -137,34 +122,16 @@ func (n *Number) At(posit int) int {
 	return n.spec.At(posit)
 }
 
-// IsMemoize returns true if n memoizes its digits. If n is zero, IsMemoize
-// always returns true.
-func (n *Number) IsMemoize() bool {
-	if n.spec == nil {
-		return true
-	}
-	return n.spec.IsMemoize()
-}
-
 // WithSignificant returns a Number like this one that has no more than
 // limit significant digits. WithSignificant rounds the returned Number
 // down toward zero when necessary. WithSignificant panics if limit is
-// negative. If n memoizes its digits, then the returned Number will also
-// memoize its digits. Moreover, the two will share the same memoization
-// data. WithSignificant will return n, if it can determine that n already
-// has limit or fewer significant digits.
+// negative. WithSignificant will return n, if it can determine that n
+// already has limit or fewer significant digits.
 func (n *Number) WithSignificant(limit int) *Number {
 	if limit < 0 {
 		panic("limit must be non-negative")
 	}
 	return n.withSpec(withLimit(n.spec, limit))
-}
-
-// WithMemoize returns a Number like this one that remembers all of its
-// previously computed digits. WithMemoize returns n, if n already memoizes
-// its digits.
-func (n *Number) WithMemoize() *Number {
-	return n.withSpec(withMemoize(n.spec))
 }
 
 // Exponent returns the exponent of this Number.
@@ -206,41 +173,37 @@ func (n *Number) withExponent(e int) *Number {
 	return &Number{exponent: e, spec: n.spec}
 }
 
-func (n *Number) digitIter() func() (Digit, bool) {
+func (n *Number) digitIter() func() (digit, bool) {
 	return n.digitIterAt(0)
 }
 
-func (n *Number) canReverse() bool {
-	return n.IsMemoize()
-}
-
-func (n *Number) reverseDigitIter() func() (Digit, bool) {
+func (n *Number) reverseDigitIter() func() (digit, bool) {
 	return n.reverseDigitIterTo(0)
 }
 
-func (n *Number) digitIterAt(index int) func() (Digit, bool) {
+func (n *Number) digitIterAt(index int) func() (digit, bool) {
 	iter := n.iteratorAt(index)
-	digit := iter()
-	return func() (dt Digit, ok bool) {
-		if digit == -1 {
+	dig := iter()
+	return func() (dt digit, ok bool) {
+		if dig == -1 {
 			return
 		}
-		result := Digit{Position: index, Value: digit}
-		digit = iter()
+		result := digit{Position: index, Value: dig}
+		dig = iter()
 		index++
 		return result, true
 	}
 }
 
-func (n *Number) reverseDigitIterTo(start int) func() (Digit, bool) {
+func (n *Number) reverseDigitIterTo(start int) func() (digit, bool) {
 	digits := n.allDigits()
 	index := len(digits)
-	return func() (d Digit, ok bool) {
+	return func() (d digit, ok bool) {
 		if index <= start {
 			return
 		}
 		index--
-		return Digit{Position: index, Value: digits[index]}, true
+		return digit{Position: index, Value: digits[index]}, true
 	}
 }
 
@@ -256,10 +219,6 @@ func (n *Number) allDigits() []int {
 		return nil
 	}
 	return n.spec.FirstN(math.MaxInt)
-}
-
-func (n *Number) canSubRange() bool {
-	return n.IsMemoize()
 }
 
 func (n *Number) subRange(start, end int) Sequence {
@@ -306,7 +265,7 @@ func nRootFrac(num, denom *big.Int, newManager func() rootManager) *Number {
 	spec.num.Set(num)
 	spec.denom.Set(denom)
 	spec.newManager = newManager
-	return &Number{exponent: exp, spec: spec}
+	return &Number{exponent: exp, spec: withMemoize(spec)}
 }
 
 type formatSpec struct {
@@ -410,20 +369,12 @@ type numberWithStart struct {
 	start  int
 }
 
-func (n *numberWithStart) digitIter() func() (Digit, bool) {
+func (n *numberWithStart) digitIter() func() (digit, bool) {
 	return n.number.digitIterAt(n.start)
 }
 
-func (n *numberWithStart) canReverse() bool {
-	return n.number.IsMemoize()
-}
-
-func (n *numberWithStart) reverseDigitIter() func() (Digit, bool) {
+func (n *numberWithStart) reverseDigitIter() func() (digit, bool) {
 	return n.number.reverseDigitIterTo(n.start)
-}
-
-func (n *numberWithStart) canSubRange() bool {
-	return n.number.IsMemoize()
 }
 
 func (n *numberWithStart) subRange(start, end int) Sequence {

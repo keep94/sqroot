@@ -74,13 +74,7 @@ func TestFindLast(t *testing.T) {
 	assert.Equal(t, 998, FindLast(n, []int{9, 0}))
 	assert.Equal(t, 994, FindLast(n, []int{5, 6}))
 	assert.Equal(t, -1, FindLast(n, []int{5, 7}))
-}
-
-func TestFindLastMemoize(t *testing.T) {
-	n := fakeNumber.WithSignificant(1000).WithMemoize()
-	assert.Equal(t, 998, FindLast(n, []int{9, 0}))
-	assert.Equal(t, 994, FindLast(n, []int{5, 6}))
-	assert.Equal(t, -1, FindLast(n, []int{5, 7}))
+	assert.Equal(t, 2, FindLast(Sqrt(1522756), []int{3, 4}))
 }
 
 func TestFindLastN(t *testing.T) {
@@ -97,42 +91,6 @@ func TestFindLastN(t *testing.T) {
 	assert.Empty(t, hits)
 	hits = FindLastN(n, []int{5, 6}, 0)
 	assert.Empty(t, hits)
-}
-
-func TestFindLastNMemoize(t *testing.T) {
-	hits := FindLastN(
-		fakeNumber.WithSignificant(1200).WithMemoize(), []int{5, 6}, 3)
-	assert.Equal(t, []int{1194, 1184, 1174}, hits)
-	n := fakeNumber.WithSignificant(1000).WithMemoize()
-	hits = FindLastN(n, []int{5, 6}, 3)
-	assert.Equal(t, []int{994, 984, 974}, hits)
-	hits = FindLastN(n.WithStart(975), []int{5, 6}, 3)
-	assert.Equal(t, []int{994, 984}, hits)
-	hits = FindLastN(n, nil, 4)
-	assert.Equal(t, []int{999, 998, 997, 996}, hits)
-	hits = FindLastN(n, []int{5, 7, 9}, 3)
-	assert.Empty(t, hits)
-	hits = FindLastN(n, []int{5, 6}, 0)
-	assert.Empty(t, hits)
-}
-
-func TestFindDigits(t *testing.T) {
-	str := "v1:01201[10]010101[20]120101"
-	var d Digits
-	d.UnmarshalText([]byte(str))
-	pattern := []int{0, 1, 0, 1}
-	hits := FindLastN(d, pattern, 4)
-	assert.Equal(t, []int{22, 12, 10}, hits)
-	hits = FindLastN(d, pattern, 3)
-	assert.Equal(t, []int{22, 12, 10}, hits)
-	hits = FindLastN(d, pattern, 2)
-	assert.Equal(t, []int{22, 12}, hits)
-	hits = FindLastN(d, pattern, 0)
-	assert.Empty(t, hits)
-	hits = FindLastN(d, nil, 8)
-	assert.Equal(t, []int{25, 24, 23, 22, 21, 20, 15, 14}, hits)
-	hits = FindFirstN(d, pattern, 2)
-	assert.Equal(t, []int{10, 12}, hits)
 }
 
 func TestFindZeroNumber(t *testing.T) {

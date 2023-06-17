@@ -7,9 +7,7 @@ import (
 	"strings"
 )
 
-// Digit represents a single digit in a Digits instance.
-// Digit and Digits instances are needed only in rare cases.
-type Digit struct {
+type digit struct {
 
 	// The 0 based position of the digit.
 	Position int
@@ -31,7 +29,7 @@ func newPrinter(
 	return &result
 }
 
-func (p *printer) Consume(d Digit) {
+func (p *printer) Consume(d digit) {
 	if p.index < d.Position {
 		if p.digitsPerRow > 0 && p.digitCountSpec != "" {
 			p.skipRowsFor(d.Position)

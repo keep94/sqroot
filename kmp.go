@@ -16,7 +16,7 @@ func ttable(pattern []int) []int {
 	return result
 }
 
-func zeroPattern(f func() (Digit, bool)) func() int {
+func zeroPattern(f func() (digit, bool)) func() int {
 	return func() int {
 		d, ok := f()
 		if !ok {
@@ -26,7 +26,7 @@ func zeroPattern(f func() (Digit, bool)) func() int {
 	}
 }
 
-func kmp(f func() (Digit, bool), pattern []int, reverse bool) func() int {
+func kmp(f func() (digit, bool), pattern []int, reverse bool) func() int {
 	kernel := newKmpKernel(pattern)
 	direction := 1
 	if reverse {

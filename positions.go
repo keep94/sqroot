@@ -92,31 +92,9 @@ func (p Positions) limit() int {
 	return p.ranges[length-1].End
 }
 
-func (p Positions) filter() *positionsFilter {
-	return &positionsFilter{ranges: p.ranges}
-}
-
 type positionRange struct {
 	Start int
 	End   int
-}
-
-type positionsFilter struct {
-	ranges     []positionRange
-	startIndex int
-	limit      int
-}
-
-func (p *positionsFilter) Includes(posit int) bool {
-	p.update(posit)
-	return posit < p.limit
-}
-
-func (p *positionsFilter) update(posit int) {
-	for p.startIndex < len(p.ranges) && p.ranges[p.startIndex].Start <= posit {
-		p.limit = p.ranges[p.startIndex].End
-		p.startIndex++
-	}
 }
 
 func appendNotBefore(item positionRange, ranges *[]positionRange) {

@@ -224,33 +224,24 @@ func TestZeroNumber(t *testing.T) {
 	assert.Equal(t, -1, n.At(0))
 	assert.Zero(t, n.Exponent())
 	assert.True(t, n.IsZero())
-	assert.Zero(t, AllDigits(&n))
-	assert.True(t, n.IsMemoize())
-	assert.Same(t, &n, n.WithMemoize())
 	assert.Same(t, &n, n.WithSignificant(5))
 	assert.Equal(t, -1, n.Iterator()())
 	assert.Equal(t, "0", n.String())
 	s := n.WithSignificant(2000000000).WithStart(1900000000)
-	assert.Zero(t, AllDigits(s))
+	assertEmpty(t, s)
 }
 
 func TestSameNumber(t *testing.T) {
 	n := Sqrt(6)
 	sixDigits := n.WithSignificant(6)
 	assert.Same(t, sixDigits, sixDigits.WithSignificant(6))
-	memoized := sixDigits.WithMemoize()
-	assert.Same(t, memoized, memoized.WithMemoize())
-	sevenDigits := memoized.WithSignificant(7)
-	assert.Same(t, sevenDigits, sevenDigits.WithSignificant(8))
-	assert.Same(t, sevenDigits, sevenDigits.WithMemoize())
+	assert.Same(t, sixDigits, sixDigits.WithSignificant(7))
 }
 
 func TestNumberWithStartEmpty(t *testing.T) {
 	n := Sqrt(19)
-	s := n.WithSignificant(10).WithStart(300000)
-	assert.Zero(t, AllDigits(s))
-	s = n.WithSignificant(10).WithStart(10)
-	assert.Zero(t, AllDigits(s))
+	assertEmpty(t, n.WithSignificant(10).WithStart(300000))
+	assertEmpty(t, n.WithSignificant(10).WithStart(10))
 }
 
 func TestNumberWithStartZeroOrNegative(t *testing.T) {
@@ -277,38 +268,8 @@ func TestNumberAtFiniteLength(t *testing.T) {
 	assert.Equal(t, -1, n.At(3))
 }
 
-func TestNumberAtMemoize(t *testing.T) {
-	n := fakeNumber.WithMemoize()
-	assert.Equal(t, -1, n.At(-1))
-	assert.Equal(t, 3, n.At(322))
-	assert.Equal(t, 1, n.At(0))
-	assert.Equal(t, 2, n.At(1))
-	assert.Equal(t, 3, n.At(102))
-	assert.Equal(t, 0, n.At(399))
-}
-
 func TestNumberAtSig(t *testing.T) {
 	n := fakeNumber.WithSignificant(357)
-	assert.Equal(t, -1, n.At(-1))
-	assert.Equal(t, 3, n.At(322))
-	assert.Equal(t, 1, n.At(0))
-	assert.Equal(t, 4, n.At(303))
-	assert.Equal(t, 7, n.At(356))
-	assert.Equal(t, -1, n.At(357))
-}
-
-func TestNumberAtSigMemoize(t *testing.T) {
-	n := fakeNumber.WithSignificant(357).WithMemoize()
-	assert.Equal(t, -1, n.At(-1))
-	assert.Equal(t, 3, n.At(322))
-	assert.Equal(t, 1, n.At(0))
-	assert.Equal(t, 4, n.At(303))
-	assert.Equal(t, 7, n.At(356))
-	assert.Equal(t, -1, n.At(357))
-}
-
-func TestNumberAtMemoizeSig(t *testing.T) {
-	n := fakeNumber.WithMemoize().WithSignificant(357)
 	assert.Equal(t, -1, n.At(-1))
 	assert.Equal(t, 3, n.At(322))
 	assert.Equal(t, 1, n.At(0))
@@ -320,91 +281,30 @@ func TestNumberAtMemoizeSig(t *testing.T) {
 func TestNumberInterfaces(t *testing.T) {
 	n := fakeNumber
 	assertStartsAt(t, n, 0)
-	assert.False(t, hasReverse(n))
-	assert.False(t, hasSubRange(n))
+	assertRange(t, n.subRange(62, 404), 62, 404)
+	assertEmpty(t, n.subRange(62, 62))
 }
 
 func TestNumberInterfacesSig(t *testing.T) {
 	n := fakeNumber.WithSignificant(357)
 	assertRange(t, n, 0, 357)
-	assert.False(t, hasReverse(n))
-	assert.False(t, hasSubRange(n))
-}
-
-func TestNumberInterfacesMemoize(t *testing.T) {
-	n := fakeNumber.WithMemoize()
-	assertStartsAt(t, n, 0)
-	assert.True(t, hasReverse(n))
-	assert.True(t, hasSubRange(n))
-	assertRange(t, subRange(n, 62, 404), 62, 404)
-	assertEmpty(t, subRange(n, 62, 62))
-}
-
-func TestNumberInterfacesSigMemoize(t *testing.T) {
-	n := fakeNumber.WithSignificant(357).WithMemoize()
-	assertRange(t, n, 0, 357)
-	assert.True(t, hasReverse(n))
-	assert.True(t, hasSubRange(n))
-	assertRange(t, subRange(n, 62, 404), 62, 357)
-	assertEmpty(t, subRange(n, 62, 62))
-	assertEmpty(t, subRange(n, 357, 400))
-}
-
-func TestNumberInterfacesMemoizeSig(t *testing.T) {
-	n := fakeNumber.WithMemoize().WithSignificant(357)
-	assertRange(t, n, 0, 357)
-	assert.True(t, hasReverse(n))
-	assert.True(t, hasSubRange(n))
-	assertRange(t, subRange(n, 62, 404), 62, 357)
-	assertEmpty(t, subRange(n, 62, 62))
-	assertEmpty(t, subRange(n, 357, 400))
+	assertRange(t, n.subRange(62, 404), 62, 357)
+	assertEmpty(t, n.subRange(62, 62))
+	assertEmpty(t, n.subRange(357, 400))
 }
 
 func TestWithStart(t *testing.T) {
 	n := fakeNumber
 	seq := n.WithStart(423)
 	assertStartsAt(t, seq, 423)
-	assert.False(t, hasReverse(seq))
-	assert.False(t, hasSubRange(seq))
+	assertRange(t, seq.subRange(357, 504), 423, 504)
 }
 
 func TestWithStartSig(t *testing.T) {
 	n := fakeNumber.WithSignificant(541)
 	seq := n.WithStart(423)
 	assertRange(t, seq, 423, 541)
-	assert.False(t, hasReverse(seq))
-	assert.False(t, hasSubRange(seq))
-	assertEmpty(t, n.WithStart(541))
-	assertEmpty(t, n.WithStart(542))
-}
-
-func TestWithStartMemoize(t *testing.T) {
-	n := fakeNumber.WithMemoize()
-	seq := n.WithStart(423)
-	assertStartsAt(t, seq, 423)
-	assert.True(t, hasReverse(seq))
-	assert.True(t, hasSubRange(seq))
-	assertRange(t, subRange(seq, 357, 504), 423, 504)
-}
-
-func TestWithStartSigMemoize(t *testing.T) {
-	n := fakeNumber.WithSignificant(541).WithMemoize()
-	seq := n.WithStart(423)
-	assertRange(t, seq, 423, 541)
-	assert.True(t, hasReverse(seq))
-	assert.True(t, hasSubRange(seq))
-	assertRange(t, subRange(seq, 357, 600), 423, 541)
-	assertEmpty(t, n.WithStart(541))
-	assertEmpty(t, n.WithStart(542))
-}
-
-func TestWithStartMemoizeSig(t *testing.T) {
-	n := fakeNumber.WithMemoize().WithSignificant(541)
-	seq := n.WithStart(423)
-	assertRange(t, seq, 423, 541)
-	assert.True(t, hasReverse(seq))
-	assert.True(t, hasSubRange(seq))
-	assertRange(t, subRange(seq, 357, 600), 423, 541)
+	assertRange(t, seq.subRange(357, 600), 423, 541)
 	assertEmpty(t, n.WithStart(541))
 	assertEmpty(t, n.WithStart(542))
 }
@@ -420,9 +320,8 @@ func assertStartsAt(t *testing.T, s Sequence, start int) {
 
 func assertRange(t *testing.T, s Sequence, start, end int) {
 	t.Helper()
-	if assertForwardRange(t, s, start, end) && hasReverse(s) {
-		assertReverseRange(t, s, start, end)
-	}
+	assertForwardRange(t, s, start, end)
+	assertReverseRange(t, s, start, end)
 }
 
 func assertForwardRange(t *testing.T, s Sequence, start, end int) bool {
@@ -446,8 +345,7 @@ func assertForwardRange(t *testing.T, s Sequence, start, end int) bool {
 
 func assertReverseRange(t *testing.T, s Sequence, start, end int) bool {
 	t.Helper()
-	r := s.(reverseSequence)
-	iter := r.reverseDigitIter()
+	iter := s.reverseDigitIter()
 	for i := end - 1; i >= start; i-- {
 		d, ok := iter()
 		if !assert.True(t, ok) {
@@ -467,19 +365,4 @@ func assertReverseRange(t *testing.T, s Sequence, start, end int) bool {
 func assertEmpty(t *testing.T, s Sequence) {
 	t.Helper()
 	assertRange(t, s, 0, 0)
-}
-
-func hasReverse(s Sequence) bool {
-	r, ok := s.(reverseSequence)
-	return ok && r.canReverse()
-}
-
-func hasSubRange(s Sequence) bool {
-	sr, ok := s.(subRangeSequence)
-	return ok && sr.canSubRange()
-}
-
-func subRange(s Sequence, start, end int) Sequence {
-	sr := s.(subRangeSequence)
-	return sr.subRange(start, end)
 }

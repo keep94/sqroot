@@ -1,7 +1,6 @@
 package sqroot
 
-// Option represents an option for the Print, Fprint, and Sprint methods of
-// Number and Digits.
+// Option represents an option for the Print, Fprint, and Sprint methods
 type Option interface {
 	mutate(p *printerSettings)
 }
