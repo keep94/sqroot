@@ -239,6 +239,17 @@ func TestPrinterWithPositions2(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
+func TestPrinterNoFormatting(t *testing.T) {
+	var pb PositionsBuilder
+	actual := Sprint(
+		fakeNumber,
+		pb.AddRange(17, 22).AddRange(27, 30).Build(),
+		DigitsPerRow(0),
+		DigitsPerColumn(0))
+	expected := "0..................89012.....890"
+	assert.Equal(t, expected, actual)
+}
+
 func TestPrinterFewerDigits(t *testing.T) {
 	actual := Sprint(
 		fakeNumber.WithSignificant(9),
