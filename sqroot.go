@@ -203,7 +203,7 @@ func (n *Number) reverseDigitIterTo(start int) func() (digit, bool) {
 			return
 		}
 		index--
-		return digit{Position: index, Value: digits[index]}, true
+		return digit{Position: index, Value: int(digits[index])}, true
 	}
 }
 
@@ -214,7 +214,7 @@ func (n *Number) iteratorAt(index int) func() int {
 	return n.spec.IteratorAt(index)
 }
 
-func (n *Number) allDigits() []int {
+func (n *Number) allDigits() []int8 {
 	if n.spec == nil {
 		return nil
 	}

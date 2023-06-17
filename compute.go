@@ -25,7 +25,7 @@ type rootManager interface {
 type numberSpec interface {
 	IteratorAt(index int) func() int
 	At(index int) int
-	FirstN(n int) []int
+	FirstN(n int) []int8
 }
 
 type nRootSpec struct {
@@ -114,7 +114,7 @@ func (l *limitSpec) IteratorAt(index int) func() int {
 	}
 }
 
-func (l *limitSpec) FirstN(n int) []int {
+func (l *limitSpec) FirstN(n int) []int8 {
 	if n > l.limit {
 		n = l.limit
 	}

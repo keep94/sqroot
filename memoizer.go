@@ -15,7 +15,7 @@ type memoizer struct {
 	mu              sync.Mutex
 	mustGrow        *sync.Cond
 	updateAvailable *sync.Cond
-	data            []int
+	data            []int8
 	maxLength       int
 	done            bool
 }
@@ -36,10 +36,10 @@ func (m *memoizer) At(index int) int {
 	if !ok {
 		return -1
 	}
-	return data[index]
+	return int(data[index])
 }
 
-func (m *memoizer) FirstN(n int) []int {
+func (m *memoizer) FirstN(n int) []int8 {
 	if n <= 0 {
 		return nil
 	}
@@ -64,11 +64,11 @@ func (m *memoizer) IteratorAt(index int) func() int {
 		if index == len(data) {
 			data, ok = m.wait(index)
 		}
-		return result
+		return int(result)
 	}
 }
 
-func (m *memoizer) wait(index int) ([]int, bool) {
+func (m *memoizer) wait(index int) ([]int8, bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if !m.done && m.maxLength <= index {
@@ -95,7 +95,7 @@ func (m *memoizer) waitToGrow() {
 	}
 }
 
-func (m *memoizer) setData(data []int, done bool) {
+func (m *memoizer) setData(data []int8, done bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.data = data
@@ -104,7 +104,7 @@ func (m *memoizer) setData(data []int, done bool) {
 }
 
 func (m *memoizer) run() {
-	var data []int
+	var data []int8
 	for i := 0; i < kMaxChunks; i++ {
 		m.waitToGrow()
 		for j := 0; j < kMemoizerChunkSize; j++ {
@@ -113,7 +113,7 @@ func (m *memoizer) run() {
 				m.setData(data, true)
 				return
 			}
-			data = append(data, x)
+			data = append(data, int8(x))
 		}
 		m.setData(data, false)
 	}
