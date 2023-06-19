@@ -167,7 +167,7 @@ func (n *Number) IsZero() bool {
 }
 
 func (n *Number) withExponent(e int) *Number {
-	if e == n.exponent {
+	if e == n.exponent || n.spec == nil {
 		return n
 	}
 	return &Number{exponent: e, spec: n.spec}
