@@ -236,9 +236,6 @@ func (n *Number) withSpec(newSpec numberSpec) *Number {
 }
 
 func nRootFrac(num, denom *big.Int, newManager func() rootManager) *Number {
-	num = new(big.Int).Set(num)
-	denom = new(big.Int).Set(denom)
-	base := newManager().Base(new(big.Int))
 	if denom.Sign() <= 0 {
 		panic("Denominator must be positive")
 	}
@@ -248,24 +245,8 @@ func nRootFrac(num, denom *big.Int, newManager func() rootManager) *Number {
 	if num.Sign() == 0 {
 		return zeroNumber
 	}
-	exp := 0
-	for num.Cmp(denom) < 0 {
-		exp--
-		num.Mul(num, base)
-	}
-	if exp < 0 {
-		exp++
-		num.Div(num, base)
-	}
-	for num.Cmp(denom) >= 0 {
-		exp++
-		denom.Mul(denom, base)
-	}
-	spec := &nRootSpec{}
-	spec.num.Set(num)
-	spec.denom.Set(denom)
-	spec.newManager = newManager
-	return &Number{exponent: exp, spec: withMemoize(spec)}
+	iter, exp := nRoot(num, denom, newManager)
+	return &Number{exponent: exp, spec: newMemoizeSpec(iter)}
 }
 
 type formatSpec struct {

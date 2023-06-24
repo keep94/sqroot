@@ -10,6 +10,12 @@ const (
 	kMaxChunks         = math.MaxInt / kMemoizerChunkSize
 )
 
+type numberSpec interface {
+	IteratorAt(index int) func() int
+	At(index int) int
+	FirstN(n int) []int8
+}
+
 type memoizer struct {
 	iter            func() int
 	mu              sync.Mutex
@@ -20,7 +26,7 @@ type memoizer struct {
 	done            bool
 }
 
-func newMemoizer(iter func() int) *memoizer {
+func newMemoizeSpec(iter func() int) numberSpec {
 	result := &memoizer{iter: iter}
 	result.mustGrow = sync.NewCond(&result.mu)
 	result.updateAvailable = sync.NewCond(&result.mu)
@@ -118,4 +124,51 @@ func (m *memoizer) run() {
 		m.setData(data, false)
 	}
 	m.setData(data, true)
+}
+
+type limitSpec struct {
+	delegate numberSpec
+	limit    int
+}
+
+func withLimit(spec numberSpec, limit int) numberSpec {
+	if limit <= 0 || spec == nil {
+		return nil
+	}
+	ls, ok := spec.(*limitSpec)
+	if ok {
+		if limit >= ls.limit {
+			return spec
+		}
+		return &limitSpec{delegate: ls.delegate, limit: limit}
+	}
+	return &limitSpec{delegate: spec, limit: limit}
+}
+
+func (l *limitSpec) At(index int) int {
+	if index >= l.limit {
+		return -1
+	}
+	return l.delegate.At(index)
+}
+
+func (l *limitSpec) IteratorAt(index int) func() int {
+	if index > l.limit {
+		index = l.limit
+	}
+	iter := l.delegate.IteratorAt(index)
+	return func() int {
+		if index == l.limit {
+			return -1
+		}
+		index++
+		return iter()
+	}
+}
+
+func (l *limitSpec) FirstN(n int) []int8 {
+	if n > l.limit {
+		n = l.limit
+	}
+	return l.delegate.FirstN(n)
 }

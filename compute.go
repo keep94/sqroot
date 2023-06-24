@@ -22,19 +22,38 @@ type rootManager interface {
 	Base(result *big.Int) *big.Int
 }
 
-type numberSpec interface {
-	IteratorAt(index int) func() int
-	At(index int) int
-	FirstN(n int) []int8
+func nRoot(
+	num, denom *big.Int, newManager func() rootManager) (
+	mantissa func() int, exponent int) {
+	num = new(big.Int).Set(num)
+	denom = new(big.Int).Set(denom)
+	base := newManager().Base(new(big.Int))
+	exp := 0
+	for num.Cmp(denom) < 0 {
+		exp--
+		num.Mul(num, base)
+	}
+	if exp < 0 {
+		exp++
+		num.Div(num, base)
+	}
+	for num.Cmp(denom) >= 0 {
+		exp++
+		denom.Mul(denom, base)
+	}
+	g := &nRootDigitGenerator{newManager: newManager}
+	g.num.Set(num)
+	g.denom.Set(denom)
+	return g.iterator(), exp
 }
 
-type nRootSpec struct {
+type nRootDigitGenerator struct {
 	num        big.Int
 	denom      big.Int
 	newManager func() rootManager
 }
 
-func (n *nRootSpec) Iterator() func() int {
+func (n *nRootDigitGenerator) iterator() func() int {
 	manager := n.newManager()
 	base := manager.Base(new(big.Int))
 	incr := big.NewInt(1)
@@ -60,7 +79,7 @@ func (n *nRootSpec) Iterator() func() int {
 	}
 }
 
-func (n *nRootSpec) generateRadicanGroups() func() *big.Int {
+func (n *nRootDigitGenerator) generateRadicanGroups() func() *big.Int {
 	num := new(big.Int).Set(&n.num)
 	denom := new(big.Int).Set(&n.denom)
 	base := n.newManager().Base(new(big.Int))
@@ -72,57 +91,6 @@ func (n *nRootSpec) generateRadicanGroups() func() *big.Int {
 		group, _ := new(big.Int).DivMod(num, denom, num)
 		return group
 	}
-}
-
-type limitSpec struct {
-	delegate numberSpec
-	limit    int
-}
-
-func withLimit(spec numberSpec, limit int) numberSpec {
-	if limit <= 0 || spec == nil {
-		return nil
-	}
-	ls, ok := spec.(*limitSpec)
-	if ok {
-		if limit >= ls.limit {
-			return spec
-		}
-		return &limitSpec{delegate: ls.delegate, limit: limit}
-	}
-	return &limitSpec{delegate: spec, limit: limit}
-}
-
-func (l *limitSpec) At(index int) int {
-	if index >= l.limit {
-		return -1
-	}
-	return l.delegate.At(index)
-}
-
-func (l *limitSpec) IteratorAt(index int) func() int {
-	if index > l.limit {
-		index = l.limit
-	}
-	iter := l.delegate.IteratorAt(index)
-	return func() int {
-		if index == l.limit {
-			return -1
-		}
-		index++
-		return iter()
-	}
-}
-
-func (l *limitSpec) FirstN(n int) []int8 {
-	if n > l.limit {
-		n = l.limit
-	}
-	return l.delegate.FirstN(n)
-}
-
-func withMemoize(spec *nRootSpec) numberSpec {
-	return newMemoizer(spec.Iterator())
 }
 
 type sqrtManager struct {

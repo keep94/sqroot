@@ -9,7 +9,7 @@ import (
 
 var (
 	// fakeNumber = 0.12345678901234567890...
-	fakeNumber = &Number{spec: newMemoizer(
+	fakeNumber = &Number{spec: newMemoizeSpec(
 		func() func() int {
 			i := 0
 			return func() int {
