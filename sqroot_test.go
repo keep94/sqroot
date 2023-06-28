@@ -221,13 +221,15 @@ func TestWithSignificantToZero(t *testing.T) {
 
 func TestZeroNumber(t *testing.T) {
 	var n Number
+	assertEmpty(t, &n)
 	assert.Equal(t, -1, n.At(0))
 	assert.Zero(t, n.Exponent())
 	assert.True(t, n.IsZero())
-	assert.Same(t, &n, n.WithSignificant(5))
 	assert.Equal(t, -1, n.Iterator()())
+	assert.Equal(t, -1, n.IteratorAt(5)())
 	assert.Equal(t, "0", n.String())
-	s := n.WithSignificant(2000000000).WithStart(1900000000)
+	assert.Same(t, &n, n.WithSignificant(5))
+	s := n.WithStart(1900000000)
 	assertEmpty(t, s)
 }
 
@@ -305,6 +307,7 @@ func TestWithStartSig(t *testing.T) {
 	seq := n.WithStart(423)
 	assertRange(t, seq, 423, 541)
 	assertRange(t, seq.subRange(357, 600), 423, 541)
+	assertEmpty(t, seq.subRange(357, 358))
 	assertEmpty(t, n.WithStart(541))
 	assertEmpty(t, n.WithStart(542))
 }
