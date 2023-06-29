@@ -84,7 +84,7 @@ func CubeRootBigRat(radican *big.Rat) *Number {
 // WithStart returns the digits of n that have positions greater than or
 // equal to start.
 func (n *Number) WithStart(start int) Sequence {
-	if start <= 0 {
+	if start <= 0 || n.IsZero() {
 		return n
 	}
 	return &numberWithStart{
@@ -167,7 +167,7 @@ func (n *Number) IsZero() bool {
 }
 
 func (n *Number) withExponent(e int) *Number {
-	if e == n.exponent || n.spec == nil {
+	if e == n.exponent || n.IsZero() {
 		return n
 	}
 	return &Number{exponent: e, spec: n.spec}
