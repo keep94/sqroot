@@ -131,7 +131,7 @@ func (n *Number) WithSignificant(limit int) *Number {
 	if limit < 0 {
 		panic("limit must be non-negative")
 	}
-	return n.withSpec(withLimit(n.spec, limit))
+	return n.withSignificant(limit)
 }
 
 // Exponent returns the exponent of this Number.
@@ -222,7 +222,7 @@ func (n *Number) allDigits() []int8 {
 }
 
 func (n *Number) subRange(start, end int) Sequence {
-	return n.WithSignificant(end).WithStart(start)
+	return n.withSignificant(end).WithStart(start)
 }
 
 func (n *Number) withSpec(newSpec numberSpec) *Number {
@@ -233,6 +233,10 @@ func (n *Number) withSpec(newSpec numberSpec) *Number {
 		return zeroNumber
 	}
 	return &Number{spec: newSpec, exponent: n.exponent}
+}
+
+func (n *Number) withSignificant(limit int) *Number {
+	return n.withSpec(withLimit(n.spec, limit))
 }
 
 func nRootFrac(num, denom *big.Int, newManager func() rootManager) *Number {
