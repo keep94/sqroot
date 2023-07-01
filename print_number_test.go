@@ -239,6 +239,13 @@ func TestPrinterWithPositions2(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
+func TestPrinterWithStart(t *testing.T) {
+	actual := Sprint(fakeNumber.WithStart(502), UpTo(505))
+	expected := `500  ..345`
+	assert.Equal(t, expected, actual)
+	assert.Empty(t, Sprint(fakeNumber.WithStart(502), UpTo(502)))
+}
+
 func TestPrinterNoFormatting(t *testing.T) {
 	var pb PositionsBuilder
 	actual := Sprint(
