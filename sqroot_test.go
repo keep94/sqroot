@@ -229,8 +229,7 @@ func TestZeroNumber(t *testing.T) {
 	assert.Equal(t, -1, n.IteratorAt(5)())
 	assert.Equal(t, "0", n.String())
 	assert.Same(t, &n, n.WithSignificant(5))
-	s := n.WithStart(1900000000)
-	assertEmpty(t, s)
+	assert.Same(t, &n, n.WithStart(1900000000))
 }
 
 func TestSameNumber(t *testing.T) {
