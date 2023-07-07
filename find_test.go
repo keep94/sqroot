@@ -71,15 +71,19 @@ func TestFindFirstNTrickyPattern(t *testing.T) {
 
 func TestFindLast(t *testing.T) {
 	n := fakeNumber.WithSignificant(1000)
-	assert.Equal(t, 998, FindLast(n, []int{9, 0}))
+	pattern := []int{9, 0}
+	assert.Equal(t, 998, FindLast(n, pattern))
+	assert.Equal(t, []int{9, 0}, pattern)
 	assert.Equal(t, 994, FindLast(n, []int{5, 6}))
 	assert.Equal(t, -1, FindLast(n, []int{5, 7}))
 	assert.Equal(t, 2, FindLast(Sqrt(1522756), []int{3, 4}))
 }
 
 func TestFindLastN(t *testing.T) {
-	hits := FindLastN(fakeNumber.WithSignificant(1200), []int{5, 6}, 3)
+	pattern := []int{5, 6}
+	hits := FindLastN(fakeNumber.WithSignificant(1200), pattern, 3)
 	assert.Equal(t, []int{1194, 1184, 1174}, hits)
+	assert.Equal(t, []int{5, 6}, pattern)
 	n := fakeNumber.WithSignificant(1000)
 	hits = FindLastN(n, []int{5, 6}, 3)
 	assert.Equal(t, []int{994, 984, 974}, hits)
