@@ -22,13 +22,10 @@ type rootManager interface {
 	Base(result *big.Int) *big.Int
 }
 
-func nRoot(
-	num, denom *big.Int, newManager func() rootManager) (
-	mantissa func() int, exponent int) {
+func computeGroupsFromRational(num, denom, base *big.Int) (
+	groups func(result *big.Int) *big.Int, exp int) {
 	num = new(big.Int).Set(num)
 	denom = new(big.Int).Set(denom)
-	base := newManager().Base(new(big.Int))
-	exp := 0
 	for num.Cmp(denom) < 0 {
 		exp--
 		num.Mul(num, base)
@@ -41,26 +38,26 @@ func nRoot(
 		exp++
 		denom.Mul(denom, base)
 	}
-	g := &nRootDigitGenerator{newManager: newManager}
-	g.num.Set(num)
-	g.denom.Set(denom)
-	return g.iterator(), exp
+	groups = func(result *big.Int) *big.Int {
+		if num.Sign() == 0 {
+			return nil
+		}
+		num.Mul(num, base)
+		result.DivMod(num, denom, num)
+		return result
+	}
+	return
 }
 
-type nRootDigitGenerator struct {
-	num        big.Int
-	denom      big.Int
-	newManager func() rootManager
-}
-
-func (n *nRootDigitGenerator) iterator() func() int {
-	manager := n.newManager()
+func computeRootDigits(
+	radicanGroups func(result *big.Int) *big.Int,
+	manager rootManager) func() int {
 	base := manager.Base(new(big.Int))
 	incr := big.NewInt(1)
 	remainder := big.NewInt(0)
-	radicanGroups := n.generateRadicanGroups()
+	var nextGroupHolder big.Int
 	return func() int {
-		nextGroup := radicanGroups()
+		nextGroup := radicanGroups(&nextGroupHolder)
 		if nextGroup == nil && remainder.Sign() == 0 {
 			return -1
 		}
@@ -76,20 +73,6 @@ func (n *nRootDigitGenerator) iterator() func() int {
 		}
 		manager.NextDigit(incr)
 		return digit
-	}
-}
-
-func (n *nRootDigitGenerator) generateRadicanGroups() func() *big.Int {
-	num := new(big.Int).Set(&n.num)
-	denom := new(big.Int).Set(&n.denom)
-	base := n.newManager().Base(new(big.Int))
-	return func() *big.Int {
-		if num.Sign() == 0 {
-			return nil
-		}
-		num.Mul(num, base)
-		group, _ := new(big.Int).DivMod(num, denom, num)
-		return group
 	}
 }
 

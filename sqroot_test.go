@@ -8,13 +8,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNumberReusable(t *testing.T) {
+func TestNumberNoSideEffects(t *testing.T) {
 	radican := big.NewInt(5)
 	n := SqrtBigInt(radican)
 	assert.Equal(t, 1, n.Exponent())
 	assert.Equal(t, "0.22360 679", Sprint(n, UpTo(8)))
 	assert.Equal(t, big.NewInt(5), radican)
+}
+
+func TestNumberNoSideEffects2(t *testing.T) {
+	radican := big.NewInt(5)
+	n := SqrtBigInt(radican)
 	radican.SetInt64(7)
+	assert.Equal(t, 1, n.Exponent())
 	assert.Equal(t, "0.22360 679", Sprint(n, UpTo(8)))
 	assert.Equal(t, big.NewInt(7), radican)
 }
@@ -134,16 +140,22 @@ func Test3Over7(t *testing.T) {
 	assert.Equal(t, "0.65465 36707 0797", Sprint(n, UpTo(14)))
 }
 
-func Test3Over70000Reusable(t *testing.T) {
+func Test3Over70000NoSideEffects(t *testing.T) {
 	radican := big.NewRat(3, 70000)
 	n := SqrtBigRat(radican)
 	assert.Equal(t, -2, n.Exponent())
 	assert.Equal(t, "0.65465 36707 0797", Sprint(n, UpTo(14)))
 	assert.Equal(t, big.NewRat(3, 70000), radican)
-	radican.Num().SetInt64(5)
+}
+
+func Test3Over70000NoSideEffects2(t *testing.T) {
+	radican := big.NewRat(3, 70000)
+	n := SqrtBigRat(radican)
+	radican.Num().SetInt64(17)
 	radican.Denom().SetInt64(80000)
+	assert.Equal(t, -2, n.Exponent())
 	assert.Equal(t, "0.65465 36707 0797", Sprint(n, UpTo(14)))
-	assert.Equal(t, big.NewInt(5), radican.Num())
+	assert.Equal(t, big.NewInt(17), radican.Num())
 	assert.Equal(t, big.NewInt(80000), radican.Denom())
 }
 
