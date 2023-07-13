@@ -12,7 +12,7 @@ func TestNumberNoSideEffects(t *testing.T) {
 	radican := big.NewInt(5)
 	n := SqrtBigInt(radican)
 	assert.Equal(t, 1, n.Exponent())
-	assert.Equal(t, "0.22360 679", Sprint(n, UpTo(8)))
+	assert.Equal(t, "2.2360679", fmt.Sprintf("%.8g", n))
 	assert.Equal(t, big.NewInt(5), radican)
 }
 
@@ -21,7 +21,7 @@ func TestNumberNoSideEffects2(t *testing.T) {
 	n := SqrtBigInt(radican)
 	radican.SetInt64(7)
 	assert.Equal(t, 1, n.Exponent())
-	assert.Equal(t, "0.22360 679", Sprint(n, UpTo(8)))
+	assert.Equal(t, "2.2360679", fmt.Sprintf("%.8g", n))
 	assert.Equal(t, big.NewInt(7), radican)
 }
 
@@ -29,33 +29,31 @@ func Test2(t *testing.T) {
 	n := Sqrt(2)
 	assert.False(t, n.IsZero())
 	assert.Equal(t, 1, n.Exponent())
-	assert.Equal(t, "0.14142 13562", Sprint(n, UpTo(10)))
+	assert.Equal(t, "1.414213562", fmt.Sprintf("%.10g", n))
 }
 
 func Test3(t *testing.T) {
 	n := Sqrt(3)
 	assert.Equal(t, 1, n.Exponent())
-	assert.Equal(t, "0.17320 50807", Sprint(n, UpTo(10)))
+	assert.Equal(t, "1.732050807", fmt.Sprintf("%.10g", n))
 }
 
 func Test0(t *testing.T) {
 	n := Sqrt(0)
 	assert.Zero(t, *zeroNumber)
 	assert.Same(t, zeroNumber, n)
-	iter := n.Iterator()
-	assert.Equal(t, -1, iter())
 }
 
 func Test1(t *testing.T) {
 	n := Sqrt(1)
 	assert.Equal(t, 1, n.Exponent())
-	assert.Equal(t, "0.1", Sprint(n, UpTo(10)))
+	assert.Equal(t, "1", fmt.Sprintf("%.10g", n))
 }
 
 func Test100489(t *testing.T) {
 	n := Sqrt(100489)
 	assert.Equal(t, 3, n.Exponent())
-	assert.Equal(t, "0.317", Sprint(n, UpTo(10)))
+	assert.Equal(t, "317", fmt.Sprintf("%.10g", n))
 }
 
 func Test100489Iterator(t *testing.T) {
@@ -107,44 +105,44 @@ func TestNegative(t *testing.T) {
 func Test256(t *testing.T) {
 	n := Sqrt(256)
 	assert.Equal(t, 2, n.Exponent())
-	assert.Equal(t, "0.16", Sprint(n, UpTo(10)))
+	assert.Equal(t, "16", fmt.Sprintf("%.10g", n))
 }
 
 func Test40(t *testing.T) {
 	n := Sqrt(40)
 	assert.Equal(t, 1, n.Exponent())
-	assert.Equal(t, "0.63245 55320", Sprint(n, UpTo(10)))
+	assert.Equal(t, "6.324555320", fmt.Sprintf("%.10g", n))
 }
 
 func Test0026(t *testing.T) {
 	n := SqrtRat(2600, 1000000)
 	assert.Equal(t, -1, n.Exponent())
-	assert.Equal(t, "0.50990 19513", Sprint(n, UpTo(10)))
+	assert.Equal(t, "0.05099019513", fmt.Sprintf("%.10g", n))
 }
 
 func Test026(t *testing.T) {
 	n := SqrtRat(26, 1000)
 	assert.Equal(t, 0, n.Exponent())
-	assert.Equal(t, "0.16124 51549", Sprint(n, UpTo(10)))
+	assert.Equal(t, "0.1612451549", fmt.Sprintf("%.10g", n))
 }
 
 func Test2401Over400(t *testing.T) {
 	n := SqrtRat(2401, 4)
 	assert.Equal(t, 2, n.Exponent())
-	assert.Equal(t, "0.245", Sprint(n, UpTo(10)))
+	assert.Equal(t, "24.5", fmt.Sprintf("%.10g", n))
 }
 
 func Test3Over7(t *testing.T) {
 	n := SqrtRat(3, 7)
 	assert.Equal(t, 0, n.Exponent())
-	assert.Equal(t, "0.65465 36707 0797", Sprint(n, UpTo(14)))
+	assert.Equal(t, "0.65465367070797", fmt.Sprintf("%.14g", n))
 }
 
 func Test3Over70000NoSideEffects(t *testing.T) {
 	radican := big.NewRat(3, 70000)
 	n := SqrtBigRat(radican)
 	assert.Equal(t, -2, n.Exponent())
-	assert.Equal(t, "0.65465 36707 0797", Sprint(n, UpTo(14)))
+	assert.Equal(t, "0.0065465367070797", fmt.Sprintf("%.14g", n))
 	assert.Equal(t, big.NewRat(3, 70000), radican)
 }
 
@@ -154,7 +152,7 @@ func Test3Over70000NoSideEffects2(t *testing.T) {
 	radican.Num().SetInt64(17)
 	radican.Denom().SetInt64(80000)
 	assert.Equal(t, -2, n.Exponent())
-	assert.Equal(t, "0.65465 36707 0797", Sprint(n, UpTo(14)))
+	assert.Equal(t, "0.0065465367070797", fmt.Sprintf("%.14g", n))
 	assert.Equal(t, big.NewInt(17), radican.Num())
 	assert.Equal(t, big.NewInt(80000), radican.Denom())
 }

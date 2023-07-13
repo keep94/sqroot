@@ -26,6 +26,7 @@ func computeGroupsFromRational(num, denom, base *big.Int) (
 	groups func(result *big.Int) *big.Int, exp int) {
 	num = new(big.Int).Set(num)
 	denom = new(big.Int).Set(denom)
+	base = new(big.Int).Set(base)
 	for num.Cmp(denom) < 0 {
 		exp--
 		num.Mul(num, base)
