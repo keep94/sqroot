@@ -366,8 +366,12 @@ func (n *numberWithStart) reverseDigitIter() func() (digit, bool) {
 }
 
 func (n *numberWithStart) subRange(start, end int) Sequence {
-	if start < n.start {
-		start = n.start
+	newNumber := n.number.withSignificant(end)
+	if start <= n.start {
+		if newNumber == n.number {
+			return n
+		}
+		return &numberWithStart{number: newNumber, start: n.start}
 	}
-	return n.number.subRange(start, end)
+	return &numberWithStart{number: newNumber, start: start}
 }
