@@ -9,8 +9,8 @@ import (
 )
 
 func TestMemoize(t *testing.T) {
+	expected := fmt.Sprintf("%.10000g", Sqrt(5))
 	n := Sqrt(5)
-	expected := fmt.Sprintf("%.10000g", n)
 	var actual [10]string
 	var wg sync.WaitGroup
 	for i := range actual {
@@ -28,25 +28,30 @@ func TestMemoize(t *testing.T) {
 
 func TestMemoizeAt(t *testing.T) {
 	n := Sqrt(7)
-	var expected, actual1, actual2 [10000]int
+	var expected [10000]int
+	var actual [10][10000]int
 	for i := range expected {
 		expected[i] = n.At(i)
 	}
+	n1 := Sqrt(7)
 	var wg sync.WaitGroup
-	wg.Add(2)
-	go func() {
-		for i := 9999; i >= 0; i-- {
-			actual1[i] = n.At(i)
-		}
-		wg.Done()
-	}()
-	go func() {
-		for i := 0; i < 10000; i++ {
-			actual2[i] = n.At(i)
-		}
-		wg.Done()
-	}()
+	for i := 0; i < len(actual)/2; i++ {
+		wg.Add(2)
+		go func(idx int) {
+			for i := 9999; i >= 0; i-- {
+				actual[idx][i] = n1.At(i)
+			}
+			wg.Done()
+		}(2 * i)
+		go func(idx int) {
+			for i := 0; i < 10000; i++ {
+				actual[idx][i] = n1.At(i)
+			}
+			wg.Done()
+		}(2*i + 1)
+	}
 	wg.Wait()
-	assert.Equal(t, expected, actual1)
-	assert.Equal(t, expected, actual2)
+	for i := range actual {
+		assert.Equal(t, expected, actual[i])
+	}
 }
