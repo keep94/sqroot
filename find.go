@@ -48,11 +48,8 @@ func FindAll(s Sequence, pattern []int) []int {
 // number of digits, FindLast will run forever. pattern is a sequence of
 // digits between 0 and 9.
 func FindLast(s Sequence, pattern []int) int {
-	result := FindLastN(s, pattern, 1)
-	if len(result) == 0 {
-		return -1
-	}
-	return result[0]
+	iter := rfind(s, pattern)
+	return iter()
 }
 
 // FindLastN works like FindLast but it finds the last n matches and
