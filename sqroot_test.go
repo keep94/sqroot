@@ -287,6 +287,7 @@ func TestNumberAtSig(t *testing.T) {
 	assert.Equal(t, 4, n.At(303))
 	assert.Equal(t, 7, n.At(356))
 	assert.Equal(t, -1, n.At(357))
+	assert.Equal(t, -1, n.At(2000000000))
 }
 
 func TestNumberInterfaces(t *testing.T) {

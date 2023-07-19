@@ -147,6 +147,7 @@ func withLimit(spec numberSpec, limit int) numberSpec {
 
 func (l *limitSpec) At(index int) int {
 	if index >= l.limit {
+		l.delegate.At(l.limit)
 		return -1
 	}
 	return l.delegate.At(index)
