@@ -1,9 +1,15 @@
 sqroot
 ======
 
-A library to compute square roots to arbitrary precision.
+A package to compute square roots to arbitrary precision.
 
-### Examples
+## How this package differs from big.Float.Sqrt
+
+big.Float.Sqrt requires a finite precision to be set ahead of time. The answer it gives is only accurate to that precision. This package does not require a precision to be set because it returns exact square roots almost instantly. This package computes base-10 significant digits of square root values lazily on an as needed basis. Also this package features cube roots which the big.Float in the standard library does not offer as of this writing.
+
+For doing math operations with square roots, big.Float in the standard library is the best and by far the fastest. However, when printing out square roots in human readable format, this package can be almost twice as fast as big.Float.
+
+## Examples
 
 Print the first 1000 digits of the square root of 2.
 
