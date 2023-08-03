@@ -273,23 +273,27 @@ func TestPrinterNegative(t *testing.T) {
 }
 
 func TestPrinterCountBytes(t *testing.T) {
-	w := &maxBytesWriter{maxBytes: 10000}
+	w := &maxBytesWriter{maxBytes: 100000}
 
-	// Prints 20 rows. Each row 10 columns 6 chars per column + (3+2) chars
-	// for the margin. 65*20-1=1299 bytes because last line doesn't get a
+	// Prints 200 rows. Each row 10 columns 6 chars per column + (4+2) chars
+	// for the margin. 66*200-1=13199 bytes because last line doesn't get a
 	// line feed char.
-	n, err := Fprint(w, fakeNumber(), UpTo(1000))
-	assert.Equal(t, 1299, n)
+	n, err := Fprint(w, fakeNumber(), UpTo(10000))
+	assert.Equal(t, 13199, n)
 	assert.NoError(t, err)
 }
 
 func TestErrorAtAllStages(t *testing.T) {
 	number := fakeNumber()
 
-	// Force an error at each point of the printing
-	for i := 0; i < 1299; i++ {
+	// Internally Fprint uses a bufio.Writer which defaults to a buffer size
+	// of 4096 bytes (could change in future go versions). This means writing
+	// can fail only when buffer fills up or is flushed. We pick 601 which
+	// is prime and small enough that we test an error happening when manually
+	// flushing the buffer. There exists a k such that 3*4096 < 601*k < 13199.
+	for i := 0; i < 13199; i += 601 {
 		w := &maxBytesWriter{maxBytes: i}
-		n, err := Fprint(w, number, UpTo(1000))
+		n, err := Fprint(w, number, UpTo(10000))
 		assert.Equal(t, i, n)
 		assert.Error(t, err)
 	}

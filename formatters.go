@@ -1,6 +1,7 @@
 package sqroot
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"strconv"
@@ -52,23 +53,25 @@ func (p *printer) skipRowsFor(nextPosit int) {
 }
 
 type rawPrinter struct {
-	writer          io.Writer
+	cWriter         *countingWriter
+	writer          *bufio.Writer
 	indentation     string
 	digitCountSpec  string
 	digitsPerRow    int
 	digitsPerColumn int
 	index           int
 	indexInRow      int
-	byteCount       int
 	err             error
 }
 
 func (p *rawPrinter) Init(
 	writer io.Writer, maxDigits int, settings *printerSettings) {
+	cWriter := &countingWriter{delegate: writer}
 	indentation, digitCountSpec := computeIndentation(
 		settings.digitCountWidth(maxDigits))
 	*p = rawPrinter{
-		writer:          writer,
+		cWriter:         cWriter,
+		writer:          bufio.NewWriter(cWriter),
 		indentation:     indentation,
 		digitCountSpec:  digitCountSpec,
 		digitsPerRow:    settings.digitsPerRow,
@@ -85,50 +88,59 @@ func (p *rawPrinter) Consume(digit rune) {
 		return
 	}
 	if p.index == 0 {
-		n, err := fmt.Fprintf(p.writer, "%s0.", p.indentation)
-		if !p.updateByteCount(n, err) {
+		_, p.err = fmt.Fprintf(p.writer, "%s0.", p.indentation)
+		if p.err != nil {
 			return
 		}
 	} else if p.digitsPerRow > 0 && p.index%p.digitsPerRow == 0 {
-		if p.byteCount > 0 {
-			n, err := fmt.Fprintln(p.writer)
-			if !p.updateByteCount(n, err) {
+		if p.BytesWritten()+p.BytesBuffered() > 0 {
+			_, p.err = fmt.Fprintln(p.writer)
+			if p.err != nil {
 				return
 			}
 		}
 		if p.digitCountSpec != "" {
-			n, err := fmt.Fprintf(p.writer, p.digitCountSpec, p.index)
-			if !p.updateByteCount(n, err) {
+			_, p.err = fmt.Fprintf(p.writer, p.digitCountSpec, p.index)
+			if p.err != nil {
 				return
 			}
 		}
-		n, err := fmt.Fprint(p.writer, "  ")
-		if !p.updateByteCount(n, err) {
+		_, p.err = p.writer.WriteString("  ")
+		if p.err != nil {
 			return
 		}
 		p.indexInRow = 0
 	} else if p.digitsPerColumn > 0 && p.indexInRow%p.digitsPerColumn == 0 {
-		n, err := fmt.Fprint(p.writer, " ")
-		if !p.updateByteCount(n, err) {
+		p.err = p.writer.WriteByte(' ')
+		if p.err != nil {
 			return
 		}
 	}
-	n, err := fmt.Fprintf(p.writer, "%c", digit)
-	if !p.updateByteCount(n, err) {
+	_, p.err = p.writer.WriteRune(digit)
+	if p.err != nil {
 		return
 	}
 	p.index++
 	p.indexInRow++
 }
 
-func (p *rawPrinter) skipRows(rowsToSkip int) {
-	p.index += rowsToSkip * p.digitsPerRow
+func (p *rawPrinter) Finish() {
+	err := p.writer.Flush()
+	if p.err == nil {
+		p.err = err
+	}
 }
 
-func (p *rawPrinter) updateByteCount(n int, err error) bool {
-	p.byteCount += n
-	p.err = err
-	return err == nil
+func (p *rawPrinter) BytesWritten() int {
+	return p.cWriter.bytesWritten
+}
+
+func (p *rawPrinter) BytesBuffered() int {
+	return p.writer.Buffered()
+}
+
+func (p *rawPrinter) skipRows(rowsToSkip int) {
+	p.index += rowsToSkip * p.digitsPerRow
 }
 
 type printerSettings struct {
@@ -160,7 +172,7 @@ func computeIndentation(width int) (
 }
 
 type formatter struct {
-	writer          io.Writer
+	writer          *bufio.Writer
 	sigDigits       int // invariant sigDigits >= exponent
 	exponent        int
 	exactDigitCount bool
@@ -173,7 +185,7 @@ func newFormatter(
 		panic("sigDigits must be >= exponent")
 	}
 	return &formatter{
-		writer:          w,
+		writer:          bufio.NewWriter(w),
 		sigDigits:       sigDigits,
 		exponent:        exponent,
 		exactDigitCount: exactDigitCount,
@@ -207,6 +219,7 @@ func (f *formatter) Finish() {
 		}
 		f.addLeadingZeros(count)
 	}
+	f.writer.Flush()
 }
 
 func (f *formatter) add(digit int) {
@@ -214,17 +227,30 @@ func (f *formatter) add(digit int) {
 		f.addLeadingZeros(-f.exponent)
 	}
 	if f.index == f.exponent {
-		fmt.Fprint(f.writer, ".")
+		f.writer.WriteByte('.')
 	}
-	fmt.Fprint(f.writer, digit)
+	f.writer.WriteByte('0' + byte(digit))
 	f.index++
 }
 
 func (f *formatter) addLeadingZeros(count int) {
-	fmt.Fprint(f.writer, "0")
+	f.writer.WriteByte('0')
 	if count <= 0 {
 		return
 	}
-	fmt.Fprint(f.writer, ".")
-	fmt.Fprint(f.writer, strings.Repeat("0", count))
+	f.writer.WriteByte('.')
+	for i := 0; i < count; i++ {
+		f.writer.WriteByte('0')
+	}
+}
+
+type countingWriter struct {
+	delegate     io.Writer
+	bytesWritten int
+}
+
+func (c *countingWriter) Write(p []byte) (n int, err error) {
+	n, err = c.delegate.Write(p)
+	c.bytesWritten += n
+	return
 }

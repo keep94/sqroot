@@ -65,7 +65,8 @@ func Fprint(w io.Writer, s Sequence, p Positions, options ...Option) (
 	}
 	printer := newPrinter(w, p.limit(), mutateSettings(options, settings))
 	fromSequenceWithPositions(s, p, printer)
-	return printer.byteCount, printer.err
+	printer.Finish()
+	return printer.BytesWritten(), printer.err
 }
 
 // Sprint works like Fprint and prints digits of s to a string.
