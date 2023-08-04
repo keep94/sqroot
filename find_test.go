@@ -8,18 +8,18 @@ import (
 )
 
 func TestFindFirstN(t *testing.T) {
-	hits := FindFirstN(fakeNumber, []int{3, 4}, 3)
+	hits := FindFirstN(fakeNumber(), []int{3, 4}, 3)
 	assert.Equal(t, []int{2, 12, 22}, hits)
 }
 
 func TestFindAll(t *testing.T) {
-	hits := FindAll(fakeNumber.WithSignificant(40), []int{3, 4})
+	hits := FindAll(fakeNumber().WithSignificant(40), []int{3, 4})
 	assert.Equal(t, []int{2, 12, 22, 32}, hits)
 }
 
 func TestFind(t *testing.T) {
 	pattern := []int{3, 4}
-	matches := Find(fakeNumber, pattern)
+	matches := Find(fakeNumber(), pattern)
 	pattern[0] = 5
 	pattern[1] = 7
 	assert.Equal(t, 2, matches())
@@ -28,12 +28,12 @@ func TestFind(t *testing.T) {
 }
 
 func TestFindFirstNSingle(t *testing.T) {
-	hits := FindFirstN(fakeNumber, []int{1}, 4)
+	hits := FindFirstN(fakeNumber(), []int{1}, 4)
 	assert.Equal(t, []int{0, 10, 20, 30}, hits)
 }
 
 func TestFindFirst(t *testing.T) {
-	assert.Equal(t, 5, FindFirst(fakeNumber, []int{6, 7, 8}))
+	assert.Equal(t, 5, FindFirst(fakeNumber(), []int{6, 7, 8}))
 }
 
 func TestFindFirstNotThere(t *testing.T) {
@@ -41,13 +41,14 @@ func TestFindFirstNotThere(t *testing.T) {
 }
 
 func TestFindEmptyPattern(t *testing.T) {
-	hits := FindFirstN(fakeNumber, nil, 4)
+	n := fakeNumber()
+	hits := FindFirstN(n, nil, 4)
 	assert.Equal(t, []int{0, 1, 2, 3}, hits)
-	assert.Equal(t, 0, FindFirst(fakeNumber, nil))
+	assert.Equal(t, 0, FindFirst(n, nil))
 }
 
 func TestFindEmptyPatternIterator(t *testing.T) {
-	iter := Find(fakeNumber.WithSignificant(4), nil)
+	iter := Find(fakeNumber().WithSignificant(4), nil)
 	assert.Equal(t, 0, iter())
 	assert.Equal(t, 1, iter())
 	assert.Equal(t, 2, iter())
@@ -70,7 +71,7 @@ func TestFindFirstNTrickyPattern(t *testing.T) {
 }
 
 func TestFindLast(t *testing.T) {
-	n := fakeNumber.WithSignificant(1000)
+	n := fakeNumber().WithSignificant(1000)
 	pattern := []int{9, 0}
 	assert.Equal(t, 998, FindLast(n, pattern))
 	assert.Equal(t, []int{9, 0}, pattern)
@@ -80,11 +81,12 @@ func TestFindLast(t *testing.T) {
 }
 
 func TestFindLastN(t *testing.T) {
+	number := fakeNumber()
 	pattern := []int{5, 6}
-	hits := FindLastN(fakeNumber.WithSignificant(1200), pattern, 3)
+	hits := FindLastN(number.WithSignificant(1200), pattern, 3)
 	assert.Equal(t, []int{1194, 1184, 1174}, hits)
 	assert.Equal(t, []int{5, 6}, pattern)
-	n := fakeNumber.WithSignificant(1000)
+	n := number.WithSignificant(1000)
 	hits = FindLastN(n, []int{5, 6}, 3)
 	assert.Equal(t, []int{994, 984, 974}, hits)
 	hits = FindLastN(n.WithStart(975), []int{5, 6}, 3)

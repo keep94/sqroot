@@ -262,7 +262,7 @@ func TestNumberWithStartZeroOrNegative(t *testing.T) {
 }
 
 func TestNumberAt(t *testing.T) {
-	n := fakeNumber
+	n := fakeNumber()
 	assert.Equal(t, -1, n.At(-1))
 	assert.Equal(t, 3, n.At(322))
 	assert.Equal(t, 1, n.At(0))
@@ -280,7 +280,7 @@ func TestNumberAtFiniteLength(t *testing.T) {
 }
 
 func TestNumberAtSig(t *testing.T) {
-	n := fakeNumber.WithSignificant(357)
+	n := fakeNumber().WithSignificant(357)
 	assert.Equal(t, -1, n.At(-1))
 	assert.Equal(t, 3, n.At(322))
 	assert.Equal(t, 1, n.At(0))
@@ -291,13 +291,13 @@ func TestNumberAtSig(t *testing.T) {
 }
 
 func TestNumberInterfaces(t *testing.T) {
-	n := fakeNumber
+	n := fakeNumber()
 	assertStartsAt(t, n, 0)
 	assertRange(t, n.subRange(62, 404), 62, 404)
 }
 
 func TestNumberInterfacesSig(t *testing.T) {
-	n := fakeNumber.WithSignificant(357)
+	n := fakeNumber().WithSignificant(357)
 	assertRange(t, n, 0, 357)
 	assertRange(t, n.subRange(62, 404), 62, 357)
 	assertRange(t, n.subRange(100, 150), 100, 150)
@@ -305,7 +305,7 @@ func TestNumberInterfacesSig(t *testing.T) {
 }
 
 func TestWithStart(t *testing.T) {
-	n := fakeNumber
+	n := fakeNumber()
 	seq := n.WithStart(423)
 	assertStartsAt(t, seq, 423)
 	assertRange(t, seq.subRange(357, 504), 423, 504)
@@ -313,7 +313,7 @@ func TestWithStart(t *testing.T) {
 }
 
 func TestWithStartSig(t *testing.T) {
-	n := fakeNumber.WithSignificant(541)
+	n := fakeNumber().WithSignificant(541)
 	seq := n.WithStart(423)
 	assertRange(t, seq, 423, 541)
 	assertRange(t, seq.subRange(357, 600), 423, 541)
