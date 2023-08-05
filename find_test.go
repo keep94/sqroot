@@ -40,6 +40,12 @@ func TestFindFirstNotThere(t *testing.T) {
 	assert.Equal(t, -1, FindFirst(Sqrt(100489), []int{5}))
 }
 
+func TestFindFirstNegativeInPattern(t *testing.T) {
+	n := Sqrt(100489)
+	assert.Equal(t, -1, FindFirst(n, []int{7, -1}))
+	assert.Equal(t, 2, FindFirst(n, []int{7}))
+}
+
 func TestFindEmptyPattern(t *testing.T) {
 	n := fakeNumber()
 	hits := FindFirstN(n, nil, 4)
