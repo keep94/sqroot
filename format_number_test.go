@@ -22,6 +22,21 @@ func TestNumberFPositiveExponent(t *testing.T) {
 	assert.Equal(t, "12345", actual)
 }
 
+func TestFormatNumberErrorAtAllStages(t *testing.T) {
+	number := fakeNumber().withExponent(5)
+	w := &maxBytesWriter{maxBytes: 100}
+	n, err := fmt.Fprintf(w, "%f", number)
+	assert.Equal(t, 12, n)
+	assert.NoError(t, err)
+
+	for i := 0; i < 12; i++ {
+		w := &maxBytesWriter{maxBytes: i}
+		n, err := fmt.Fprintf(w, "%f", number)
+		assert.Equal(t, i, n)
+		assert.Error(t, err)
+	}
+}
+
 func TestNumberFPositiveExponentFiniteDigits(t *testing.T) {
 	number := fakeNumber().WithSignificant(9).withExponent(5)
 	actual := fmt.Sprintf("%F", number)

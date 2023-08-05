@@ -43,6 +43,12 @@ func MissingDigit(missingDigit rune) Option {
 	})
 }
 
+func bufferSize(size int) Option {
+	return optionFunc(func(p *printerSettings) {
+		p.bufferSize = size
+	})
+}
+
 // Sequence represents a sequence of digits. Number pointers implement
 // Sequence.
 type Sequence interface {
@@ -66,7 +72,7 @@ func Fprint(w io.Writer, s Sequence, p Positions, options ...Option) (
 	printer := newPrinter(w, p.limit(), mutateSettings(options, settings))
 	fromSequenceWithPositions(s, p, printer)
 	printer.Finish()
-	return printer.BytesWritten(), printer.err
+	return printer.BytesWritten(), printer.Err()
 }
 
 // Sprint works like Fprint and prints digits of s to a string.

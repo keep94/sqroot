@@ -283,6 +283,17 @@ func TestPrinterCountBytes(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestPrinterCountBytes2(t *testing.T) {
+	w := &maxBytesWriter{maxBytes: 10000}
+
+	// Prints 20 rows. Each row 10 columns 6 chars per column + (3+2) chars
+	// for the margin. 65*20-1=1299 bytes because last line doesn't get a
+	// line feed char.
+	n, err := Fprint(w, fakeNumber(), UpTo(1000))
+	assert.Equal(t, 1299, n)
+	assert.NoError(t, err)
+}
+
 func TestErrorAtAllStages(t *testing.T) {
 	number := fakeNumber()
 
@@ -294,6 +305,18 @@ func TestErrorAtAllStages(t *testing.T) {
 	for i := 0; i < 13199; i += 601 {
 		w := &maxBytesWriter{maxBytes: i}
 		n, err := Fprint(w, number, UpTo(10000))
+		assert.Equal(t, i, n)
+		assert.Error(t, err)
+	}
+}
+
+func TestErrorAtAllStages2(t *testing.T) {
+	number := fakeNumber()
+
+	// Set buffer size to 1 so that we get extra coverage.
+	for i := 0; i < 1299; i++ {
+		w := &maxBytesWriter{maxBytes: i}
+		n, err := Fprint(w, number, UpTo(1000), bufferSize(1))
 		assert.Equal(t, i, n)
 		assert.Error(t, err)
 	}

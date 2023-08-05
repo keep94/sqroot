@@ -67,11 +67,17 @@ type rawPrinter struct {
 func (p *rawPrinter) Init(
 	writer io.Writer, maxDigits int, settings *printerSettings) {
 	cWriter := &countingWriter{delegate: writer}
+	var bWriter *bufio.Writer
+	if settings.bufferSize <= 0 {
+		bWriter = bufio.NewWriter(cWriter)
+	} else {
+		bWriter = bufio.NewWriterSize(cWriter, settings.bufferSize)
+	}
 	indentation, digitCountSpec := computeIndentation(
 		settings.digitCountWidth(maxDigits))
 	*p = rawPrinter{
 		cWriter:         cWriter,
-		writer:          bufio.NewWriter(cWriter),
+		writer:          bWriter,
 		indentation:     indentation,
 		digitCountSpec:  digitCountSpec,
 		digitsPerRow:    settings.digitsPerRow,
@@ -93,7 +99,7 @@ func (p *rawPrinter) Consume(digit rune) {
 			return
 		}
 	} else if p.digitsPerRow > 0 && p.index%p.digitsPerRow == 0 {
-		if p.BytesWritten()+p.BytesBuffered() > 0 {
+		if p.BytesWritten()+p.bytesBuffered() > 0 {
 			_, p.err = fmt.Fprintln(p.writer)
 			if p.err != nil {
 				return
@@ -135,7 +141,11 @@ func (p *rawPrinter) BytesWritten() int {
 	return p.cWriter.bytesWritten
 }
 
-func (p *rawPrinter) BytesBuffered() int {
+func (p *rawPrinter) Err() error {
+	return p.err
+}
+
+func (p *rawPrinter) bytesBuffered() int {
 	return p.writer.Buffered()
 }
 
@@ -148,6 +158,7 @@ type printerSettings struct {
 	digitsPerColumn int
 	showCount       bool
 	missingDigit    rune
+	bufferSize      int
 }
 
 func (p *printerSettings) digitCountWidth(maxDigits int) int {
