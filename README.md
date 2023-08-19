@@ -1,7 +1,7 @@
 sqroot
 ======
 
-A package to compute square roots to arbitrary precision.
+A package to compute square roots and cube roots to arbitrary precision.
 
 ## How this package differs from big.Float.Sqrt
 

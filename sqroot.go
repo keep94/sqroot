@@ -1,4 +1,4 @@
-// Package sqroot calculates square roots to arbitrary precision.
+// Package sqroot computes square roots and cube roots to arbitrary precision.
 package sqroot
 
 import (
