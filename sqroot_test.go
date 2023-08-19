@@ -83,6 +83,28 @@ func TestIteratorPersistence(t *testing.T) {
 	assert.Equal(t, 5, iter())
 }
 
+func TestNumDigits(t *testing.T) {
+	// n = 12.7
+	n := SqrtRat(16129, 100)
+	assert.Equal(t, 3, n.NumDigits())
+}
+
+func TestReverse(t *testing.T) {
+	// n = 2.2360679
+	n := Sqrt(5).WithSignificant(8)
+	iter := n.Reverse()
+	assert.Equal(t, 9, iter())
+	assert.Equal(t, 7, iter())
+	assert.Equal(t, 6, iter())
+	assert.Equal(t, 0, iter())
+	assert.Equal(t, 6, iter())
+	assert.Equal(t, 3, iter())
+	assert.Equal(t, 2, iter())
+	assert.Equal(t, 2, iter())
+	assert.Equal(t, -1, iter())
+	assert.Equal(t, -1, iter())
+}
+
 func TestIteratorAt(t *testing.T) {
 	n := Sqrt(100489)
 	iter := n.IteratorAt(3)
@@ -240,6 +262,8 @@ func TestZeroNumber(t *testing.T) {
 	assert.Equal(t, "0", n.String())
 	assert.Same(t, &n, n.WithSignificant(5))
 	assert.Same(t, &n, n.WithStart(1900000000))
+	assert.Equal(t, 0, n.NumDigits())
+	assert.Equal(t, -1, n.Reverse()())
 }
 
 func TestSameNumber(t *testing.T) {

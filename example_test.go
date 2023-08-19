@@ -138,6 +138,27 @@ func ExampleNumber_IteratorAt() {
 	// 1
 }
 
+func ExampleNumber_NumDigits() {
+	n := sqroot.Sqrt(10).WithSignificant(157)
+	fmt.Println(n.NumDigits())
+	// Output:
+	// 157
+}
+
+func ExampleNumber_Reverse() {
+	// n = 3127
+	n := sqroot.Sqrt(9778129)
+	iter := n.Reverse()
+	for digit := iter(); digit != -1; digit = iter() {
+		fmt.Println(digit)
+	}
+	// Output:
+	// 7
+	// 2
+	// 1
+	// 3
+}
+
 func ExampleNumber_WithStart() {
 
 	// sqrt(29) = 5.3851648...

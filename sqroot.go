@@ -166,6 +166,29 @@ func (n *Number) IsZero() bool {
 	return n.spec == nil
 }
 
+// NumDigits returns the total number of significant digits this Number has.
+// If this Number has an infinite number of digits, NumDigits runs forever.
+func (n *Number) NumDigits() int {
+	return len(n.allDigits())
+}
+
+// Reverse returns a function that generates the significant digits of this
+// Number in reverse order. The first call to the returned function returns
+// the last digit; the second call returns the second to last digit and so
+// forth. When there are no more digits, the returned function returns -1.
+// If this Number has an infinite number of digits, Reverse runs forever.
+func (n *Number) Reverse() func() int {
+	digits := n.allDigits()
+	index := len(digits)
+	return func() int {
+		if index <= 0 {
+			return -1
+		}
+		index--
+		return int(digits[index])
+	}
+}
+
 func (n *Number) withExponent(e int) *Number {
 	if e == n.exponent || n.IsZero() {
 		return n
