@@ -48,7 +48,7 @@ func FindAll(s Sequence, pattern []int) []int {
 // number of digits, FindLast will run forever. pattern is a sequence of
 // digits between 0 and 9.
 func FindLast(s Sequence, pattern []int) int {
-	iter := rfind(s, pattern)
+	iter := FindR(s, pattern)
 	return iter()
 }
 
@@ -57,10 +57,15 @@ func FindLast(s Sequence, pattern []int) int {
 // in returned array. If s has an infinite number of digits, FindLastN
 // will run forever. pattern is a sequence of digits between 0 and 9.
 func FindLastN(s Sequence, pattern []int, n int) []int {
-	return asIntSlice(rfind(s, pattern), consume2.PSlice[int](0, n))
+	return asIntSlice(FindR(s, pattern), consume2.PSlice[int](0, n))
 }
 
-func rfind(s Sequence, pattern []int) func() int {
+// FindR returns a function that starts at the end of s and returns the
+// previous zero based index of the match for pattern in s with each call.
+// If there are no more matches for pattern, the returned function returns
+// -1. If s has an infinite number of digits, FindR runs forever. pattern is
+// a sequence of digits between 0 and 9.
+func FindR(s Sequence, pattern []int) func() int {
 	if len(pattern) == 0 {
 		return zeroPattern(s.reverseDigitIter())
 	}

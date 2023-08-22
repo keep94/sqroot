@@ -27,6 +27,17 @@ func TestFind(t *testing.T) {
 	assert.Equal(t, 22, matches())
 }
 
+func TestFindR(t *testing.T) {
+	pattern := []int{3, 4}
+	matches := FindR(fakeNumber().WithSignificant(30), pattern)
+	pattern[0] = 5
+	pattern[1] = 7
+	assert.Equal(t, 22, matches())
+	assert.Equal(t, 12, matches())
+	assert.Equal(t, 2, matches())
+	assert.Equal(t, -1, matches())
+}
+
 func TestFindFirstNSingle(t *testing.T) {
 	hits := FindFirstN(fakeNumber(), []int{1}, 4)
 	assert.Equal(t, []int{0, 10, 20, 30}, hits)

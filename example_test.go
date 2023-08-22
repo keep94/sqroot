@@ -84,6 +84,18 @@ func ExampleFindLastN() {
 	// [945 916 631]
 }
 
+func ExampleFindR() {
+	n := sqroot.Sqrt(2).WithSignificant(1000)
+	matches := sqroot.FindR(n, []int{1, 4})
+	fmt.Println(matches())
+	fmt.Println(matches())
+	fmt.Println(matches())
+	// Output:
+	// 945
+	// 916
+	// 631
+}
+
 func ExampleNumber_Exponent() {
 
 	// sqrt(50176) = 0.224 * 10^3
