@@ -69,7 +69,7 @@ func Fprint(w io.Writer, s Sequence, p Positions, options ...Option) (
 		showCount:       true,
 		missingDigit:    '.',
 	}
-	printer := newPrinter(w, p.limit(), mutateSettings(options, settings))
+	printer := newPrinter(w, p.End(), mutateSettings(options, settings))
 	fromSequenceWithPositions(s, p, printer)
 	printer.Finish()
 	return printer.BytesWritten(), printer.Err()
@@ -90,8 +90,9 @@ func Print(s Sequence, p Positions, options ...Option) (
 
 func fromSequenceWithPositions(
 	s Sequence, p Positions, consumer consume2.Consumer[digit]) {
-	for _, pr := range p.ranges {
-		consume2.FromGenerator[digit](
+	iter := p.Ranges()
+	for pr, ok := iter(); ok; pr, ok = iter() {
+		consume2.FromGenerator(
 			s.subRange(pr.Start, pr.End).digitIter(), consumer)
 	}
 }

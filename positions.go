@@ -7,7 +7,7 @@ import (
 // PositionsBuilder builds Positions objects. The zero value has no
 // positions in it and is ready to use.
 type PositionsBuilder struct {
-	ranges   []positionRange
+	ranges   []PositionRange
 	unsorted bool
 }
 
@@ -28,7 +28,7 @@ func (p *PositionsBuilder) AddRange(start, end int) *PositionsBuilder {
 	if end <= start {
 		return p
 	}
-	newRange := positionRange{Start: start, End: end}
+	newRange := PositionRange{Start: start, End: end}
 	length := len(p.ranges)
 	if length == 0 {
 		p.ranges = append(p.ranges, newRange)
@@ -57,7 +57,7 @@ func (p *PositionsBuilder) Build() Positions {
 			return p.ranges[i].Start < p.ranges[j].Start
 		},
 	)
-	var result []positionRange
+	var result []PositionRange
 	result = append(result, p.ranges[0])
 	for _, prange := range p.ranges[1:] {
 		appendNotBefore(prange, &result)
@@ -69,7 +69,7 @@ func (p *PositionsBuilder) Build() Positions {
 // Positions represents a set of zero based positions for which to fetch
 // digits. The zero value contains no positions.
 type Positions struct {
-	ranges []positionRange
+	ranges []PositionRange
 }
 
 // UpTo returns the positions from 0 up to but not including end.
@@ -84,7 +84,25 @@ func Between(start, end int) Positions {
 	return pb.AddRange(start, end).Build()
 }
 
-func (p Positions) limit() int {
+// Ranges returns a function that generates all the non overlapping ranges
+// of positions in p. The returned function generates all the ranges in
+// increasing order and returns false when there are no more.
+func (p Positions) Ranges() func() (pr PositionRange, ok bool) {
+	index := 0
+	return func() (pr PositionRange, ok bool) {
+		if index == len(p.ranges) {
+			return
+		}
+		pr = p.ranges[index]
+		ok = true
+		index++
+		return
+	}
+}
+
+// End returns the last zero based position in p plus 1. If p is the zero
+// value, End returns 0.
+func (p Positions) End() int {
 	length := len(p.ranges)
 	if length == 0 {
 		return 0
@@ -92,12 +110,17 @@ func (p Positions) limit() int {
 	return p.ranges[length-1].End
 }
 
-type positionRange struct {
+// PositionRange is a single range of positions within a Positions instance.
+type PositionRange struct {
+
+	// The zero based starting position inclusive.
 	Start int
-	End   int
+
+	// The zero based ending position exclusive.
+	End int
 }
 
-func appendNotBefore(item positionRange, ranges *[]positionRange) {
+func appendNotBefore(item PositionRange, ranges *[]PositionRange) {
 	length := len(*ranges)
 	lastItem := &(*ranges)[length-1]
 	if item.Start <= lastItem.End {

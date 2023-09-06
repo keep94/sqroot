@@ -3,6 +3,7 @@ package sqroot
 import (
 	"testing"
 
+	"github.com/keep94/consume2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,15 +22,17 @@ func TestPositionsBuilder(t *testing.T) {
 	p := pb.Build()
 	assert.False(t, pb.unsorted)
 	assert.Len(t, pb.ranges, 0)
-	expected := []positionRange{
+	expected := []PositionRange{
 		{Start: 0, End: 3},
 		{Start: 4, End: 5},
 		{Start: 10, End: 11},
 		{Start: 13, End: 19},
 		{Start: 20, End: 26},
 	}
-	assert.Equal(t, expected, p.ranges)
-	assert.Equal(t, 26, p.limit())
+	var actual []PositionRange
+	consume2.FromGenerator(p.Ranges(), consume2.AppendTo(&actual))
+	assert.Equal(t, expected, actual)
+	assert.Equal(t, 26, p.End())
 }
 
 func TestPositionsBuilderSorted(t *testing.T) {
@@ -45,13 +48,15 @@ func TestPositionsBuilderSorted(t *testing.T) {
 	p := pb.Build()
 	assert.False(t, pb.unsorted)
 	assert.Len(t, pb.ranges, 0)
-	expected := []positionRange{
+	expected := []PositionRange{
 		{Start: 0, End: 6},
 		{Start: 10, End: 17},
 		{Start: 100, End: 200},
 	}
-	assert.Equal(t, expected, p.ranges)
-	assert.Equal(t, 200, p.limit())
+	var actual []PositionRange
+	consume2.FromGenerator(p.Ranges(), consume2.AppendTo(&actual))
+	assert.Equal(t, expected, actual)
+	assert.Equal(t, 200, p.End())
 }
 
 func TestPositionsBuilderNegative(t *testing.T) {
