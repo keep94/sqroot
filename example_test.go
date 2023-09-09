@@ -106,6 +106,42 @@ func ExampleNumber_Exponent() {
 	// 3
 }
 
+func ExampleNumber_FullIterator() {
+
+	// sqrt(7) = 0.26457513110... * 10^1
+	n := sqroot.Sqrt(7).WithSignificant(6)
+
+	iter := n.FullIterator()
+	for digit, ok := iter(); ok; digit, ok = iter() {
+		fmt.Printf("%+v\n", digit)
+	}
+	// Output:
+	// {Position:0 Value:2}
+	// {Position:1 Value:6}
+	// {Position:2 Value:4}
+	// {Position:3 Value:5}
+	// {Position:4 Value:7}
+	// {Position:5 Value:5}
+}
+
+func ExampleNumber_FullReverse() {
+
+	// sqrt(7) = 0.26457513110... * 10^1
+	n := sqroot.Sqrt(7).WithSignificant(6)
+
+	iter := n.FullReverse()
+	for digit, ok := iter(); ok; digit, ok = iter() {
+		fmt.Printf("%+v\n", digit)
+	}
+	// Output:
+	// {Position:5 Value:5}
+	// {Position:4 Value:7}
+	// {Position:3 Value:5}
+	// {Position:2 Value:4}
+	// {Position:1 Value:6}
+	// {Position:0 Value:2}
+}
+
 func ExampleNumber_Iterator() {
 
 	// sqrt(7) = 0.26457513110... * 10^1
@@ -174,14 +210,14 @@ func ExampleNumber_Reverse() {
 func ExampleNumber_WithStart() {
 
 	// sqrt(29) = 5.3851648...
-	n := sqroot.Sqrt(29).WithSignificant(1000)
+	n := sqroot.Sqrt(29)
 
 	// Find all occurrences of '85' in the first 1000 digits of sqrt(29)
-	fmt.Println(sqroot.FindAll(n, []int{8, 5}))
+	fmt.Println(sqroot.FindAll(n.WithEnd(1000), []int{8, 5}))
 
 	// Find all occurrences of '85' in the first 1000 digits of sqrt(29)
 	// on or after position 800
-	fmt.Println(sqroot.FindAll(n.WithStart(800), []int{8, 5}))
+	fmt.Println(sqroot.FindAll(n.WithStart(800).WithEnd(1000), []int{8, 5}))
 	// Output:
 	// [2 167 444 507 511 767 853 917 935 958]
 	// [853 917 935 958]
@@ -255,4 +291,19 @@ func ExampleNumber_WithSignificant() {
 	fmt.Println(sqroot.FindFirst(n, []int{1, 1, 2}))
 	// Output:
 	// -1
+}
+
+func ExamplePositions() {
+	var builder sqroot.PositionsBuilder
+	builder.AddRange(0, 7).AddRange(40, 50)
+	positions := builder.AddRange(5, 10).Build()
+	fmt.Printf("End: %d\n", positions.End())
+	iter := positions.Ranges()
+	for pr, ok := iter(); ok; pr, ok = iter() {
+		fmt.Printf("%+v\n", pr)
+	}
+	// Output:
+	// End: 50
+	// {Start:0 End:10}
+	// {Start:40 End:50}
 }
