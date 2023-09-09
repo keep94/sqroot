@@ -8,7 +8,8 @@ import (
 	"strings"
 )
 
-type digit struct {
+// Digit represents a digit and a zero based position.
+type Digit struct {
 
 	// The 0 based position of the digit.
 	Position int
@@ -30,7 +31,7 @@ func newPrinter(
 	return &result
 }
 
-func (p *printer) Consume(d digit) {
+func (p *printer) Consume(d Digit) {
 	if p.index < d.Position {
 		if p.digitsPerRow > 0 && p.digitCountSpec != "" {
 			p.skipRowsFor(d.Position)

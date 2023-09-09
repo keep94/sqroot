@@ -52,8 +52,8 @@ func bufferSize(size int) Option {
 // Sequence represents a sequence of digits. Number pointers implement
 // Sequence.
 type Sequence interface {
-	digitIter() func() (digit, bool)
-	reverseDigitIter() func() (digit, bool)
+	digitIter() func() (Digit, bool)
+	reverseDigitIter() func() (Digit, bool)
 	subRange(start, end int) Sequence
 }
 
@@ -89,7 +89,7 @@ func Print(s Sequence, p Positions, options ...Option) (
 }
 
 func fromSequenceWithPositions(
-	s Sequence, p Positions, consumer consume2.Consumer[digit]) {
+	s Sequence, p Positions, consumer consume2.Consumer[Digit]) {
 	iter := p.Ranges()
 	for pr, ok := iter(); ok; pr, ok = iter() {
 		consume2.FromGenerator(

@@ -196,37 +196,37 @@ func (n *Number) withExponent(e int) *Number {
 	return &Number{exponent: e, spec: n.spec}
 }
 
-func (n *Number) digitIter() func() (digit, bool) {
+func (n *Number) digitIter() func() (Digit, bool) {
 	return n.digitIterAt(0)
 }
 
-func (n *Number) reverseDigitIter() func() (digit, bool) {
+func (n *Number) reverseDigitIter() func() (Digit, bool) {
 	return n.reverseDigitIterTo(0)
 }
 
-func (n *Number) digitIterAt(index int) func() (digit, bool) {
+func (n *Number) digitIterAt(index int) func() (Digit, bool) {
 	iter := n.iteratorAt(index)
 	dig := iter()
-	return func() (dt digit, ok bool) {
+	return func() (dt Digit, ok bool) {
 		if dig == -1 {
 			return
 		}
-		result := digit{Position: index, Value: dig}
+		result := Digit{Position: index, Value: dig}
 		dig = iter()
 		index++
 		return result, true
 	}
 }
 
-func (n *Number) reverseDigitIterTo(start int) func() (digit, bool) {
+func (n *Number) reverseDigitIterTo(start int) func() (Digit, bool) {
 	digits := n.allDigits()
 	index := len(digits)
-	return func() (d digit, ok bool) {
+	return func() (d Digit, ok bool) {
 		if index <= start {
 			return
 		}
 		index--
-		return digit{Position: index, Value: int(digits[index])}, true
+		return Digit{Position: index, Value: int(digits[index])}, true
 	}
 }
 
@@ -380,11 +380,11 @@ type numberWithStart struct {
 	start  int
 }
 
-func (n *numberWithStart) digitIter() func() (digit, bool) {
+func (n *numberWithStart) digitIter() func() (Digit, bool) {
 	return n.number.digitIterAt(n.start)
 }
 
-func (n *numberWithStart) reverseDigitIter() func() (digit, bool) {
+func (n *numberWithStart) reverseDigitIter() func() (Digit, bool) {
 	return n.number.reverseDigitIterTo(n.start)
 }
 
