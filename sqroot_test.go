@@ -264,6 +264,8 @@ func TestZeroNumber(t *testing.T) {
 	assert.Same(t, &n, n.WithStart(1900000000))
 	assert.Equal(t, 0, n.NumDigits())
 	assert.Equal(t, -1, n.Reverse()())
+	assertEmpty(t, n.WithEnd(17))
+	assertEmpty(t, n.WithStart(5))
 }
 
 func TestSameNumber(t *testing.T) {
@@ -314,30 +316,29 @@ func TestNumberAtSig(t *testing.T) {
 	assert.Equal(t, -1, n.At(2000000000))
 }
 
-func TestNumberInterfaces(t *testing.T) {
+func TestNumberSubSequence(t *testing.T) {
 	n := fakeNumber()
 	assertStartsAt(t, n, 0)
 	assertRange(t, n.WithStart(62).WithEnd(404), 62, 404)
 }
 
-func TestNumberInterfacesSig(t *testing.T) {
-	n := fakeNumber().WithSignificant(357)
+func TestNumberSubSequenceWithEnd(t *testing.T) {
+	n := fakeNumber().WithEnd(357)
 	assertRange(t, n, 0, 357)
 	assertRange(t, n.WithStart(62).WithEnd(404), 62, 357)
 	assertRange(t, n.WithStart(100).WithEnd(150), 100, 150)
 	assertEmpty(t, n.WithStart(357).WithEnd(400))
 }
 
-func TestWithStart(t *testing.T) {
-	n := fakeNumber()
-	seq := n.WithStart(423)
+func TestNumberSubSequenceWithStart(t *testing.T) {
+	seq := fakeNumber().WithStart(423)
 	assertStartsAt(t, seq, 423)
 	assertRange(t, seq.WithStart(357).WithEnd(504), 423, 504)
 	assertRange(t, seq.WithStart(424).WithEnd(425), 424, 425)
 }
 
-func TestWithStartSig(t *testing.T) {
-	n := fakeNumber().WithSignificant(541)
+func TestNumberSubSequenceWithStartAndEnd(t *testing.T) {
+	n := fakeNumber().WithEnd(541)
 	seq := n.WithStart(423)
 	assertRange(t, seq, 423, 541)
 	assertRange(t, seq.WithStart(357).WithEnd(600), 423, 541)
@@ -345,6 +346,18 @@ func TestWithStartSig(t *testing.T) {
 	assertRange(t, seq.WithStart(424).WithEnd(425), 424, 425)
 	assertEmpty(t, n.WithStart(541))
 	assertEmpty(t, n.WithStart(542))
+}
+
+func TestNumberSubSequenceSame(t *testing.T) {
+	n := fakeNumber()
+	assert.Same(t, n, n.WithStart(0))
+	assert.Same(t, n, n.WithStart(-1))
+	endSeq := n.WithEnd(457)
+	assert.Same(t, endSeq, endSeq.WithEnd(458))
+	startEndSeq := endSeq.WithStart(303)
+	assert.Same(t, startEndSeq, startEndSeq.WithStart(-2))
+	assert.Same(t, startEndSeq, startEndSeq.WithEnd(458))
+	assertEmpty(t, startEndSeq.WithEnd(-3))
 }
 
 func assertStartsAt(t *testing.T, s Sequence, start int) {
