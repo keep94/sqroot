@@ -189,6 +189,16 @@ func (n *Number) Reverse() func() int {
 	}
 }
 
+// FullIterator comes from the Sequence interface.
+func (n *Number) FullIterator() func() (Digit, bool) {
+	return n.fullIteratorAt(0)
+}
+
+// FullReverse comes from the Sequence interface.
+func (n *Number) FullReverse() func() (Digit, bool) {
+	return n.fullReverseTo(0)
+}
+
 func (n *Number) withExponent(e int) *Number {
 	if e == n.exponent || n.IsZero() {
 		return n
@@ -196,15 +206,7 @@ func (n *Number) withExponent(e int) *Number {
 	return &Number{exponent: e, spec: n.spec}
 }
 
-func (n *Number) digitIter() func() (Digit, bool) {
-	return n.digitIterAt(0)
-}
-
-func (n *Number) reverseDigitIter() func() (Digit, bool) {
-	return n.reverseDigitIterTo(0)
-}
-
-func (n *Number) digitIterAt(index int) func() (Digit, bool) {
+func (n *Number) fullIteratorAt(index int) func() (Digit, bool) {
 	iter := n.iteratorAt(index)
 	dig := iter()
 	return func() (dt Digit, ok bool) {
@@ -218,7 +220,7 @@ func (n *Number) digitIterAt(index int) func() (Digit, bool) {
 	}
 }
 
-func (n *Number) reverseDigitIterTo(start int) func() (Digit, bool) {
+func (n *Number) fullReverseTo(start int) func() (Digit, bool) {
 	digits := n.allDigits()
 	index := len(digits)
 	return func() (d Digit, ok bool) {
@@ -380,12 +382,12 @@ type numberWithStart struct {
 	start  int
 }
 
-func (n *numberWithStart) digitIter() func() (Digit, bool) {
-	return n.number.digitIterAt(n.start)
+func (n *numberWithStart) FullIterator() func() (Digit, bool) {
+	return n.number.fullIteratorAt(n.start)
 }
 
-func (n *numberWithStart) reverseDigitIter() func() (Digit, bool) {
-	return n.number.reverseDigitIterTo(n.start)
+func (n *numberWithStart) FullReverse() func() (Digit, bool) {
+	return n.number.fullReverseTo(n.start)
 }
 
 func (n *numberWithStart) subRange(start, end int) Sequence {

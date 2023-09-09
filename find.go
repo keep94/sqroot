@@ -10,11 +10,11 @@ import (
 // Pattern is a sequence of digits between 0 and 9.
 func Find(s Sequence, pattern []int) func() int {
 	if len(pattern) == 0 {
-		return zeroPattern(s.digitIter())
+		return zeroPattern(s.FullIterator())
 	}
 	patternCopy := make([]int, len(pattern))
 	copy(patternCopy, pattern)
-	return kmp(s.digitIter(), patternCopy, false)
+	return kmp(s.FullIterator(), patternCopy, false)
 }
 
 // FindFirst finds the zero based index of the first match of pattern in s.
@@ -67,16 +67,16 @@ func FindLastN(s Sequence, pattern []int, n int) []int {
 // a sequence of digits between 0 and 9.
 func FindR(s Sequence, pattern []int) func() int {
 	if len(pattern) == 0 {
-		return zeroPattern(s.reverseDigitIter())
+		return zeroPattern(s.FullReverse())
 	}
-	return kmp(s.reverseDigitIter(), patternReverse(pattern), true)
+	return kmp(s.FullReverse(), patternReverse(pattern), true)
 }
 
 func find(s Sequence, pattern []int) func() int {
 	if len(pattern) == 0 {
-		return zeroPattern(s.digitIter())
+		return zeroPattern(s.FullIterator())
 	}
-	return kmp(s.digitIter(), pattern, false)
+	return kmp(s.FullIterator(), pattern, false)
 }
 
 func asIntSlice(

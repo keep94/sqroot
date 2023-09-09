@@ -52,8 +52,19 @@ func bufferSize(size int) Option {
 // Sequence represents a sequence of digits. Number pointers implement
 // Sequence.
 type Sequence interface {
-	digitIter() func() (Digit, bool)
-	reverseDigitIter() func() (Digit, bool)
+
+	// FullIterator returns a function that generates the digits in this
+	// Sequence along with their zero based positions from beginning to end.
+	// If there are no more digits, returned function returns false.
+	FullIterator() func() (Digit, bool)
+
+	// FullReverse returns a function that generates the digits in this
+	// Sequence along with their zero based positions from end to beginning.
+	// When there are no more digits, returned function returns false. If
+	// this Sequence happens to have an infinite number of digits, FullReverse
+	// runs forever.
+	FullReverse() func() (Digit, bool)
+
 	subRange(start, end int) Sequence
 }
 
@@ -93,7 +104,7 @@ func fromSequenceWithPositions(
 	iter := p.Ranges()
 	for pr, ok := iter(); ok; pr, ok = iter() {
 		consume2.FromGenerator(
-			s.subRange(pr.Start, pr.End).digitIter(), consumer)
+			s.subRange(pr.Start, pr.End).FullIterator(), consumer)
 	}
 }
 

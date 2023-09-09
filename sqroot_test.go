@@ -349,7 +349,7 @@ func TestWithStartSig(t *testing.T) {
 
 func assertStartsAt(t *testing.T, s Sequence, start int) {
 	t.Helper()
-	iter := s.digitIter()
+	iter := s.FullIterator()
 	d, ok := iter()
 	assert.True(t, ok)
 	assert.Equal(t, start, d.Position)
@@ -364,7 +364,7 @@ func assertRange(t *testing.T, s Sequence, start, end int) {
 
 func assertForwardRange(t *testing.T, s Sequence, start, end int) bool {
 	t.Helper()
-	iter := s.digitIter()
+	iter := s.FullIterator()
 	for i := start; i < end; i++ {
 		d, ok := iter()
 		if !assert.True(t, ok) {
@@ -383,7 +383,7 @@ func assertForwardRange(t *testing.T, s Sequence, start, end int) bool {
 
 func assertReverseRange(t *testing.T, s Sequence, start, end int) bool {
 	t.Helper()
-	iter := s.reverseDigitIter()
+	iter := s.FullReverse()
 	for i := end - 1; i >= start; i-- {
 		d, ok := iter()
 		if !assert.True(t, ok) {
