@@ -81,8 +81,7 @@ func CubeRootBigRat(radican *big.Rat) *Number {
 	return nRootFrac(radican.Num(), radican.Denom(), newCubeRootManager)
 }
 
-// WithStart returns the digits of n that have positions greater than or
-// equal to start.
+// WithStart comes from the Sequence interface.
 func (n *Number) WithStart(start int) Sequence {
 	if start <= 0 || n.IsZero() {
 		return n
@@ -91,6 +90,11 @@ func (n *Number) WithStart(start int) Sequence {
 		number: n,
 		start:  start,
 	}
+}
+
+// WithEnd comes from the Sequence interface.
+func (n *Number) WithEnd(end int) Sequence {
+	return n.withSignificant(end)
 }
 
 // Iterator returns the digits of the mantissa of this Number as a function.
@@ -246,10 +250,6 @@ func (n *Number) allDigits() []int8 {
 	return n.spec.FirstN(math.MaxInt)
 }
 
-func (n *Number) subRange(start, end int) Sequence {
-	return n.withSignificant(end).WithStart(start)
-}
-
 func (n *Number) withSpec(newSpec numberSpec) *Number {
 	if newSpec == n.spec {
 		return n
@@ -262,6 +262,9 @@ func (n *Number) withSpec(newSpec numberSpec) *Number {
 
 func (n *Number) withSignificant(limit int) *Number {
 	return n.withSpec(withLimit(n.spec, limit))
+}
+
+func (n *Number) private() {
 }
 
 func nRootFrac(num, denom *big.Int, newManager func() rootManager) *Number {
@@ -390,13 +393,23 @@ func (n *numberWithStart) FullReverse() func() (Digit, bool) {
 	return n.number.fullReverseTo(n.start)
 }
 
-func (n *numberWithStart) subRange(start, end int) Sequence {
-	newNumber := n.number.withSignificant(end)
+func (n *numberWithStart) WithStart(start int) Sequence {
 	if start <= n.start {
-		if newNumber == n.number {
-			return n
-		}
-		return &numberWithStart{number: newNumber, start: n.start}
+		return n
 	}
-	return &numberWithStart{number: newNumber, start: start}
+	return &numberWithStart{number: n.number, start: start}
+}
+
+func (n *numberWithStart) WithEnd(end int) Sequence {
+	return n.withNumber(n.number.withSignificant(end))
+}
+
+func (n *numberWithStart) withNumber(number *Number) Sequence {
+	if number == n.number {
+		return n
+	}
+	return &numberWithStart{number: number, start: n.start}
+}
+
+func (n *numberWithStart) private() {
 }

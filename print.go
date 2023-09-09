@@ -65,7 +65,15 @@ type Sequence interface {
 	// runs forever.
 	FullReverse() func() (Digit, bool)
 
-	subRange(start, end int) Sequence
+	// WithStart returns a Sequence like this one that only has digits with
+	// zero based positions greater than or equal to start.
+	WithStart(start int) Sequence
+
+	// WithEnd returns a sequence like this one that only has digits with
+	// zero based positions less than end.
+	WithEnd(end int) Sequence
+
+	private()
 }
 
 // Fprint prints digits of s to w. Fprint returns the number of bytes written
@@ -104,7 +112,7 @@ func fromSequenceWithPositions(
 	iter := p.Ranges()
 	for pr, ok := iter(); ok; pr, ok = iter() {
 		consume2.FromGenerator(
-			s.subRange(pr.Start, pr.End).FullIterator(), consumer)
+			s.WithStart(pr.Start).WithEnd(pr.End).FullIterator(), consumer)
 	}
 }
 
