@@ -228,6 +228,25 @@ func TestCubeRootSmallRat(t *testing.T) {
 	assert.Equal(t, "0.030016498129266", fmt.Sprintf("%.14g", n))
 }
 
+func TestNewNumberFromBigRat(t *testing.T) {
+	var r big.Rat
+	r.SetString("2/7")
+	assert.Equal(t, "0.285714", fmt.Sprintf("%.6g", NewNumberFromBigRat(&r)))
+	r.SetString("47")
+	assert.Equal(t, "47", NewNumberFromBigRat(&r).String())
+}
+
+func TestNewNumberFromBigRatZero(t *testing.T) {
+	var r big.Rat
+	assert.Zero(t, *NewNumberFromBigRat(&r))
+}
+
+func TestNewNumberFromBigRatPanic(t *testing.T) {
+	var r big.Rat
+	r.SetString("-3/5")
+	assert.Panics(t, func() { NewNumberFromBigRat(&r) })
+}
+
 func TestNegDenom(t *testing.T) {
 	radican := big.NewRat(1, 700)
 	radican.Denom().SetInt64(-500)

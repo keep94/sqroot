@@ -2,6 +2,7 @@ package sqroot_test
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/keep94/sqroot"
 )
@@ -20,6 +21,20 @@ func ExampleCubeRoot() {
 	fmt.Printf("%.100g\n", sqroot.CubeRoot(3))
 	// Output:
 	// 1.442249570307408382321638310780109588391869253499350577546416194541687596829997339854755479705645256
+}
+
+func ExampleNewNumberFromBigRat() {
+	var r big.Rat
+
+	// r = 0.713124713124713124...
+	r.SetString("713124/999999")
+
+	// n = 0.713124713124713124...
+	n := sqroot.NewNumberFromBigRat(&r)
+
+	fmt.Println(n)
+	// Output
+	// 0.7131247131247131
 }
 
 func ExampleFind() {

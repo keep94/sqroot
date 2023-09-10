@@ -74,11 +74,9 @@ func TestFindEmptyPatternIterator(t *testing.T) {
 }
 
 func TestFindFirstNTrickyPattern(t *testing.T) {
-	// 12212212122122121221221 ** 2
-	radican, ok := new(big.Int).SetString(
-		"149138124915706483400311993274596508420730841", 10)
-	assert.True(t, ok)
-	number := SqrtBigInt(radican)
+	var value big.Rat
+	value.SetString("12212212122122121221221")
+	number := NewNumberFromBigRat(&value)
 	hits := FindFirstN(
 		number,
 		[]int{1, 2, 2, 1, 2, 1, 2, 2, 1, 2, 2, 1},

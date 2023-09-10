@@ -50,6 +50,17 @@ func computeGroupsFromRational(num, denom, base *big.Int) (
 	return
 }
 
+func groupsToDigits(groups func(result *big.Int) *big.Int) func() int {
+	var nextGroupHolder big.Int
+	return func() int {
+		nextGroup := groups(&nextGroupHolder)
+		if nextGroup == nil {
+			return -1
+		}
+		return int(nextGroup.Int64())
+	}
+}
+
 func computeRootDigits(
 	radicanGroups func(result *big.Int) *big.Int,
 	manager rootManager) func() int {

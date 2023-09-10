@@ -81,6 +81,23 @@ func CubeRootBigRat(radican *big.Rat) *Number {
 	return nRootFrac(radican.Num(), radican.Denom(), newCubeRootManager)
 }
 
+// NewNumberFromBigRat returns value as a Number. Because Number can only
+// hold positive results, the denominator of value must be positive, and the
+// numerator must be non-negative or else NewNumberFromBigRat panics.
+// NewNumberFromBigRat can be used to create arbitrary Number instances for
+// testing.
+func NewNumberFromBigRat(value *big.Rat) *Number {
+	num := value.Num()
+	denom := value.Denom()
+	checkNumDenom(num, denom)
+	if num.Sign() == 0 {
+		return zeroNumber
+	}
+	groups, exp := computeGroupsFromRational(num, denom, ten)
+	digits := groupsToDigits(groups)
+	return &Number{exponent: exp, spec: newMemoizeSpec(digits)}
+}
+
 // WithStart comes from the Sequence interface.
 func (n *Number) WithStart(start int) Sequence {
 	if start <= 0 || n.IsZero() {
@@ -268,12 +285,7 @@ func (n *Number) private() {
 }
 
 func nRootFrac(num, denom *big.Int, newManager func() rootManager) *Number {
-	if denom.Sign() <= 0 {
-		panic("Denominator must be positive")
-	}
-	if num.Sign() < 0 {
-		panic("Numerator must be non-negative")
-	}
+	checkNumDenom(num, denom)
 	if num.Sign() == 0 {
 		return zeroNumber
 	}
@@ -282,6 +294,15 @@ func nRootFrac(num, denom *big.Int, newManager func() rootManager) *Number {
 		num, denom, manager.Base(new(big.Int)))
 	digits := computeRootDigits(groups, manager)
 	return &Number{exponent: exp, spec: newMemoizeSpec(digits)}
+}
+
+func checkNumDenom(num, denom *big.Int) {
+	if denom.Sign() <= 0 {
+		panic("Denominator must be positive")
+	}
+	if num.Sign() < 0 {
+		panic("Numerator must be non-negative")
+	}
 }
 
 type formatSpec struct {
