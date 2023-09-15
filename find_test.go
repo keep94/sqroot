@@ -8,8 +8,17 @@ import (
 )
 
 func TestFindFirstN(t *testing.T) {
-	hits := FindFirstN(fakeNumber(), []int{3, 4}, 3)
+	n := fakeNumber()
+	hits := FindFirstN(n, []int{3, 4}, 3)
 	assert.Equal(t, []int{2, 12, 22}, hits)
+	hits = FindFirstN(n.WithEnd(20), []int{3, 4}, 3)
+	assert.Equal(t, []int{2, 12}, hits)
+	hits = FindFirstN(n.WithEnd(20), []int{5, 7}, 3)
+	assert.Empty(t, hits)
+	hits = FindFirstN(Sqrt(12), []int{0, 0, 0, 0, 0, 0, 0, 0}, 0)
+	assert.Empty(t, hits)
+	hits = FindFirstN(Sqrt(12), []int{0, 0, 0, 0, 0, 0, 0, 0}, -1)
+	assert.Empty(t, hits)
 }
 
 func TestFindAll(t *testing.T) {
@@ -112,6 +121,8 @@ func TestFindLastN(t *testing.T) {
 	assert.Empty(t, hits)
 	hits = FindLastN(n, []int{5, 6}, 0)
 	assert.Empty(t, hits)
+	hits = FindLastN(n, []int{5, 6}, -1)
+	assert.Empty(t, hits)
 }
 
 func TestFindZeroNumber(t *testing.T) {
@@ -126,4 +137,15 @@ func TestFindZeroNumber(t *testing.T) {
 	assert.Equal(t, -1, FindLast(&n, nil))
 	assert.Empty(t, FindLastN(&n, []int{5}, 3))
 	assert.Empty(t, FindLastN(&n, nil, 3))
+}
+
+func TestFindOverlap(t *testing.T) {
+	var r big.Rat
+	r.SetString("43000023/99999999")
+
+	// n = 0.4300002343000023...
+	n := NewNumberFromBigRat(&r)
+
+	assert.Equal(t, []int{2, 3, 10}, FindFirstN(n, []int{0, 0, 0}, 3))
+	assert.Equal(t, []int{3, 2}, FindLastN(n.WithEnd(8), []int{0, 0, 0}, 3))
 }
