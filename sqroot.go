@@ -100,7 +100,7 @@ func NewNumberFromBigRat(value *big.Rat) *Number {
 
 // WithStart comes from the Sequence interface.
 func (n *Number) WithStart(start int) Sequence {
-	if start <= 0 || n.IsZero() {
+	if start <= 0 {
 		return n
 	}
 	return &numberWithStart{

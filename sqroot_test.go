@@ -280,7 +280,6 @@ func TestZeroNumber(t *testing.T) {
 	assert.Equal(t, -1, n.IteratorAt(5)())
 	assert.Equal(t, "0", n.String())
 	assert.Same(t, &n, n.WithSignificant(5))
-	assert.Same(t, &n, n.WithStart(1900000000))
 	assert.Equal(t, 0, n.NumDigits())
 	assert.Equal(t, -1, n.Reverse()())
 	assertEmpty(t, n.WithEnd(17))
