@@ -38,4 +38,4 @@ fmt.Println(sqroot.FindLast(
     []int{7}))
 ```
 
-More documentation and examples can be found [here](https://pkg.go.dev/github.com/keep94/sqroot).
+More documentation and examples can be found [here](https://pkg.go.dev/github.com/keep94/sqroot/v2).
