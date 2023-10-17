@@ -21,10 +21,13 @@ var (
 )
 
 // Number represents a square root value. The zero value for Number
-// corresponds to 0. A Number is of the form mantissa * 10^exponent where
-// mantissa is between 0.1 inclusive and 1.0 exclusive. A Number instance
-// can represent an infinite number of digits. Number pointers implement
-// Sequence. Number instances are safe to use with multiple goroutines.
+// corresponds to 0. A non-zero Number is of the form mantissa * 10^exponent
+// where mantissa is between 0.1 inclusive and 1.0 exclusive. A Number
+// instance can represent an infinite number of digits. Number instances
+// compute the digits of their mantissa lazily on an as needed basis. Number
+// instances store their computed digits so that they only have to be
+// computed once. Number pointers implement Sequence. Number instances are
+// safe to use with multiple goroutines.
 type Number struct {
 	spec     numberSpec
 	exponent int
@@ -124,11 +127,9 @@ func (n *Number) At(posit int) int {
 	return n.spec.At(posit)
 }
 
-// WithSignificant returns a Number like this one that has no more than
-// limit significant digits. WithSignificant rounds the returned Number
-// down toward zero when necessary. WithSignificant panics if limit is
-// negative. WithSignificant will return n, if it can determine that n
-// already has limit or fewer significant digits.
+// WithSignificant returns a view of n that has no more than limit
+// significant digits. WithSignificant rounds the returned Number
+// down toward zero. WithSignificant panics if limit is negative.
 func (n *Number) WithSignificant(limit int) *Number {
 	if limit < 0 {
 		panic("limit must be non-negative")

@@ -65,11 +65,11 @@ type Sequence interface {
 	// runs forever.
 	Reverse() func() (Digit, bool)
 
-	// WithStart returns a Sequence like this one that only has digits with
+	// WithStart returns a view of this Sequence that only has digits with
 	// zero based positions greater than or equal to start.
 	WithStart(start int) Sequence
 
-	// WithEnd returns a sequence like this one that only has digits with
+	// WithEnd returns a view of this Sequence that only has digits with
 	// zero based positions less than end.
 	WithEnd(end int) Sequence
 
