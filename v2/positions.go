@@ -5,7 +5,8 @@ import (
 )
 
 // PositionsBuilder builds Positions objects. The zero value has no
-// positions in it and is ready to use.
+// positions in it and is ready to use. Do not copy a PositionsBuilder
+// instance.
 type PositionsBuilder struct {
 	ranges   []PositionRange
 	unsorted bool

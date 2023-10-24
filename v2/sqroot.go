@@ -23,11 +23,22 @@ var (
 // Number represents a square root value. The zero value for Number
 // corresponds to 0. A non-zero Number is of the form mantissa * 10^exponent
 // where mantissa is between 0.1 inclusive and 1.0 exclusive. A Number
-// instance can represent an infinite number of digits. Number instances
-// compute the digits of their mantissa lazily on an as needed basis. Number
-// instances store their computed digits so that they only have to be
-// computed once. Number pointers implement Sequence. Number instances are
-// safe to use with multiple goroutines.
+// can represent an infinite number of digits. A Number computes the digits
+// of its mantissa lazily on an as needed basis. To compute a given digit,
+// a Number must compute all digits that come before that digit. A Number
+// stores its computed digits so that they only have to be computed once.
+// Number pointers implement Sequence. Number instances are safe to use with
+// multiple goroutines.
+//
+// The Number factory functions such as the Sqrt and CubeRoot functions
+// return pointers to new Number instances that contain no computed digits.
+// For zero, these factory functions return pointers to the same zero value
+// Number, which has no actual digits to compute and therefore never
+// changes.
+//
+// Pass Number instances by reference not by value. Copying a Number
+// instance or overwriting a Number instance with the assignment operator
+// is not supported and may cause errors.
 type Number struct {
 	spec     numberSpec
 	exponent int
