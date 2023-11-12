@@ -11,31 +11,30 @@ For doing math operations with square roots, big.Float in the standard library i
 
 ## Examples
 
-Print the first 1000 digits of the square root of 2.
-
 ```golang
-fmt.Printf("%.1000g\n", sqroot.Sqrt(2))
-```
+package main
 
-Print the 10,000th digit of the square root of 5.
+import (
+    "fmt"
 
-```golang
-fmt.Println(sqroot.Sqrt(5).At(9999))
-```
+    "github.com/keep94/sqroot/v2"
+)
 
-Print where the first 4 consecutive 0's start in the cube root of 7.
+func main() {
 
-```golang
-fmt.Println(sqroot.FindFirst(
-    sqroot.CubeRoot(7), []int{0, 0, 0, 0}))
-```
+    // Print the first 1000 digits of the square root of 2.
+    fmt.Printf("%.1000g\n", sqroot.Sqrt(2))
 
-Print the location of the last 7 in the first 10,000 digits of the cube root of 11.
+    // Print the 10,000th digit of the square root of 5.
+    fmt.Println(sqroot.Sqrt(5).At(9999))
 
-```golang
-fmt.Println(sqroot.FindLast(
-    sqroot.CubeRoot(11).WithSignificant(10000),
-    []int{7}))
+    // Print the location of the first 4 consecutive 0's in the cube root of 7.
+    fmt.Println(sqroot.FindFirst(sqroot.CubeRoot(7), []int{0, 0, 0, 0}))
+
+    // Print the location of the last 7 in the first 10,000 digits of the
+    // cube root of 11.
+    fmt.Println(sqroot.FindLast(sqroot.CubeRoot(11).WithEnd(10000), []int{7}))
+}
 ```
 
 More documentation and examples can be found [here](https://pkg.go.dev/github.com/keep94/sqroot/v2).
