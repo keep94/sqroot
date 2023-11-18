@@ -17,7 +17,7 @@ package main
 import (
     "fmt"
 
-    "github.com/keep94/sqroot/v2"
+    "github.com/keep94/sqroot/v3"
 )
 
 func main() {
@@ -37,4 +37,4 @@ func main() {
 }
 ```
 
-More documentation and examples can be found [here](https://pkg.go.dev/github.com/keep94/sqroot/v2).
+More documentation and examples can be found [here](https://pkg.go.dev/github.com/keep94/sqroot/v3).
