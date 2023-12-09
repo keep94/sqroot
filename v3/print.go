@@ -49,7 +49,8 @@ func bufferSize(size int) Option {
 	})
 }
 
-// Sequence represents a sequence of digits.
+// Sequence represents a sequence of digits of either finite or infinite
+// length.
 type Sequence interface {
 
 	// Iterator returns a function that generates the digits in this
@@ -68,13 +69,14 @@ type Sequence interface {
 	private()
 }
 
-// FiniteSequence represents a finite sequence of digits.
+// FiniteSequence represents a sequence of digits of finite length.
 type FiniteSequence interface {
 	Sequence
 
 	// Reverse returns a function that generates the digits in this
-	// Sequence along with their zero based positions from end to beginning.
-	// When there are no more digits, returned function returns false.
+	// FiniteSequence along with their zero based positions from end to
+	// beginning. When there are no more digits, returned function returns
+	// false.
 	Reverse() func() (Digit, bool)
 
 	// FiniteWithStart works like WithStart except that it returns a

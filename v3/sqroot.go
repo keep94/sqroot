@@ -20,17 +20,18 @@ var (
 	zeroNumber = &FiniteNumber{}
 )
 
-// Number represents a square root value.
+// Number is a reference to a square root value.
 // A non-zero Number is of the form mantissa * 10^exponent
 // where mantissa is between 0.1 inclusive and 1.0 exclusive. A Number
-// can represent an infinite number of digits. A Number computes the digits
-// of its mantissa lazily on an as needed basis. To compute a given digit,
-// a Number must compute all digits that come before that digit. A Number
-// stores its computed digits so that they only have to be computed once.
-// Number instances are safe to use with multiple goroutines.
+// can represent either a finite or infinite number of digits. A Number
+// computes the digits of its mantissa lazily on an as needed basis. To
+// compute a given digit, a Number must compute all digits that come before
+// that digit. A Number stores its computed digits so that they only have
+// to be computed once. Number instances are safe to use with multiple
+// goroutines.
 //
 // The Number factory functions such as the Sqrt and CubeRoot functions
-// return new Number instances that contain no computed digits.
+// return new Number instances that contain no computed digits initially.
 type Number interface {
 	Sequence
 
