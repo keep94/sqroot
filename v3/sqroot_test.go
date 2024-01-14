@@ -186,6 +186,80 @@ func TestCubeRootSmallRat(t *testing.T) {
 	assert.Equal(t, "0.030016498129266", fmt.Sprintf("%.14g", n))
 }
 
+func TestNewNumberForTesting(t *testing.T) {
+	n, err := NewNumberForTesting([]int{1, 0, 2}, []int{0, 0, 3, 4}, 2)
+	assert.Equal(t, "10.20034003400340", n.String())
+	assert.NoError(t, err)
+}
+
+func TestNewNumberForTestingNoExp(t *testing.T) {
+	n, err := NewNumberForTesting([]int{1, 0, 2}, []int{0, 0, 3, 4}, 0)
+	assert.Equal(t, "0.1020034003400340", n.String())
+	assert.NoError(t, err)
+}
+
+func TestNewNumberForTestingNegExp(t *testing.T) {
+	n, err := NewNumberForTesting([]int{1, 0, 2}, []int{0, 0, 3, 4}, -2)
+	assert.Equal(t, "0.001020034003400340", n.String())
+	assert.NoError(t, err)
+}
+
+func TestNewNumberForTestingNoFixed(t *testing.T) {
+	n, err := NewNumberForTesting(nil, []int{1, 0, 3, 4}, 0)
+	assert.Equal(t, "0.1034103410341034", n.String())
+	assert.NoError(t, err)
+}
+
+func TestNewNumberForTestingNoRepeat(t *testing.T) {
+	n, err := NewNumberForTesting([]int{1, 0, 2}, nil, 0)
+	assert.Equal(t, "0.102", n.String())
+	assert.NoError(t, err)
+}
+
+func TestNewNumberForTestingZero(t *testing.T) {
+	n, err := NewNumberForTesting(nil, nil, 5)
+	assert.True(t, n.IsZero())
+	assert.NoError(t, err)
+}
+
+func TestNewNumberForTestingLeadingZero(t *testing.T) {
+	_, err := NewNumberForTesting(nil, []int{0, 3}, 5)
+	assert.Error(t, err)
+}
+
+func TestNewNumberForTestingIllegalDigits(t *testing.T) {
+	_, err := NewNumberForTesting([]int{10}, nil, 5)
+	assert.Error(t, err)
+	_, err = NewNumberForTesting(nil, []int{-1}, 5)
+	assert.Error(t, err)
+}
+
+func TestNewNumber(t *testing.T) {
+	// n = 0.12112111211112....
+	n := NewNumber(&testgenerator{first: 1, second: 2})
+	assert.Equal(t, "0.1211211121111211", n.String())
+}
+
+func TestNewNumberIllegal(t *testing.T) {
+	n := NewNumber(&testgenerator{first: 5, second: 10})
+	assert.Equal(t, "0.5", n.String())
+}
+
+func TestNewNumberZero(t *testing.T) {
+	n := NewNumber(&testgenerator{first: 10, second: 5, exp: 3})
+	assert.True(t, n.IsZero())
+}
+
+func TestNewNumberZero2(t *testing.T) {
+	n := NewNumber(&testgenerator{first: -1, second: -1, exp: 3})
+	assert.True(t, n.IsZero())
+}
+
+func TestNewNumberZeroLeadingZero(t *testing.T) {
+	n := NewNumber(&testgenerator{first: 0, second: 5, exp: 3})
+	assert.True(t, n.IsZero())
+}
+
 func TestNewNumberFromBigRat(t *testing.T) {
 	var r big.Rat
 	r.SetString("2/7")
@@ -399,4 +473,25 @@ func exhaust(iter func() (Digit, bool), max int) []int {
 		}
 	}
 	return result
+}
+
+type testgenerator struct {
+	first  int
+	second int
+	exp    int
+}
+
+func (g *testgenerator) Generate() (func() int, int) {
+	onesLeft := 1
+	onesCount := 1
+	digits := func() int {
+		if onesLeft == 0 {
+			onesCount++
+			onesLeft = onesCount
+			return g.second
+		}
+		onesLeft--
+		return g.first
+	}
+	return digits, g.exp
 }

@@ -2,6 +2,7 @@
 package sqroot
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -140,9 +141,52 @@ func NewNumberFromBigRat(value *big.Rat) Number {
 	if num.Sign() == 0 {
 		return zeroNumber
 	}
-	groups, exp := computeGroupsFromRational(num, denom, ten)
-	digits := groupsToDigits(groups)
-	return &FiniteNumber{exponent: exp, spec: newMemoizeSpec(digits)}
+	return newNumber(newRatGenerator(num, denom))
+}
+
+// NewNumberForTesting creates an arbitrary Number for testing. fixed are
+// digits between 0 and 9 representing the non repeating digits that come
+// immediately after the decimal place of the mantissa. repeating are digits
+// between 0 and 9 representing the repeating digits that follow the non
+// repeating digits of the mantissa. exp is the exponent part of the
+// returned Number. NewNumberForTesting returns an error if fixed or
+// repeating contain values not between 0 and 9, or if the first digit of
+// the mantissa would be zero since mantissas must be between 0.1 inclusive
+// and 1.0 exclusive.
+func NewNumberForTesting(fixed, repeating []int, exp int) (Number, error) {
+	if len(fixed) == 0 && len(repeating) == 0 {
+		return zeroNumber, nil
+	}
+	if !validDigits(fixed) || !validDigits(repeating) {
+		return nil, errors.New("NewNumberForTesting: digits must be between 0 and 9")
+	}
+	gen := newRepeatingGenerator(fixed, repeating, exp)
+	digits, _ := gen.Generate()
+	if digits() == 0 {
+		return nil, errors.New("NewNumberForTesting: leading zeros not allowed in digits")
+	}
+	return newNumber(gen), nil
+}
+
+// NewNumber returns a new Number based on g. Although g is expected to
+// follow the contract of Generator, if g yields mantissa digits outside the
+// range of 0 and 9, NewNumber regards that as a signal that there are no
+// more mantissa digits. Also if g happens to yield 0 as the first digit
+// of the mantissa, NewNumber will return zero.
+func NewNumber(g Generator) Number {
+
+	// gen is guaranteed to follow the Generator contract. if g yields
+	// a digit outside the range of 0 and 9, gen will signal no more digits
+	// in the mantissa. However, we still have to check that the first
+	// mantissa digit yielded is not zero.
+	gen := newValidDigits(g)
+
+	digits, _ := gen.Generate()
+	first := digits()
+	if first == 0 || first == -1 {
+		return zeroNumber
+	}
+	return newNumber(gen)
 }
 
 // WithStart comes from the Sequence interface.
@@ -290,10 +334,14 @@ func nRootFrac(
 	if num.Sign() == 0 {
 		return zeroNumber
 	}
-	manager := newManager()
-	groups, exp := computeGroupsFromRational(
-		num, denom, manager.Base(new(big.Int)))
-	digits := computeRootDigits(groups, manager)
+	return newNumber(newNRootGenerator(num, denom, newManager))
+}
+
+// newNumber returns a new number based on gen. Unlike NewNumber, gen must
+// follow the contract of Generator. Also, newNumber doesn't handle empty
+// mantissas.
+func newNumber(gen Generator) *FiniteNumber {
+	digits, exp := gen.Generate()
 	return &FiniteNumber{exponent: exp, spec: newMemoizeSpec(digits)}
 }
 

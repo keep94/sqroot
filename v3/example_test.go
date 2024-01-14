@@ -37,6 +37,15 @@ func ExampleNewNumberFromBigRat() {
 	// 0.7131247131247131
 }
 
+func ExampleNewNumberForTesting() {
+	// n = 10.2003400340034...
+	n, _ := sqroot.NewNumberForTesting([]int{1, 0, 2}, []int{0, 0, 3, 4}, 2)
+
+	fmt.Println(n)
+	// Output:
+	// 10.20034003400340
+}
+
 func ExampleFind() {
 
 	// sqrt(2) = 0.14142135... * 10^1

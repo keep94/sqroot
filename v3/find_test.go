@@ -1,7 +1,6 @@
 package sqroot
 
 import (
-	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -83,9 +82,8 @@ func TestFindEmptyPatternIterator(t *testing.T) {
 }
 
 func TestFindFirstNTrickyPattern(t *testing.T) {
-	var value big.Rat
-	value.SetString("12212212122122121221221")
-	number := NewNumberFromBigRat(&value)
+	number, _ := NewNumberForTesting(
+		intSliceFromString("12212212122122121221221"), nil, 0)
 	hits := FindFirstN(
 		number,
 		[]int{1, 2, 2, 1, 2, 1, 2, 2, 1, 2, 2, 1},
@@ -140,12 +138,18 @@ func TestFindZeroNumber(t *testing.T) {
 }
 
 func TestFindOverlap(t *testing.T) {
-	var r big.Rat
-	r.SetString("43000023/99999999")
 
 	// n = 0.4300002343000023...
-	n := NewNumberFromBigRat(&r)
+	n, _ := NewNumberForTesting(nil, intSliceFromString("43000023"), 0)
 
 	assert.Equal(t, []int{2, 3, 10}, FindFirstN(n, []int{0, 0, 0}, 3))
 	assert.Equal(t, []int{3, 2}, FindLastN(n.WithEnd(8), []int{0, 0, 0}, 3))
+}
+
+func intSliceFromString(s string) []int {
+	result := make([]int, 0, len(s))
+	for _, c := range s {
+		result = append(result, int(c-'0'))
+	}
+	return result
 }
