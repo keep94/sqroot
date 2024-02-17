@@ -115,6 +115,16 @@ func Print(s Sequence, p Positions, options ...Option) (
 	return Fprint(os.Stdout, s, p, options...)
 }
 
+// DigitsToString returns all the digits in s as a string.
+func DigitsToString(s FiniteSequence) string {
+	var sb strings.Builder
+	iter := s.Iterator()
+	for d, ok := iter(); ok; d, ok = iter() {
+		sb.WriteByte('0' + byte(d.Value))
+	}
+	return sb.String()
+}
+
 func fromSequenceWithPositions(
 	s Sequence, p Positions, consumer consume2.Consumer[Digit]) {
 	iter := p.Ranges()

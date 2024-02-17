@@ -322,6 +322,13 @@ func TestErrorAtAllStages2(t *testing.T) {
 	}
 }
 
+func TestDigitsToString(t *testing.T) {
+	n, _ := NewNumberForTesting(nil, []int{1, 2, 5}, 0)
+	assert.Equal(t, "2512512", DigitsToString(n.WithStart(4).WithEnd(11)))
+	assert.Empty(t, DigitsToString(n.WithStart(4).WithEnd(4)))
+	assert.Empty(t, DigitsToString(n.WithStart(4).WithEnd(3)))
+}
+
 type maxBytesWriter struct {
 	maxBytes     int
 	bytesWritten int

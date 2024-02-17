@@ -46,6 +46,16 @@ func ExampleNewNumberForTesting() {
 	// 10.20034003400340
 }
 
+func ExampleDigitsToString() {
+
+	// sqrt(3) = 0.1732050807... * 10^1
+	n := sqroot.Sqrt(3)
+
+	fmt.Println(sqroot.DigitsToString(n.WithStart(2).WithEnd(10)))
+	// Output:
+	// 32050807
+}
+
 func ExampleFind() {
 
 	// sqrt(2) = 0.14142135... * 10^1
