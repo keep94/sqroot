@@ -33,7 +33,7 @@ func newPrinter(
 
 func (p *printer) Consume(d Digit) {
 	if p.index < d.Position {
-		if p.digitsPerRow > 0 && p.digitCountSpec != "" {
+		if p.digitsPerRow > 0 && p.rowStarter.CountOn() {
 			p.skipRowsFor(d.Position)
 		}
 		for p.index < d.Position {
@@ -53,16 +53,53 @@ func (p *printer) skipRowsFor(nextPosit int) {
 	}
 }
 
+type rowStarter interface {
+	Start(w *bufio.Writer, index int) error
+	CountOn() bool
+}
+
+type countOnStarter struct {
+	zeroString    string
+	nonZeroString string
+}
+
+func (c *countOnStarter) Start(w *bufio.Writer, index int) error {
+	if index == 0 {
+		_, err := w.WriteString(c.zeroString)
+		return err
+	}
+	_, err := fmt.Fprintf(w, c.nonZeroString, index)
+	return err
+}
+
+func (c *countOnStarter) CountOn() bool { return true }
+
+type countOffStarter struct {
+	zeroString    string
+	nonZeroString string
+}
+
+func (c *countOffStarter) Start(w *bufio.Writer, index int) error {
+	if index == 0 {
+		_, err := w.WriteString(c.zeroString)
+		return err
+	}
+	_, err := w.WriteString(c.nonZeroString)
+	return err
+}
+
+func (c *countOffStarter) CountOn() bool { return false }
+
 type rawPrinter struct {
-	cWriter         *countingWriter
-	writer          *bufio.Writer
-	indentation     string
-	digitCountSpec  string
-	digitsPerRow    int
-	digitsPerColumn int
-	index           int
-	indexInRow      int
-	err             error
+	cWriter          *countingWriter
+	writer           *bufio.Writer
+	rowStarter       rowStarter
+	digitsPerRow     int
+	digitsPerColumn  int
+	trailingLineFeed bool
+	index            int
+	indexInRow       int
+	err              error
 }
 
 func (p *rawPrinter) Init(
@@ -74,15 +111,13 @@ func (p *rawPrinter) Init(
 	} else {
 		bWriter = bufio.NewWriterSize(cWriter, settings.bufferSize)
 	}
-	indentation, digitCountSpec := computeIndentation(
-		settings.digitCountWidth(maxDigits))
 	*p = rawPrinter{
-		cWriter:         cWriter,
-		writer:          bWriter,
-		indentation:     indentation,
-		digitCountSpec:  digitCountSpec,
-		digitsPerRow:    settings.digitsPerRow,
-		digitsPerColumn: settings.digitsPerColumn,
+		cWriter:          cWriter,
+		writer:           bWriter,
+		rowStarter:       settings.computeRowStarter(maxDigits),
+		digitsPerRow:     settings.digitsPerRow,
+		digitsPerColumn:  settings.digitsPerColumn,
+		trailingLineFeed: settings.trailingLineFeed,
 	}
 }
 
@@ -95,7 +130,7 @@ func (p *rawPrinter) Consume(digit rune) {
 		return
 	}
 	if p.index == 0 {
-		_, p.err = fmt.Fprintf(p.writer, "%s0.", p.indentation)
+		p.err = p.rowStarter.Start(p.writer, 0)
 		if p.err != nil {
 			return
 		}
@@ -106,13 +141,7 @@ func (p *rawPrinter) Consume(digit rune) {
 				return
 			}
 		}
-		if p.digitCountSpec != "" {
-			_, p.err = fmt.Fprintf(p.writer, p.digitCountSpec, p.index)
-			if p.err != nil {
-				return
-			}
-		}
-		_, p.err = p.writer.WriteString("  ")
+		p.err = p.rowStarter.Start(p.writer, p.index)
 		if p.err != nil {
 			return
 		}
@@ -132,6 +161,9 @@ func (p *rawPrinter) Consume(digit rune) {
 }
 
 func (p *rawPrinter) Finish() {
+	if p.err == nil && p.trailingLineFeed {
+		_, p.err = fmt.Fprintln(p.writer)
+	}
 	err := p.writer.Flush()
 	if p.err == nil {
 		p.err = err
@@ -155,11 +187,13 @@ func (p *rawPrinter) skipRows(rowsToSkip int) {
 }
 
 type printerSettings struct {
-	digitsPerRow    int
-	digitsPerColumn int
-	showCount       bool
-	missingDigit    rune
-	bufferSize      int
+	digitsPerRow     int
+	digitsPerColumn  int
+	showCount        bool
+	missingDigit     rune
+	bufferSize       int
+	trailingLineFeed bool
+	leadingDecimal   bool
 }
 
 func (p *printerSettings) digitCountWidth(maxDigits int) int {
@@ -173,14 +207,27 @@ func (p *printerSettings) digitCountWidth(maxDigits int) int {
 	return len(strconv.Itoa(maxCounter))
 }
 
-func computeIndentation(width int) (
-	indentation string, digitCountSpec string) {
+func (p *printerSettings) computeRowStarter(maxDigits int) rowStarter {
+	width := p.digitCountWidth(maxDigits)
 	if width <= 0 {
-		return
+		if p.leadingDecimal {
+			return &countOffStarter{zeroString: "0.", nonZeroString: "  "}
+		} else if p.showCount {
+			return &countOffStarter{zeroString: "0  ", nonZeroString: "   "}
+		} else {
+			return &countOffStarter{}
+		}
 	}
-	indentation = strings.Repeat(" ", width)
-	digitCountSpec = fmt.Sprintf("%%%dd", width)
-	return
+	if p.leadingDecimal {
+		return &countOnStarter{
+			zeroString:    strings.Repeat(" ", width) + "0.",
+			nonZeroString: fmt.Sprintf("%%%dd  ", width),
+		}
+	}
+	return &countOnStarter{
+		zeroString:    strings.Repeat(" ", width-1) + "0  ",
+		nonZeroString: fmt.Sprintf("%%%dd  ", width),
+	}
 }
 
 type formatter struct {

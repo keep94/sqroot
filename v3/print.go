@@ -43,6 +43,20 @@ func MissingDigit(missingDigit rune) Option {
 	})
 }
 
+// TrailingLF adds a trailing line feed to what is printed if on is true.
+func TrailingLF(on bool) Option {
+	return optionFunc(func(p *printerSettings) {
+		p.trailingLineFeed = on
+	})
+}
+
+// LeadingDecimal prints "0." before the first digit if on is true.
+func LeadingDecimal(on bool) Option {
+	return optionFunc(func(p *printerSettings) {
+		p.leadingDecimal = on
+	})
+}
+
 func bufferSize(size int) Option {
 	return optionFunc(func(p *printerSettings) {
 		p.bufferSize = size
@@ -84,10 +98,13 @@ type FiniteSequence interface {
 	FiniteWithStart(start int) FiniteSequence
 }
 
-// Fprint prints digits of s to w. Fprint returns the number of bytes written
-// and any error encountered. p contains the positions of the digits to print.
+// Fprint prints digits of s to w. Unless using advanced functionality,
+// prefer Fwrite, Write, and Swrite to Fprint, Print, and Sprint.
+// Fprint returns the number of bytes written and any error encountered.
+// p contains the positions of the digits to print.
 // For options, the default is 50 digits per row, 5 digits per column,
-// show digit count, and period (.) for missing digits.
+// show digit count, period (.) for missing digits, don't write a trailing
+// line feed, and show the leading decimal point.
 func Fprint(w io.Writer, s Sequence, p Positions, options ...Option) (
 	written int, err error) {
 	settings := &printerSettings{
@@ -95,9 +112,30 @@ func Fprint(w io.Writer, s Sequence, p Positions, options ...Option) (
 		digitsPerColumn: 5,
 		showCount:       true,
 		missingDigit:    '.',
+		leadingDecimal:  true,
 	}
 	printer := newPrinter(w, p.End(), mutateSettings(options, settings))
 	fromSequenceWithPositions(s, p, printer)
+	printer.Finish()
+	return printer.BytesWritten(), printer.Err()
+}
+
+// Fwrite writes all the digits of s to w. Fwrite returns the number of bytes
+// written and any error encountered. For options, the default is 50 digits
+// per row, 5 digits per column, show digit count, period (.) for missing
+// digits, write a trailing line feed, and don't show the leading decimal
+// point.
+func Fwrite(w io.Writer, s FiniteSequence, options ...Option) (
+	written int, err error) {
+	settings := &printerSettings{
+		digitsPerRow:     50,
+		digitsPerColumn:  5,
+		showCount:        true,
+		missingDigit:     '.',
+		trailingLineFeed: true,
+	}
+	printer := newPrinter(w, endOf(s), mutateSettings(options, settings))
+	consume2.FromGenerator[Digit](s.Iterator(), printer)
 	printer.Finish()
 	return printer.BytesWritten(), printer.Err()
 }
@@ -109,10 +147,23 @@ func Sprint(s Sequence, p Positions, options ...Option) string {
 	return builder.String()
 }
 
+// Swrite works like Fwrite and writes all the digits of s to returned string.
+func Swrite(s FiniteSequence, options ...Option) string {
+	var builder strings.Builder
+	Fwrite(&builder, s, options...)
+	return builder.String()
+}
+
 // Print works like Fprint and prints digits of s to stdout.
 func Print(s Sequence, p Positions, options ...Option) (
 	written int, err error) {
 	return Fprint(os.Stdout, s, p, options...)
+}
+
+// Write works like Fwrite and writes all the digits of s to stdout.
+func Write(s FiniteSequence, options ...Option) (
+	written int, err error) {
+	return Fwrite(os.Stdout, s, options...)
 }
 
 // DigitsToString returns all the digits in s as a string.
@@ -123,6 +174,14 @@ func DigitsToString(s FiniteSequence) string {
 		sb.WriteByte('0' + byte(d.Value))
 	}
 	return sb.String()
+}
+
+func endOf(s FiniteSequence) int {
+	iter := s.Reverse()
+	if d, ok := iter(); ok {
+		return d.Position + 1
+	}
+	return 0
 }
 
 func fromSequenceWithPositions(
