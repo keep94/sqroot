@@ -33,6 +33,22 @@ var (
 //
 // The Number factory functions such as the Sqrt and CubeRoot functions
 // return new Number instances that contain no computed digits initially.
+//
+// Because Number instances store their computed digits, it is best to
+// reuse a Number instance when possible. For example the code:
+//
+//	n := sqroot.Sqrt(6)
+//	fmt.Println(sqroot.FindFirst(n, []int{0, 0, 0, 0, 0}))
+//	fmt.Println(sqroot.FindFirst(n, []int{2, 2, 2, 2, 2}))
+//
+// runs faster than the code:
+//
+//	fmt.Println(sqroot.FindFirst(sqroot.Sqrt(6), []int{0, 0, 0, 0, 0}))
+//	fmt.Println(sqroot.FindFirst(sqroot.Sqrt(6), []int{2, 2, 2, 2, 2}))
+//
+// In the first code block, the second line reuses digits computed in the
+// first line, but in the second code block, no reuse is possible since
+// sqroot.Sqrt(6) always returns a Number with no precomputed digits.
 type Number interface {
 	Sequence
 
