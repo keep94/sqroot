@@ -186,6 +186,28 @@ func TestCubeRootSmallRat(t *testing.T) {
 	assert.Equal(t, "0.030016498129266", fmt.Sprintf("%.14g", n))
 }
 
+func TestExact(t *testing.T) {
+	n := fakeNumber().withExponent(1)
+	assert.Equal(t, "1.2345678901234567890", n.WithSignificant(20).Exact())
+}
+
+func TestExactShort(t *testing.T) {
+	n, _ := NewNumberForTesting([]int{5, 0, 0, 1}, nil, 3)
+	assert.Equal(t, "500.1", n.WithSignificant(20).Exact())
+	assert.Equal(t, "500", n.WithSignificant(3).Exact())
+	assert.Equal(t, "0.50e+03", n.WithSignificant(2).Exact())
+	assert.Equal(t, "0.5e+03", n.WithSignificant(1).Exact())
+	assert.Equal(t, "0", n.WithSignificant(0).Exact())
+	smallN := n.withExponent(-3)
+	assert.Equal(t, "0.0005001", smallN.WithSignificant(4).Exact())
+	assert.Equal(t, "0.00050", smallN.WithSignificant(2).Exact())
+}
+
+func TestExactZero(t *testing.T) {
+	var n FiniteNumber
+	assert.Equal(t, "0", n.Exact())
+}
+
 func TestNewNumberForTesting(t *testing.T) {
 	n, err := NewNumberForTesting([]int{1, 0, 2}, []int{0, 0, 3, 4}, 2)
 	assert.Equal(t, "10.20034003400340", n.String())

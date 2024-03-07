@@ -257,10 +257,19 @@ func (n *FiniteNumber) Format(state fmt.State, verb rune) {
 	formatSpec.PrintField(state, n)
 }
 
+// Exact works like String, but uses enough significant digits to return
+// the exact representation of n.
+func (n *FiniteNumber) Exact() string {
+	var builder strings.Builder
+	fs := formatSpecForG(endOf(n), n.exponent, false)
+	fs.PrintNumber(&builder, n)
+	return builder.String()
+}
+
 // String comes from the Number interface.
 func (n *FiniteNumber) String() string {
 	var builder strings.Builder
-	fs := formatSpec{sigDigits: gPrecision, sci: bigExponent(n.exponent)}
+	fs := formatSpecForG(gPrecision, n.exponent, false)
 	fs.PrintNumber(&builder, n)
 	return builder.String()
 }
@@ -380,43 +389,47 @@ type formatSpec struct {
 func newFormatSpec(state fmt.State, verb rune, exponent int) (
 	formatSpec, bool) {
 	precision, precisionOk := state.Precision()
-	var sigDigits int
-	var exactDigitCount bool
-	var sci bool
 	switch verb {
 	case 'f', 'F':
 		if !precisionOk {
 			precision = fPrecision
 		}
-		sigDigits = precision + exponent
-		exactDigitCount = true
-		sci = false
+		return formatSpecForF(precision, exponent), true
 	case 'g', 'G', 'v':
 		if !precisionOk {
 			precision = gPrecision
 		}
-		sigDigits = precision
-		if sigDigits == 0 {
-			sigDigits = 1
-		}
-		exactDigitCount = false
-		sci = sigDigits < exponent || bigExponent(exponent)
+		return formatSpecForG(precision, exponent, verb == 'G'), true
 	case 'e', 'E':
 		if !precisionOk {
 			precision = fPrecision
 		}
-		sigDigits = precision
-		exactDigitCount = true
-		sci = true
+		return formatSpecForE(precision, verb == 'E'), true
 	default:
 		return formatSpec{}, false
 	}
-	capital := verb == 'E' || verb == 'G'
+}
+
+func formatSpecForF(precision, exponent int) formatSpec {
+	sigDigits := precision + exponent
+	return formatSpec{sigDigits: sigDigits, exactDigitCount: true}
+}
+
+func formatSpecForG(precision, exponent int, capital bool) formatSpec {
+	sigDigits := precision
+	if sigDigits == 0 {
+		sigDigits = 1
+	}
+	sci := sigDigits < exponent || bigExponent(exponent)
+	return formatSpec{sigDigits: sigDigits, sci: sci, capital: capital}
+}
+
+func formatSpecForE(precision int, capital bool) formatSpec {
 	return formatSpec{
-		sigDigits:       sigDigits,
-		exactDigitCount: exactDigitCount,
-		sci:             sci,
-		capital:         capital}, true
+		sigDigits:       precision,
+		exactDigitCount: true,
+		sci:             true,
+		capital:         capital}
 }
 
 func (f formatSpec) PrintField(state fmt.State, n *FiniteNumber) {

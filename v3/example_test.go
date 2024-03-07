@@ -191,6 +191,13 @@ func ExampleFiniteNumber_WithStart() {
 	// [853 917 935 958]
 }
 
+func ExampleFiniteNumber_Exact() {
+	n := sqroot.Sqrt(2).WithSignificant(60)
+	fmt.Println(n.Exact())
+	// Output:
+	// 1.41421356237309504880168872420969807856967187537694807317667
+}
+
 func ExampleWrite() {
 	n := sqroot.Sqrt(2)
 	sqroot.Write(n.WithEnd(1000))
