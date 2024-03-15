@@ -9,12 +9,8 @@ import (
 
 // fakeNumber returns 0.12345678901234567890...
 func fakeNumber() Number {
-	digit := 0
-	return &FiniteNumber{spec: newMemoizeSpec(
-		func() int {
-			digit++
-			return digit % 10
-		})}
+	n, _ := NewNumberForTesting(nil, []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}, 0)
+	return n
 }
 
 func TestPrintZeroDigits(t *testing.T) {

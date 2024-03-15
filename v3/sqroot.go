@@ -354,7 +354,7 @@ func (n *FiniteNumber) private() {
 }
 
 func nRootFrac(
-	num, denom *big.Int, newManager func() rootManager) *FiniteNumber {
+	num, denom *big.Int, newManager func() rootManager) Number {
 	checkNumDenom(num, denom)
 	if num.Sign() == 0 {
 		return zeroNumber
@@ -365,9 +365,10 @@ func nRootFrac(
 // newNumber returns a new number based on gen. Unlike NewNumber, gen must
 // follow the contract of Generator. Also, newNumber doesn't handle empty
 // mantissas.
-func newNumber(gen Generator) *FiniteNumber {
+func newNumber(gen Generator) Number {
 	digits, exp := gen.Generate()
-	return &FiniteNumber{exponent: exp, spec: newMemoizeSpec(digits)}
+	f := &FiniteNumber{exponent: exp, spec: newMemoizeSpec(digits)}
+	return infiniteNumber(f)
 }
 
 func checkNumDenom(num, denom *big.Int) {
@@ -516,4 +517,31 @@ func (n *numberWithStart) withNumber(
 }
 
 func (n *numberWithStart) private() {
+}
+
+func infiniteNumber(n Number) Number {
+	if _, ok := n.(*infNumber); ok {
+		return n
+	}
+	return &infNumber{Number: n}
+}
+
+type infNumber struct {
+	Number
+}
+
+func (n *infNumber) WithStart(start int) Sequence {
+	result := n.Number.WithStart(start)
+	if result == n.Number {
+		return n
+	}
+	return infiniteSequence(result)
+}
+
+func (n *infNumber) withExponent(e int) Number {
+	result := n.Number.withExponent(e)
+	if result == n.Number {
+		return n
+	}
+	return infiniteNumber(result)
 }

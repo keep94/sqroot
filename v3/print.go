@@ -206,3 +206,22 @@ func mutateSettings(
 	}
 	return settings
 }
+
+func infiniteSequence(s Sequence) Sequence {
+	if _, ok := s.(*infSequence); ok {
+		return s
+	}
+	return &infSequence{Sequence: s}
+}
+
+type infSequence struct {
+	Sequence
+}
+
+func (s *infSequence) WithStart(start int) Sequence {
+	result := s.Sequence.WithStart(start)
+	if result == s.Sequence {
+		return s
+	}
+	return infiniteSequence(result)
+}

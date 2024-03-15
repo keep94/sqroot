@@ -428,6 +428,36 @@ func TestNumberSubSequenceSame(t *testing.T) {
 	assertEmpty(t, startEndSeq.WithEnd(-3))
 }
 
+func TestTypeAssertions(t *testing.T) {
+	n := Sqrt(6)
+	_, ok := n.(*FiniteNumber)
+	assert.False(t, ok)
+}
+
+func TestTypeAssertionsWithPositiveStart(t *testing.T) {
+	s := Sqrt(6).WithStart(2).WithStart(3).WithStart(1)
+	_, ok := s.(FiniteSequence)
+	assert.False(t, ok)
+}
+
+func TestTypeAssertionsWithEnd(t *testing.T) {
+	s := Sqrt(6).WithEnd(1000).WithStart(1)
+	_, ok := s.(FiniteSequence)
+	assert.True(t, ok)
+}
+
+func TestTypeAssertionsWithStartAndEnd(t *testing.T) {
+	s := Sqrt(6).WithStart(5).WithEnd(1000).WithStart(10)
+	_, ok := s.(FiniteSequence)
+	assert.True(t, ok)
+}
+
+func TestTypeAssertionsWithSignificant(t *testing.T) {
+	s := Sqrt(6).WithSignificant(1000).WithStart(0)
+	_, ok := s.(*FiniteNumber)
+	assert.True(t, ok)
+}
+
 func assertStartsAt(t *testing.T, s Sequence, start int) {
 	t.Helper()
 	iter := s.Iterator()
