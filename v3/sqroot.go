@@ -368,7 +368,7 @@ func nRootFrac(
 func newNumber(gen Generator) Number {
 	digits, exp := gen.Generate()
 	f := &FiniteNumber{exponent: exp, spec: newMemoizeSpec(digits)}
-	return infiniteNumber(f)
+	return opaqueNumber(f)
 }
 
 func checkNumDenom(num, denom *big.Int) {
@@ -519,29 +519,29 @@ func (n *numberWithStart) withNumber(
 func (n *numberWithStart) private() {
 }
 
-func infiniteNumber(n Number) Number {
-	if _, ok := n.(*infNumber); ok {
+func opaqueNumber(n Number) Number {
+	if _, ok := n.(*opqNumber); ok {
 		return n
 	}
-	return &infNumber{Number: n}
+	return &opqNumber{Number: n}
 }
 
-type infNumber struct {
+type opqNumber struct {
 	Number
 }
 
-func (n *infNumber) WithStart(start int) Sequence {
+func (n *opqNumber) WithStart(start int) Sequence {
 	result := n.Number.WithStart(start)
 	if result == n.Number {
 		return n
 	}
-	return infiniteSequence(result)
+	return opaqueSequence(result)
 }
 
-func (n *infNumber) withExponent(e int) Number {
+func (n *opqNumber) withExponent(e int) Number {
 	result := n.Number.withExponent(e)
 	if result == n.Number {
 		return n
 	}
-	return infiniteNumber(result)
+	return opaqueNumber(result)
 }
