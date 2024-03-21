@@ -82,18 +82,6 @@ type Number interface {
 	withExponent(e int) Number
 }
 
-// FiniteNumber is a Number with a finite number of digits. FiniteNumber
-// implements both Number and FiniteSequence. The zero value for FiniteNumber
-// is 0.
-//
-// Pass FiniteNumber instances by reference not by value. Copying a
-// FiniteNumber instance or overwriting a FiniteNumber instance with the
-// assignment operator is not supported and may cause errors.
-type FiniteNumber struct {
-	spec     numberSpec
-	exponent int
-}
-
 // Sqrt returns the square root of radican. Sqrt panics if radican is
 // negative.
 func Sqrt(radican int64) Number {
@@ -205,6 +193,18 @@ func NewNumber(g Generator) Number {
 	return newNumber(gen)
 }
 
+// FiniteNumber is a Number with a finite number of digits. FiniteNumber
+// implements both Number and FiniteSequence. The zero value for FiniteNumber
+// is 0.
+//
+// Pass FiniteNumber instances by reference not by value. Copying a
+// FiniteNumber instance or overwriting a FiniteNumber instance with the
+// assignment operator is not supported and may cause errors.
+type FiniteNumber struct {
+	mantissa mantissa
+	exponent int
+}
+
 // WithStart comes from the Sequence interface.
 func (n *FiniteNumber) WithStart(start int) Sequence {
 	return n.FiniteWithStart(start)
@@ -215,23 +215,20 @@ func (n *FiniteNumber) FiniteWithStart(start int) FiniteSequence {
 	if start <= 0 {
 		return n
 	}
-	return &numberWithStart{
-		number: n,
-		start:  start,
+	return &mantissaWithStart{
+		mantissa: n.mantissa,
+		start:    start,
 	}
 }
 
 // WithEnd comes from the Sequence interface.
 func (n *FiniteNumber) WithEnd(end int) FiniteSequence {
-	return n.withSignificant(end)
+	return n.withMantissa(n.mantissa.WithLimit(end))
 }
 
 // At comes from the Number interface.
 func (n *FiniteNumber) At(posit int) int {
-	if n.spec == nil {
-		return -1
-	}
-	return n.spec.At(posit)
+	return n.mantissa.At(posit)
 }
 
 // WithSignificant comes from the Number interface.
@@ -239,7 +236,7 @@ func (n *FiniteNumber) WithSignificant(limit int) *FiniteNumber {
 	if limit < 0 {
 		panic("limit must be non-negative")
 	}
-	return n.withSignificant(limit)
+	return n.withMantissa(n.mantissa.WithLimit(limit))
 }
 
 // Exponent comes from the Number interface.
@@ -276,78 +273,34 @@ func (n *FiniteNumber) String() string {
 
 // IsZero comes from the Number interface.
 func (n *FiniteNumber) IsZero() bool {
-	return n.spec == nil
+	return n.mantissa.IsZero()
 }
 
 // Iterator comes from the Sequence interface.
 func (n *FiniteNumber) Iterator() func() (Digit, bool) {
-	return n.fullIteratorAt(0)
+	return n.mantissa.FullIteratorAt(0)
 }
 
 // Reverse comes from the FiniteSequence interface.
 func (n *FiniteNumber) Reverse() func() (Digit, bool) {
-	return n.fullReverseTo(0)
+	return n.mantissa.FullReverseTo(0)
 }
 
 func (n *FiniteNumber) withExponent(e int) Number {
 	if e == n.exponent || n.IsZero() {
 		return n
 	}
-	return &FiniteNumber{exponent: e, spec: n.spec}
+	return &FiniteNumber{exponent: e, mantissa: n.mantissa}
 }
 
-func (n *FiniteNumber) fullIteratorAt(index int) func() (Digit, bool) {
-	iter := n.iteratorAt(index)
-	dig := iter()
-	return func() (dt Digit, ok bool) {
-		if dig == -1 {
-			return
-		}
-		result := Digit{Position: index, Value: dig}
-		dig = iter()
-		index++
-		return result, true
-	}
-}
-
-func (n *FiniteNumber) fullReverseTo(start int) func() (Digit, bool) {
-	digits := n.allDigits()
-	index := len(digits)
-	return func() (d Digit, ok bool) {
-		if index <= start {
-			return
-		}
-		index--
-		return Digit{Position: index, Value: int(digits[index])}, true
-	}
-}
-
-func (n *FiniteNumber) iteratorAt(index int) func() int {
-	if n.spec == nil {
-		return func() int { return -1 }
-	}
-	return n.spec.IteratorAt(index)
-}
-
-func (n *FiniteNumber) allDigits() []int8 {
-	if n.spec == nil {
-		return nil
-	}
-	return n.spec.FirstN(math.MaxInt)
-}
-
-func (n *FiniteNumber) withSpec(newSpec numberSpec) *FiniteNumber {
-	if newSpec == n.spec {
+func (n *FiniteNumber) withMantissa(newMantissa mantissa) *FiniteNumber {
+	if newMantissa == n.mantissa {
 		return n
 	}
-	if newSpec == nil {
+	if newMantissa.IsZero() {
 		return zeroNumber
 	}
-	return &FiniteNumber{spec: newSpec, exponent: n.exponent}
-}
-
-func (n *FiniteNumber) withSignificant(limit int) *FiniteNumber {
-	return n.withSpec(withLimit(n.spec, limit))
+	return &FiniteNumber{mantissa: newMantissa, exponent: n.exponent}
 }
 
 func (n *FiniteNumber) private() {
@@ -367,7 +320,8 @@ func nRootFrac(
 // mantissas.
 func newNumber(gen Generator) Number {
 	digits, exp := gen.Generate()
-	f := &FiniteNumber{exponent: exp, spec: newMemoizeSpec(digits)}
+	mantissa := mantissa{spec: newMemoizeSpec(digits)}
+	f := &FiniteNumber{exponent: exp, mantissa: mantissa}
 	return opaqueNumber(f)
 }
 
@@ -378,6 +332,65 @@ func checkNumDenom(num, denom *big.Int) {
 	if num.Sign() < 0 {
 		panic("Numerator must be non-negative")
 	}
+}
+
+type mantissa struct {
+	spec numberSpec
+}
+
+func (m mantissa) At(posit int) int {
+	if m.spec == nil {
+		return -1
+	}
+	return m.spec.At(posit)
+}
+
+func (m mantissa) IsZero() bool {
+	return m.spec == nil
+}
+
+func (m mantissa) FullIteratorAt(index int) func() (Digit, bool) {
+	iter := m.IteratorAt(index)
+	dig := iter()
+	return func() (dt Digit, ok bool) {
+		if dig == -1 {
+			return
+		}
+		result := Digit{Position: index, Value: dig}
+		dig = iter()
+		index++
+		return result, true
+	}
+}
+
+func (m mantissa) FullReverseTo(start int) func() (Digit, bool) {
+	digits := m.allDigits()
+	index := len(digits)
+	return func() (d Digit, ok bool) {
+		if index <= start {
+			return
+		}
+		index--
+		return Digit{Position: index, Value: int(digits[index])}, true
+	}
+}
+
+func (m mantissa) IteratorAt(index int) func() int {
+	if m.spec == nil {
+		return func() int { return -1 }
+	}
+	return m.spec.IteratorAt(index)
+}
+
+func (m mantissa) WithLimit(limit int) mantissa {
+	return mantissa{spec: withLimit(m.spec, limit)}
+}
+
+func (m mantissa) allDigits() []int8 {
+	if m.spec == nil {
+		return nil
+	}
+	return m.spec.FirstN(math.MaxInt)
 }
 
 type formatSpec struct {
@@ -465,7 +478,7 @@ func (f formatSpec) PrintNumber(w io.Writer, n *FiniteNumber) {
 
 func (f formatSpec) printFixed(w io.Writer, n *FiniteNumber, exponent int) {
 	formatter := newFormatter(w, f.sigDigits, exponent, f.exactDigitCount)
-	consume2.FromIntGenerator(n.iteratorAt(0), formatter)
+	consume2.FromIntGenerator(n.mantissa.IteratorAt(0), formatter)
 	formatter.Finish()
 }
 
@@ -480,43 +493,42 @@ func bigExponent(exponent int) bool {
 	return exponent < -3 || exponent > 6
 }
 
-type numberWithStart struct {
-	number *FiniteNumber
-	start  int
+type mantissaWithStart struct {
+	mantissa mantissa
+	start    int
 }
 
-func (n *numberWithStart) Iterator() func() (Digit, bool) {
-	return n.number.fullIteratorAt(n.start)
+func (m *mantissaWithStart) Iterator() func() (Digit, bool) {
+	return m.mantissa.FullIteratorAt(m.start)
 }
 
-func (n *numberWithStart) Reverse() func() (Digit, bool) {
-	return n.number.fullReverseTo(n.start)
+func (m *mantissaWithStart) Reverse() func() (Digit, bool) {
+	return m.mantissa.FullReverseTo(m.start)
 }
 
-func (n *numberWithStart) WithStart(start int) Sequence {
-	return n.FiniteWithStart(start)
+func (m *mantissaWithStart) WithStart(start int) Sequence {
+	return m.FiniteWithStart(start)
 }
 
-func (n *numberWithStart) FiniteWithStart(start int) FiniteSequence {
-	if start <= n.start {
-		return n
+func (m *mantissaWithStart) FiniteWithStart(start int) FiniteSequence {
+	if start <= m.start {
+		return m
 	}
-	return &numberWithStart{number: n.number, start: start}
+	return &mantissaWithStart{mantissa: m.mantissa, start: start}
 }
 
-func (n *numberWithStart) WithEnd(end int) FiniteSequence {
-	return n.withNumber(n.number.withSignificant(end))
+func (m *mantissaWithStart) WithEnd(end int) FiniteSequence {
+	return m.withMantissa(m.mantissa.WithLimit(end))
 }
 
-func (n *numberWithStart) withNumber(
-	number *FiniteNumber) *numberWithStart {
-	if number == n.number {
-		return n
+func (m *mantissaWithStart) withMantissa(mantissa mantissa) *mantissaWithStart {
+	if mantissa == m.mantissa {
+		return m
 	}
-	return &numberWithStart{number: number, start: n.start}
+	return &mantissaWithStart{mantissa: mantissa, start: m.start}
 }
 
-func (n *numberWithStart) private() {
+func (m *mantissaWithStart) private() {
 }
 
 func opaqueNumber(n Number) Number {

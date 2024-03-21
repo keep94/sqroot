@@ -238,6 +238,12 @@ func TestNewNumberForTestingNoRepeat(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestNewNumberForTestingRepeatZeros(t *testing.T) {
+	n, err := NewNumberForTesting([]int{1, 0, 2}, []int{0}, -2)
+	assert.Equal(t, "0.001020000000000000", n.String())
+	assert.NoError(t, err)
+}
+
 func TestNewNumberForTestingZero(t *testing.T) {
 	n, err := NewNumberForTesting(nil, nil, 5)
 	assert.True(t, n.IsZero())
@@ -311,7 +317,7 @@ func TestNegDenom(t *testing.T) {
 func TestWithSignificant(t *testing.T) {
 	// Resolves to 6 significant digits
 	n := Sqrt(2).WithSignificant(9).WithSignificant(6).WithSignificant(10)
-	assert.Equal(t, "1.41421", n.String())
+	assert.Equal(t, "1.41421", n.Exact())
 }
 
 func TestWithSignificantPanics(t *testing.T) {
@@ -426,6 +432,13 @@ func TestNumberSubSequenceSame(t *testing.T) {
 	assert.Same(t, startEndSeq, startEndSeq.WithStart(-2))
 	assert.Same(t, startEndSeq, startEndSeq.WithEnd(458))
 	assertEmpty(t, startEndSeq.WithEnd(-3))
+}
+
+func TestNumberInfSequenceSame(t *testing.T) {
+	n := Sqrt(11)
+	s := n.WithStart(10)
+	assert.Same(t, s, s.WithStart(10))
+	assert.Same(t, s, s.WithStart(9))
 }
 
 func TestTypeAssertions(t *testing.T) {
