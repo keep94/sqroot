@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// Digit represents a digit and a zero based position.
+// Digit represents a digit and its zero based position in a mantissa.
 type Digit struct {
 
 	// The 0 based position of the digit.

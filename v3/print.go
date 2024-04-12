@@ -64,12 +64,15 @@ func bufferSize(size int) Option {
 }
 
 // Sequence represents a sequence of digits of either finite or infinite
-// length.
+// length within the mantissa of a real number. Although they can start
+// and optionally end anywhere within a mantissa, Sequences must be
+// contiguous. That is they can have no gaps in the middle.
 type Sequence interface {
 
 	// Iterator returns a function that generates the digits in this
-	// Sequence along with their zero based positions from beginning to end.
-	// If there are no more digits, returned function returns false.
+	// Sequence along with their zero based positions within a mantissa
+	// from beginning to end. If there are no more digits, returned
+	// function returns false.
 	Iterator() func() (Digit, bool)
 
 	// WithStart returns a view of this Sequence that only has digits with
@@ -83,14 +86,14 @@ type Sequence interface {
 	private()
 }
 
-// FiniteSequence represents a sequence of digits of finite length.
+// FiniteSequence represents a Sequence of finite length.
 type FiniteSequence interface {
 	Sequence
 
 	// Reverse returns a function that generates the digits in this
-	// FiniteSequence along with their zero based positions from end to
-	// beginning. When there are no more digits, returned function returns
-	// false.
+	// FiniteSequence along with their zero based positions within a
+	// mantissa from end to beginning. When there are no more digits,
+	// returned function returns false.
 	Reverse() func() (Digit, bool)
 
 	// FiniteWithStart works like WithStart except that it returns a

@@ -21,7 +21,7 @@ var (
 	zeroNumber = &FiniteNumber{}
 )
 
-// Number is a reference to a square root value.
+// Number is a reference to a non-negative real number.
 // A non-zero Number is of the form mantissa * 10^exponent
 // where mantissa is between 0.1 inclusive and 1.0 exclusive. A Number
 // can represent either a finite or infinite number of digits. A Number
@@ -49,6 +49,14 @@ var (
 // In the first code block, the second line reuses digits computed in the
 // first line, but in the second code block, no reuse is possible since
 // sqroot.Sqrt(6) always returns a Number with no precomputed digits.
+//
+// A Number can be 0, in which case IsZero() returns true. Zero Numbers
+// have an exponent of 0 and no digits in their mantissa. This means that
+// calling At() on a zero Number always returns -1. Likewise calling
+// Iterator() or Reverse() on a zero Number returns a function that yields
+// no digits. However, calling String() on a zero Number returns "0" and
+// printing a zero Number prints 0 according to the format specification
+// used.
 type Number interface {
 	Sequence
 

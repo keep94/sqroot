@@ -28,21 +28,12 @@ func zeroPattern(f func() (Digit, bool)) func() int {
 
 func kmp(f func() (Digit, bool), pattern []int, reverse bool) func() int {
 	kernel := newKmpKernel(pattern)
-	direction := 1
-	if reverse {
-		direction = -1
-	}
-	expectedIndex := -1
 	return func() int {
 		for {
 			d, ok := f()
 			if !ok {
 				return -1
 			}
-			if d.Position != expectedIndex {
-				kernel.Reset()
-			}
-			expectedIndex = d.Position + direction
 			if kernel.Visit(d.Value) {
 				if reverse {
 					return d.Position
@@ -80,10 +71,6 @@ func (k *kmpKernel) Visit(digit int) bool {
 	}
 	k.patternIndex++
 	return false
-}
-
-func (k *kmpKernel) Reset() {
-	k.patternIndex = 0
 }
 
 func patternReverse(pattern []int) []int {
