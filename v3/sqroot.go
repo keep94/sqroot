@@ -478,21 +478,21 @@ func (f formatSpec) PrintNumber(w io.Writer, n *FiniteNumber) {
 		if f.capital {
 			sep = "E"
 		}
-		f.printSci(w, n, n.exponent, sep)
+		f.printSci(w, n.mantissa, n.exponent, sep)
 	} else {
-		f.printFixed(w, n, n.exponent)
+		f.printFixed(w, n.mantissa, n.exponent)
 	}
 }
 
-func (f formatSpec) printFixed(w io.Writer, n *FiniteNumber, exponent int) {
+func (f formatSpec) printFixed(w io.Writer, m mantissa, exponent int) {
 	formatter := newFormatter(w, f.sigDigits, exponent, f.exactDigitCount)
-	consume2.FromIntGenerator(n.mantissa.IteratorAt(0), formatter)
+	consume2.FromIntGenerator(m.IteratorAt(0), formatter)
 	formatter.Finish()
 }
 
 func (f formatSpec) printSci(
-	w io.Writer, n *FiniteNumber, exponent int, sep string) {
-	f.printFixed(w, n, 0)
+	w io.Writer, m mantissa, exponent int, sep string) {
+	f.printFixed(w, m, 0)
 	fmt.Fprint(w, sep)
 	fmt.Fprintf(w, "%+03d", exponent)
 }
