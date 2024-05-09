@@ -1,4 +1,25 @@
 // Package sqroot computes square roots and cube roots to arbitrary precision.
+//
+// Number is the main type in this package. It represents a lazily evaluated
+// non negative real number that generally has an infinite number of digits,
+// but a Number can also have a finite number of digits.
+//
+// A FiniteNumber works like Number except that it always has a finite
+// number of digits. A *FiniteNumber can be used anywhere a Number type
+// is expected but not the other way around.
+//
+// A Sequence is a view of a contiguous subset of digits of a Number.
+// For example, A Sequence could represent everything past the 1000th digit
+// of the square root of 3. Because Sequences are views, they are cheap to
+// create. Note that Number and *FiniteNumber can be used anywhere a Sequence
+// type is expected. A Sequence can be either infinite or finite in length.
+//
+// A FiniteSequence works like Sequence except unlike Sequence, a
+// FiniteSequence is always finite in length. A FiniteSequence can be used
+// anywhere a Sequence is expected, and a *FiniteNumber can be used anywhere
+// a FiniteSequence is expected. However, a Number or Sequence cannot be
+// used where a FiniteSequence is expected because they can have an infinite
+// number of digits. A FiniteSequence must have a finite number of digits.
 package sqroot
 
 import (
