@@ -307,12 +307,12 @@ func (n *FiniteNumber) IsZero() bool {
 
 // Iterator comes from the Sequence interface.
 func (n *FiniteNumber) Iterator() func() (Digit, bool) {
-	return n.mantissa.FullIteratorAt(0)
+	return n.mantissa.IteratorAt(0)
 }
 
 // Reverse comes from the FiniteSequence interface.
 func (n *FiniteNumber) Reverse() func() (Digit, bool) {
-	return n.mantissa.FullReverseTo(0)
+	return n.mantissa.ReverseTo(0)
 }
 
 func (n *FiniteNumber) withExponent(e int) Number {
@@ -378,21 +378,7 @@ func (m mantissa) IsZero() bool {
 	return m.spec == nil
 }
 
-func (m mantissa) FullIteratorAt(index int) func() (Digit, bool) {
-	iter := m.IteratorAt(index)
-	dig := iter()
-	return func() (dt Digit, ok bool) {
-		if dig == -1 {
-			return
-		}
-		result := Digit{Position: index, Value: dig}
-		dig = iter()
-		index++
-		return result, true
-	}
-}
-
-func (m mantissa) FullReverseTo(start int) func() (Digit, bool) {
+func (m mantissa) ReverseTo(start int) func() (Digit, bool) {
 	digits := m.allDigits()
 	index := len(digits)
 	return func() (d Digit, ok bool) {
@@ -404,9 +390,9 @@ func (m mantissa) FullReverseTo(start int) func() (Digit, bool) {
 	}
 }
 
-func (m mantissa) IteratorAt(index int) func() int {
+func (m mantissa) IteratorAt(index int) func() (Digit, bool) {
 	if m.spec == nil {
-		return func() int { return -1 }
+		return func() (Digit, bool) { return Digit{}, false }
 	}
 	return m.spec.IteratorAt(index)
 }
@@ -507,7 +493,7 @@ func (f formatSpec) PrintNumber(w io.Writer, n *FiniteNumber) {
 
 func (f formatSpec) printFixed(w io.Writer, m mantissa, exponent int) {
 	formatter := newFormatter(w, f.sigDigits, exponent, f.exactDigitCount)
-	consume2.FromIntGenerator(m.IteratorAt(0), formatter)
+	consume2.FromGenerator[Digit](m.IteratorAt(0), formatter)
 	formatter.Finish()
 }
 
@@ -528,11 +514,11 @@ type mantissaWithStart struct {
 }
 
 func (m *mantissaWithStart) Iterator() func() (Digit, bool) {
-	return m.mantissa.FullIteratorAt(m.start)
+	return m.mantissa.IteratorAt(m.start)
 }
 
 func (m *mantissaWithStart) Reverse() func() (Digit, bool) {
-	return m.mantissa.FullReverseTo(m.start)
+	return m.mantissa.ReverseTo(m.start)
 }
 
 func (m *mantissaWithStart) WithStart(start int) Sequence {

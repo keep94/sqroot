@@ -10,8 +10,18 @@ const (
 	kMaxChunks         = math.MaxInt / kMemoizerChunkSize
 )
 
+// Digit represents a digit and its zero based position in a mantissa.
+type Digit struct {
+
+	// The 0 based position of the digit.
+	Position int
+
+	// The value of the digit. Always between 0 and 9.
+	Value int
+}
+
 type numberSpec interface {
-	IteratorAt(index int) func() int
+	IteratorAt(index int) func() (Digit, bool)
 	At(index int) int
 	FirstN(n int) []int8
 }
@@ -56,21 +66,21 @@ func (m *memoizer) FirstN(n int) []int8 {
 	return data
 }
 
-func (m *memoizer) IteratorAt(index int) func() int {
+func (m *memoizer) IteratorAt(index int) func() (Digit, bool) {
 	if index < 0 {
 		panic("index must be non-negative")
 	}
 	data, ok := m.wait(index)
-	return func() int {
+	return func() (Digit, bool) {
 		if !ok {
-			return -1
+			return Digit{}, false
 		}
-		result := data[index]
+		result := Digit{Position: index, Value: int(data[index])}
 		index++
 		if index == len(data) {
 			data, ok = m.wait(index)
 		}
-		return int(result)
+		return result, true
 	}
 }
 
@@ -153,14 +163,14 @@ func (l *limitSpec) At(index int) int {
 	return l.delegate.At(index)
 }
 
-func (l *limitSpec) IteratorAt(index int) func() int {
+func (l *limitSpec) IteratorAt(index int) func() (Digit, bool) {
 	if index > l.limit {
 		index = l.limit
 	}
 	iter := l.delegate.IteratorAt(index)
-	return func() int {
+	return func() (Digit, bool) {
 		if index == l.limit {
-			return -1
+			return Digit{}, false
 		}
 		index++
 		return iter()

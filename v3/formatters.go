@@ -8,16 +8,6 @@ import (
 	"strings"
 )
 
-// Digit represents a digit and its zero based position in a mantissa.
-type Digit struct {
-
-	// The 0 based position of the digit.
-	Position int
-
-	// The value of the digit. Always between 0 and 9.
-	Value int
-}
-
 type printer struct {
 	rawPrinter
 	missingDigit rune
@@ -255,11 +245,11 @@ func (f *formatter) CanConsume() bool {
 	return f.index < f.sigDigits
 }
 
-func (f *formatter) Consume(digit int) {
+func (f *formatter) Consume(digit Digit) {
 	if !f.CanConsume() {
 		return
 	}
-	f.add(digit)
+	f.add(digit.Value)
 }
 
 func (f *formatter) Finish() {
