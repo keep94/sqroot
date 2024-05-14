@@ -3,11 +3,11 @@ sqroot
 
 A package to compute square roots and cube roots to arbitrary precision.
 
+This package is dedicated to my mother, who taught me how to calculate square roots by hand as a child.
+
 ## How this package differs from big.Float.Sqrt
 
-big.Float.Sqrt requires a finite precision to be set ahead of time. The answer it gives is only accurate to that precision. This package does not require a precision to be set because it computes exact square roots almost instantly. These exact square roots compute their digits lazily on an as needed basis. Also this package features cube roots which the big.Float in the standard library does not offer as of this writing.
-
-For doing math operations with square roots, big.Float in the standard library is the best and by far the fastest. However, when printing out square roots in human readable format, this package can be almost twice as fast as big.Float.
+big.Float.Sqrt requires a finite precision to be set ahead of time. The answer it gives is only accurate to that precision. This package does not require a precision to be set in advance. Square root values in this package compute their digits lazily on an as needed basis just as one would compute square roots by hand. Also, this package features cube roots which big.Float in the standard library does not offer as of this writing. Cube root values in this package also compute their digits lazily on an as needed basis just as one would compute cube roots by hand.
 
 ## Examples
 
