@@ -394,7 +394,7 @@ func (m mantissa) IteratorAt(index int) func() (Digit, bool) {
 	if m.spec == nil {
 		return func() (Digit, bool) { return Digit{}, false }
 	}
-	return m.spec.IteratorAt(index)
+	return m.spec.IteratorAt(index, math.MaxInt)
 }
 
 func (m mantissa) WithLimit(limit int) mantissa {

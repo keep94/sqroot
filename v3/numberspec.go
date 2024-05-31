@@ -21,7 +21,7 @@ type Digit struct {
 }
 
 type numberSpec interface {
-	IteratorAt(index int) func() (Digit, bool)
+	IteratorAt(index, limit int) func() (Digit, bool)
 	At(index int) int
 	FirstN(n int) []int8
 }
@@ -66,17 +66,13 @@ func (m *memoizer) FirstN(n int) []int8 {
 	return data
 }
 
-func (m *memoizer) IteratorAt(index int) func() (Digit, bool) {
-	return m.iteratorAt(index, nil)
-}
-
-func (m *memoizer) iteratorAt(index int, limit *int) func() (Digit, bool) {
+func (m *memoizer) IteratorAt(index, limit int) func() (Digit, bool) {
 	if index < 0 {
 		panic("index must be non-negative")
 	}
 	data, ok := m.wait(index)
 	return func() (Digit, bool) {
-		if !ok || (limit != nil && index >= *limit) {
+		if !ok || index >= limit {
 			return Digit{}, false
 		}
 		result := Digit{Position: index, Value: int(data[index])}
@@ -141,7 +137,7 @@ func (m *memoizer) run() {
 }
 
 type limitSpec struct {
-	delegate *memoizer
+	delegate numberSpec
 	limit    int
 }
 
@@ -156,7 +152,7 @@ func withLimit(spec numberSpec, limit int) numberSpec {
 		}
 		return &limitSpec{delegate: ls.delegate, limit: limit}
 	}
-	return &limitSpec{delegate: spec.(*memoizer), limit: limit}
+	return &limitSpec{delegate: spec, limit: limit}
 }
 
 func (l *limitSpec) At(index int) int {
@@ -167,11 +163,10 @@ func (l *limitSpec) At(index int) int {
 	return l.delegate.At(index)
 }
 
-func (l *limitSpec) IteratorAt(index int) func() (Digit, bool) {
-	if index > l.limit {
-		index = l.limit
-	}
-	return l.delegate.iteratorAt(index, &l.limit)
+func (l *limitSpec) IteratorAt(index, limit int) func() (Digit, bool) {
+	index = minInt(index, l.limit)
+	limit = minInt(limit, l.limit)
+	return l.delegate.IteratorAt(index, limit)
 }
 
 func (l *limitSpec) FirstN(n int) []int8 {
@@ -179,4 +174,11 @@ func (l *limitSpec) FirstN(n int) []int8 {
 		n = l.limit
 	}
 	return l.delegate.FirstN(n)
+}
+
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
