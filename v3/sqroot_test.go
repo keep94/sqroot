@@ -2,6 +2,7 @@ package sqroot
 
 import (
 	"fmt"
+	"math"
 	"math/big"
 	"testing"
 
@@ -377,6 +378,10 @@ func TestNumberAtFiniteLength(t *testing.T) {
 	assert.Equal(t, 7, n.At(2))
 	assert.Equal(t, 3, n.At(0))
 	assert.Equal(t, -1, n.At(3))
+}
+
+func TestNumberAtFiniteLength2(t *testing.T) {
+	assert.Equal(t, -1, Sqrt(100489).At(math.MaxInt))
 }
 
 func TestNumberAtSig(t *testing.T) {
