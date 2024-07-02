@@ -476,6 +476,34 @@ func TestTypeAssertionsWithSignificant(t *testing.T) {
 	assert.True(t, ok)
 }
 
+func TestIteratorsCheapToCreate(t *testing.T) {
+	n := CubeRootRat(1, 27)
+
+	// This should evaluate quickly.
+	assert.NotNil(t, Find(n.WithStart(200000), []int{0}))
+}
+
+func TestReverseIteratorsCheapToCreate(t *testing.T) {
+	n := CubeRootRat(1, 27)
+
+	// This should evaluate quickly.
+	assert.NotNil(t, FindR(n.WithEnd(200000), []int{0}))
+}
+
+func TestFindFirstZeroCheap(t *testing.T) {
+	n := CubeRootRat(1, 27)
+
+	// This should evaluate quickly.
+	assert.Empty(t, FindFirstN(n.WithStart(200000), []int{0}, 0))
+}
+
+func TestFindLastZeroCheap(t *testing.T) {
+	n := CubeRootRat(1, 27)
+
+	// This should evaluate quickly.
+	assert.Empty(t, FindLastN(n.WithEnd(200000), []int{0}, 0))
+}
+
 func assertStartsAt(t *testing.T, s Sequence, start int) {
 	t.Helper()
 	iter := s.Iterator()

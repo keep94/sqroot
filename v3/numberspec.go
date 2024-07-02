@@ -70,8 +70,13 @@ func (m *memoizer) IteratorAt(index, limit int) func() (Digit, bool) {
 	if index < 0 {
 		panic("index must be non-negative")
 	}
-	data, ok := m.wait(index)
+	var data []int8
+	var ok, initialized bool
 	return func() (Digit, bool) {
+		if !initialized {
+			data, ok = m.wait(index)
+			initialized = true
+		}
 		if !ok || index >= limit {
 			return Digit{}, false
 		}

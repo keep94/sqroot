@@ -379,9 +379,15 @@ func (m mantissa) IsZero() bool {
 }
 
 func (m mantissa) ReverseTo(start int) func() (Digit, bool) {
-	digits := m.allDigits()
-	index := len(digits)
+	var initialized bool
+	var digits []int8
+	var index int
 	return func() (d Digit, ok bool) {
+		if !initialized {
+			digits = m.allDigits()
+			index = len(digits)
+			initialized = true
+		}
 		if index <= start {
 			return
 		}
