@@ -1,6 +1,6 @@
 module github.com/keep94/sqroot/v3
 
-go 1.20
+go 1.23
 
 require (
 	github.com/keep94/consume2 v0.7.0

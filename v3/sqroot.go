@@ -26,6 +26,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"iter"
 	"math"
 	"math/big"
 	"strings"
@@ -40,6 +41,11 @@ const (
 
 var (
 	zeroNumber = &FiniteNumber{}
+)
+
+var (
+	_ FiniteSequence = zeroNumber
+	_ Number         = zeroNumber
 )
 
 // Number is a reference to a non-negative real number.
@@ -310,9 +316,23 @@ func (n *FiniteNumber) Iterator() func() (Digit, bool) {
 	return n.mantissa.IteratorAt(0)
 }
 
+// All comes from the Sequence interface.
+func (n *FiniteNumber) All() iter.Seq2[int, int] {
+	return func(yield func(index, value int) bool) {
+		n.mantissa.Scan(0, yield)
+	}
+}
+
 // Reverse comes from the FiniteSequence interface.
 func (n *FiniteNumber) Reverse() func() (Digit, bool) {
 	return n.mantissa.ReverseTo(0)
+}
+
+// Backward comes from the FiniteSequence interface.
+func (n *FiniteNumber) Backward() iter.Seq2[int, int] {
+	return func(yield func(index, value int) bool) {
+		n.mantissa.ReverseScan(0, yield)
+	}
 }
 
 func (n *FiniteNumber) withExponent(e int) Number {
@@ -396,11 +416,27 @@ func (m mantissa) ReverseTo(start int) func() (Digit, bool) {
 	}
 }
 
+func (m mantissa) ReverseScan(start int, yield func(index, value int) bool) {
+	digits := m.allDigits()
+	for index := len(digits) - 1; index >= start; index-- {
+		if !yield(index, int(digits[index])) {
+			return
+		}
+	}
+}
+
 func (m mantissa) IteratorAt(index int) func() (Digit, bool) {
 	if m.spec == nil {
 		return func() (Digit, bool) { return Digit{}, false }
 	}
 	return m.spec.IteratorAt(index, math.MaxInt)
+}
+
+func (m mantissa) Scan(index int, yield func(index, value int) bool) {
+	if m.spec == nil {
+		return
+	}
+	m.spec.Scan(index, math.MaxInt, yield)
 }
 
 func (m mantissa) WithLimit(limit int) mantissa {
@@ -523,8 +559,20 @@ func (m *mantissaWithStart) Iterator() func() (Digit, bool) {
 	return m.mantissa.IteratorAt(m.start)
 }
 
+func (m *mantissaWithStart) All() iter.Seq2[int, int] {
+	return func(yield func(index, value int) bool) {
+		m.mantissa.Scan(m.start, yield)
+	}
+}
+
 func (m *mantissaWithStart) Reverse() func() (Digit, bool) {
 	return m.mantissa.ReverseTo(m.start)
+}
+
+func (m *mantissaWithStart) Backward() iter.Seq2[int, int] {
+	return func(yield func(index, value int) bool) {
+		m.mantissa.ReverseScan(m.start, yield)
+	}
 }
 
 func (m *mantissaWithStart) WithStart(start int) Sequence {

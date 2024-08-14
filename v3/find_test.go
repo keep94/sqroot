@@ -25,6 +25,32 @@ func TestFindAll(t *testing.T) {
 	assert.Equal(t, []int{2, 12, 22, 32}, hits)
 }
 
+func TestMatches(t *testing.T) {
+	s := fakeNumber().WithSignificant(40)
+	pattern := []int{3, 4}
+	iterator := Matches(s, pattern)
+	pattern[0] = 5
+	pattern[1] = 7
+	var hits []int
+	for index := range iterator {
+		hits = append(hits, index)
+	}
+	assert.Equal(t, []int{2, 12, 22, 32}, hits)
+}
+
+func TestBackwardMatches(t *testing.T) {
+	s := fakeNumber().WithSignificant(40)
+	pattern := []int{3, 4}
+	iterator := BackwardMatches(s, pattern)
+	pattern[0] = 5
+	pattern[1] = 7
+	var hits []int
+	for index := range iterator {
+		hits = append(hits, index)
+	}
+	assert.Equal(t, []int{32, 22, 12, 2}, hits)
+}
+
 func TestFind(t *testing.T) {
 	pattern := []int{3, 4}
 	matches := Find(fakeNumber(), pattern)

@@ -1,6 +1,7 @@
 package sqroot
 
 import (
+	"iter"
 	"sort"
 )
 
@@ -98,6 +99,17 @@ func (p Positions) Ranges() func() (pr PositionRange, ok bool) {
 		ok = true
 		index++
 		return
+	}
+}
+
+// All returns all the non overlapping ranges of positions in p.
+func (p Positions) All() iter.Seq[PositionRange] {
+	return func(yield func(pr PositionRange) bool) {
+		for _, pr := range p.ranges {
+			if !yield(pr) {
+				return
+			}
+		}
 	}
 }
 

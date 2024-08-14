@@ -1,6 +1,7 @@
 package sqroot
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/keep94/consume2"
@@ -32,6 +33,7 @@ func TestPositionsBuilder(t *testing.T) {
 	var actual []PositionRange
 	consume2.FromGenerator(p.Ranges(), consume2.AppendTo(&actual))
 	assert.Equal(t, expected, actual)
+	assert.Equal(t, expected, slices.Collect(p.All()))
 	assert.Equal(t, 26, p.End())
 }
 
@@ -56,6 +58,7 @@ func TestPositionsBuilderSorted(t *testing.T) {
 	var actual []PositionRange
 	consume2.FromGenerator(p.Ranges(), consume2.AppendTo(&actual))
 	assert.Equal(t, expected, actual)
+	assert.Equal(t, expected, slices.Collect(p.All()))
 	assert.Equal(t, 200, p.End())
 }
 
@@ -68,4 +71,16 @@ func TestPositionsBuilderNegative(t *testing.T) {
 func TestPositionsBuilderZero(t *testing.T) {
 	var pb PositionsBuilder
 	assert.Zero(t, pb.Build())
+}
+
+func TestPositionsAllExitEarly(t *testing.T) {
+	var pb PositionsBuilder
+	pb.AddRange(0, 10).AddRange(100, 110)
+	p := pb.Build()
+	var firstRange PositionRange
+	for pr := range p.All() {
+		firstRange = pr
+		break
+	}
+	assert.Equal(t, PositionRange{Start: 0, End: 10}, firstRange)
 }

@@ -56,6 +56,26 @@ func ExampleDigitsToString() {
 	// 32050807
 }
 
+func ExampleMatches() {
+
+	// sqrt(2) = 0.14142135... * 10^1
+	n := sqroot.Sqrt(2)
+
+	// '14' matches at index 0, 2, 144, ...
+	count := 0
+	for index := range sqroot.Matches(n, []int{1, 4}) {
+		fmt.Println(index)
+		count++
+		if count == 3 {
+			break
+		}
+	}
+	// Output:
+	// 0
+	// 2
+	// 144
+}
+
 func ExampleFind() {
 
 	// sqrt(2) = 0.14142135... * 10^1
@@ -117,6 +137,23 @@ func ExampleFindLastN() {
 	// [945 916 631]
 }
 
+func ExampleBackwardMatches() {
+	n := sqroot.Sqrt(2)
+	count := 0
+	iterator := sqroot.BackwardMatches(n.WithEnd(1000), []int{1, 4})
+	for index := range iterator {
+		fmt.Println(index)
+		count++
+		if count == 3 {
+			break
+		}
+	}
+	// Output:
+	// 945
+	// 916
+	// 631
+}
+
 func ExampleFindR() {
 	n := sqroot.Sqrt(2)
 	matches := sqroot.FindR(n.WithEnd(1000), []int{1, 4})
@@ -157,6 +194,26 @@ func ExampleFiniteNumber_Iterator() {
 	// {Position:5 Value:5}
 }
 
+func ExampleFiniteNumber_All() {
+
+	// sqrt(7) = 0.26457513110... * 10^1
+	n := sqroot.Sqrt(7)
+
+	for index, value := range n.All() {
+		fmt.Println(index, value)
+		if index == 5 {
+			break
+		}
+	}
+	// Output:
+	// 0 2
+	// 1 6
+	// 2 4
+	// 3 5
+	// 4 7
+	// 5 5
+}
+
 func ExampleFiniteNumber_Reverse() {
 
 	// sqrt(7) = 0.26457513110... * 10^1
@@ -173,6 +230,23 @@ func ExampleFiniteNumber_Reverse() {
 	// {Position:2 Value:4}
 	// {Position:1 Value:6}
 	// {Position:0 Value:2}
+}
+
+func ExampleFiniteNumber_Backward() {
+
+	// sqrt(7) = 0.26457513110... * 10^1
+	n := sqroot.Sqrt(7).WithSignificant(6)
+
+	for index, value := range n.Backward() {
+		fmt.Println(index, value)
+	}
+	// Output:
+	// 5 5
+	// 4 7
+	// 3 5
+	// 2 4
+	// 1 6
+	// 0 2
 }
 
 func ExampleFiniteNumber_WithStart() {
@@ -299,8 +373,7 @@ func ExamplePositions() {
 	builder.AddRange(0, 7).AddRange(40, 50)
 	positions := builder.AddRange(5, 10).Build()
 	fmt.Printf("End: %d\n", positions.End())
-	iter := positions.Ranges()
-	for pr, ok := iter(); ok; pr, ok = iter() {
+	for pr := range positions.All() {
 		fmt.Printf("%+v\n", pr)
 	}
 	// Output:

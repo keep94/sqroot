@@ -2,6 +2,7 @@ package sqroot
 
 import (
 	"io"
+	"iter"
 	"os"
 	"strings"
 
@@ -69,10 +70,13 @@ func bufferSize(size int) Option {
 // contiguous. That is they can have no gaps in the middle.
 type Sequence interface {
 
+	// All returns the 0 based position of each digit in this Sequence
+	// followed by the digit itself. The digit is always between 0 and 9.
+	All() iter.Seq2[int, int]
+
 	// Iterator returns a function that generates the digits in this
-	// Sequence along with their zero based positions within a mantissa
-	// from beginning to end. If there are no more digits, returned
-	// function returns false.
+	// Sequence along with their zero based positions from beginning to end.
+	// If there are no more digits, returned function returns false.
 	Iterator() func() (Digit, bool)
 
 	// WithStart returns a view of this Sequence that only has digits with
@@ -90,10 +94,15 @@ type Sequence interface {
 type FiniteSequence interface {
 	Sequence
 
+	// Backward returns the 0 based position of each digit in this
+	// FiniteSequence followed by the digit itself from end to beginning.
+	// The digit is always between 0 and 9.
+	Backward() iter.Seq2[int, int]
+
 	// Reverse returns a function that generates the digits in this
-	// FiniteSequence along with their zero based positions within a
-	// mantissa from end to beginning. When there are no more digits,
-	// returned function returns false.
+	// FiniteSequence along with their zero based positions from end to
+	// beginning. When there are no more digits, returned function
+	// returns false.
 	Reverse() func() (Digit, bool)
 
 	// FiniteWithStart works like WithStart except that it returns a
@@ -172,25 +181,22 @@ func Write(s FiniteSequence, options ...Option) (
 // DigitsToString returns all the digits in s as a string.
 func DigitsToString(s FiniteSequence) string {
 	var sb strings.Builder
-	iter := s.Iterator()
-	for d, ok := iter(); ok; d, ok = iter() {
-		sb.WriteByte('0' + byte(d.Value))
+	for _, digit := range s.All() {
+		sb.WriteByte('0' + byte(digit))
 	}
 	return sb.String()
 }
 
 func endOf(s FiniteSequence) int {
-	iter := s.Reverse()
-	if d, ok := iter(); ok {
-		return d.Position + 1
+	for index := range s.Backward() {
+		return index + 1
 	}
 	return 0
 }
 
 func fromSequenceWithPositions(
 	s Sequence, p Positions, consumer consume2.Consumer[Digit]) {
-	iter := p.Ranges()
-	for pr, ok := iter(); ok; pr, ok = iter() {
+	for pr := range p.All() {
 		consume2.FromGenerator(
 			s.WithStart(pr.Start).WithEnd(pr.End).Iterator(), consumer)
 	}
