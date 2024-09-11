@@ -38,12 +38,23 @@ func ExampleNewNumberFromBigRat() {
 }
 
 func ExampleNewNumberForTesting() {
+
 	// n = 10.2003400340034...
 	n, _ := sqroot.NewNumberForTesting([]int{1, 0, 2}, []int{0, 0, 3, 4}, 2)
 
 	fmt.Println(n)
 	// Output:
 	// 10.20034003400340
+}
+
+func ExampleNewFiniteNumber() {
+
+	// n = 563.5
+	n, _ := sqroot.NewFiniteNumber([]int{5, 6, 3, 5}, 3)
+
+	fmt.Println(n.Exact())
+	// Output:
+	// 563.5
 }
 
 func ExampleDigitsToString() {

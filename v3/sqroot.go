@@ -204,6 +204,9 @@ func NewNumberForTesting(fixed, repeating []int, exp int) (Number, error) {
 	if digits() == 0 {
 		return nil, errors.New("NewNumberForTesting: leading zeros not allowed in digits")
 	}
+	if len(repeating) == 0 {
+		return newFiniteNumber(gen), nil
+	}
 	return newNumber(gen), nil
 }
 
@@ -238,6 +241,18 @@ func NewNumber(g Generator) Number {
 type FiniteNumber struct {
 	mantissa mantissa
 	exponent int
+}
+
+// NewFiniteNumber works like NewNumberForTesting except that it
+// returns a *FiniteNumber instead of a Number. Note that there is no
+// repeating parameter because FiniteNumbers have a finite number of
+// digits.
+func NewFiniteNumber(fixed []int, exponent int) (*FiniteNumber, error) {
+	result, err := NewNumberForTesting(fixed, nil, exponent)
+	if err != nil {
+		return nil, err
+	}
+	return result.(*FiniteNumber), nil
 }
 
 // WithStart comes from the Sequence interface.
@@ -368,10 +383,13 @@ func nRootFrac(
 // follow the contract of Generator. Also, newNumber doesn't handle empty
 // mantissas.
 func newNumber(gen Generator) Number {
+	return opaqueNumber(newFiniteNumber(gen))
+}
+
+func newFiniteNumber(gen Generator) *FiniteNumber {
 	digits, exp := gen.Generate()
 	mantissa := mantissa{spec: newMemoizeSpec(digits)}
-	f := &FiniteNumber{exponent: exp, mantissa: mantissa}
-	return opaqueNumber(f)
+	return &FiniteNumber{exponent: exp, mantissa: mantissa}
 }
 
 func checkNumDenom(num, denom *big.Int) {

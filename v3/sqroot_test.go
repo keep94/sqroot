@@ -221,10 +221,34 @@ func TestExactZero(t *testing.T) {
 	assert.Equal(t, "0", n.Exact())
 }
 
-func TestNewNumberForTesting(t *testing.T) {
-	n, err := NewNumberForTesting([]int{1, 0, 2}, []int{0, 0, 3, 4}, 2)
-	assert.Equal(t, "10.20034003400340", n.String())
+func TestNewFiniteNumber(t *testing.T) {
+	n, err := NewFiniteNumber([]int{2, 0, 5}, 2)
 	assert.NoError(t, err)
+	assert.Equal(t, "20.5", n.String())
+	assert.Equal(t, "20.5", n.Exact())
+}
+
+func TestNewFiniteNumberZero(t *testing.T) {
+	n, err := NewFiniteNumber(nil, 2)
+	assert.NoError(t, err)
+	assert.True(t, n.IsZero())
+}
+
+func TestNewFiniteNumberError(t *testing.T) {
+	_, err := NewFiniteNumber([]int{10}, 3)
+	assert.Error(t, err)
+}
+
+func TestNewNumberForTesting(t *testing.T) {
+	fixed := []int{1, 0, 2}
+	repeating := []int{0, 0, 3, 4}
+	n, err := NewNumberForTesting(fixed, repeating, 2)
+	assert.NoError(t, err)
+	fixed[0] = 7
+	repeating[0] = 9
+	assert.Equal(t, "10.20034003400340", n.String())
+	_, ok := n.(*FiniteNumber)
+	assert.False(t, ok)
 }
 
 func TestNewNumberForTestingNoExp(t *testing.T) {
@@ -249,6 +273,8 @@ func TestNewNumberForTestingNoRepeat(t *testing.T) {
 	n, err := NewNumberForTesting([]int{1, 0, 2}, nil, 0)
 	assert.Equal(t, "0.102", n.String())
 	assert.NoError(t, err)
+	_, ok := n.(*FiniteNumber)
+	assert.True(t, ok)
 }
 
 func TestNewNumberForTestingRepeatZeros(t *testing.T) {
