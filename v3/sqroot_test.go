@@ -208,8 +208,8 @@ func TestExactShort(t *testing.T) {
 	n, _ := NewNumberForTesting([]int{5, 0, 0, 1}, nil, 3)
 	assert.Equal(t, "500.1", n.WithSignificant(20).Exact())
 	assert.Equal(t, "500", n.WithSignificant(3).Exact())
-	assert.Equal(t, "0.50e+03", n.WithSignificant(2).Exact())
-	assert.Equal(t, "0.5e+03", n.WithSignificant(1).Exact())
+	assert.Equal(t, "500", n.WithSignificant(2).Exact())
+	assert.Equal(t, "500", n.WithSignificant(1).Exact())
 	assert.Equal(t, "0", n.WithSignificant(0).Exact())
 	smallN := n.withExponent(-3)
 	assert.Equal(t, "0.0005001", smallN.WithSignificant(4).Exact())
@@ -226,6 +226,13 @@ func TestNewFiniteNumber(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "20.5", n.String())
 	assert.Equal(t, "20.5", n.Exact())
+}
+
+func TestNewBigFiniteNumber(t *testing.T) {
+	n, err := NewFiniteNumber([]int{2, 0, 5}, 4)
+	assert.NoError(t, err)
+	assert.Equal(t, "2050", n.String())
+	assert.Equal(t, "2050", n.Exact())
 }
 
 func TestNewFiniteNumberZero(t *testing.T) {
