@@ -236,8 +236,7 @@ func NewNumber(g Generator) Number {
 // is 0.
 //
 // Pass FiniteNumber instances by reference not by value. Copying a
-// FiniteNumber instance or overwriting a FiniteNumber instance with the
-// assignment operator is not supported and may cause errors.
+// FiniteNumber instance is not supported and may cause errors.
 type FiniteNumber struct {
 	mantissa mantissa
 	exponent int
