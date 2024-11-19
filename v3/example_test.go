@@ -225,6 +225,22 @@ func ExampleFiniteNumber_All() {
 	// 5 5
 }
 
+func ExampleFiniteNumber_Values() {
+	// sqrt(7) = 0.26457513110... * 10^1
+	n := sqroot.Sqrt(7)
+
+	for value := range n.WithEnd(6).Values() {
+		fmt.Println(value)
+	}
+	// Output:
+	// 2
+	// 6
+	// 4
+	// 5
+	// 7
+	// 5
+}
+
 func ExampleFiniteNumber_Reverse() {
 
 	// sqrt(7) = 0.26457513110... * 10^1

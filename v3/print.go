@@ -70,9 +70,13 @@ func bufferSize(size int) Option {
 // contiguous. That is they can have no gaps in the middle.
 type Sequence interface {
 
-	// All returns the 0 based position of each digit in this Sequence
-	// followed by the digit itself. The digit is always between 0 and 9.
+	// All returns the 0 based position and value of each digit in this
+	// Sequence from beginning to end.
 	All() iter.Seq2[int, int]
+
+	// Values returns the value of each digit in this Sequence from
+	// beginning to end.
+	Values() iter.Seq[int]
 
 	// Iterator returns a function that generates the digits in this
 	// Sequence along with their zero based positions from beginning to end.
@@ -94,9 +98,8 @@ type Sequence interface {
 type FiniteSequence interface {
 	Sequence
 
-	// Backward returns the 0 based position of each digit in this
-	// FiniteSequence followed by the digit itself from end to beginning.
-	// The digit is always between 0 and 9.
+	// Backward returns the 0 based position and value of each digit in this
+	// FiniteSequence from end to beginning.
 	Backward() iter.Seq2[int, int]
 
 	// Reverse returns a function that generates the digits in this
@@ -181,7 +184,7 @@ func Write(s FiniteSequence, options ...Option) (
 // DigitsToString returns all the digits in s as a string.
 func DigitsToString(s FiniteSequence) string {
 	var sb strings.Builder
-	for _, digit := range s.All() {
+	for digit := range s.Values() {
 		sb.WriteByte('0' + byte(digit))
 	}
 	return sb.String()

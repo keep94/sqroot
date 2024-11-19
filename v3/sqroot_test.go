@@ -66,15 +66,20 @@ func Test100489Iterator(t *testing.T) {
 	iterator := n.All()
 	assert.Equal(t, []int{3, 1, 7}, collect(iterator, 0))
 	assert.Equal(t, []int{3, 1, 7}, collect(iterator, 0))
+	valIter := n.Values()
+	assert.Equal(t, []int{3, 1, 7}, collectValues(valIter, 0))
+	assert.Equal(t, []int{3, 1, 7}, collectValues(valIter, 0))
 }
 
 func TestIteratorPersistence(t *testing.T) {
 	n := Sqrt(7)
 	it := n.Iterator()
 	iterator := n.All()
+	valIter := n.Values()
 	n = Sqrt(11)
 	assert.Equal(t, []int{2, 6, 4, 5}, exhaust(it, 4))
 	assert.Equal(t, []int{2, 6, 4, 5}, collect(iterator, 4))
+	assert.Equal(t, []int{2, 6, 4, 5}, collectValues(valIter, 4))
 }
 
 func TestReverse(t *testing.T) {
@@ -92,8 +97,11 @@ func TestIteratorAt(t *testing.T) {
 	assert.Equal(t, []int{7}, exhaust(n.WithStart(2).Iterator(), 0))
 	assert.Equal(t, []int{3, 1, 7}, exhaust(n.WithStart(0).Iterator(), 0))
 	assert.Empty(t, collect(n.WithStart(3).All(), 0))
+	assert.Empty(t, collectValues(n.WithStart(3).Values(), 0))
 	assert.Equal(t, []int{7}, collect(n.WithStart(2).All(), 0))
+	assert.Equal(t, []int{7}, collectValues(n.WithStart(2).Values(), 0))
 	assert.Equal(t, []int{3, 1, 7}, collect(n.WithStart(0).All(), 0))
+	assert.Equal(t, []int{3, 1, 7}, collectValues(n.WithStart(0).Values(), 0))
 }
 
 func TestNegative(t *testing.T) {
@@ -181,6 +189,7 @@ func TestCubeRoot35223040952(t *testing.T) {
 	assert.Equal(t, 4, n.Exponent())
 	assert.Equal(t, []int{3, 2, 7, 8}, exhaust(n.Iterator(), 0))
 	assert.Equal(t, []int{3, 2, 7, 8}, collect(n.All(), 0))
+	assert.Equal(t, []int{3, 2, 7, 8}, collectValues(n.Values(), 0))
 }
 
 func TestCubeRootRat(t *testing.T) {
@@ -436,6 +445,17 @@ func TestAllExitEarly(t *testing.T) {
 	assert.Equal(t, 323, position)
 }
 
+func TestValuesExitEarly(t *testing.T) {
+	n := fakeNumber()
+	var value int
+	it := n.WithStart(323).Values()
+	for val := range it {
+		value = val
+		break
+	}
+	assert.Equal(t, 4, value)
+}
+
 func TestBackwardExitEarly(t *testing.T) {
 	n := fakeNumber()
 	var position, value int
@@ -574,6 +594,11 @@ func TestSequenceAllCheapToCreate(t *testing.T) {
 	assert.NotNil(t, n.WithStart(200000).All())
 }
 
+func TestSequenceValuesCheapToCreate(t *testing.T) {
+	n := CubeRootRat(1, 27)
+	assert.NotNil(t, n.WithStart(200000).Values())
+}
+
 func TestFiniteSequenceBackwardCheapToCreate(t *testing.T) {
 	n := CubeRootRat(1, 27)
 	assert.NotNil(t, n.WithEnd(200000).Backward())
@@ -614,13 +639,20 @@ func assertStartsAt(t *testing.T, s Sequence, start int) {
 	assert.True(t, ok)
 	assert.Equal(t, start, d.Position)
 	assert.Equal(t, (start+1)%10, d.Value)
-	var position, value int
+	position := -1
+	value := -1
 	for k, v := range s.All() {
 		position = k
 		value = v
 		break
 	}
 	assert.Equal(t, start, position)
+	assert.Equal(t, (start+1)%10, value)
+	value = -1
+	for v := range s.Values() {
+		value = v
+		break
+	}
 	assert.Equal(t, (start+1)%10, value)
 }
 
@@ -647,6 +679,16 @@ func assertForwardPushIterator(
 		if !assert.Equal(t, i, index) {
 			return false
 		}
+		if !assert.Equal(t, (i+1)%10, value) {
+			return false
+		}
+		i++
+	}
+	if !assert.Equal(t, end, i) {
+		return false
+	}
+	i = start
+	for value := range s.Values() {
 		if !assert.Equal(t, (i+1)%10, value) {
 			return false
 		}
@@ -739,6 +781,17 @@ func exhaust(it func() (Digit, bool), max int) []int {
 func collect(iterator iter.Seq2[int, int], max int) []int {
 	var result []int
 	for _, value := range iterator {
+		result = append(result, value)
+		if len(result) == max {
+			break
+		}
+	}
+	return result
+}
+
+func collectValues(iterator iter.Seq[int], max int) []int {
+	var result []int
+	for value := range iterator {
 		result = append(result, value)
 		if len(result) == max {
 			break

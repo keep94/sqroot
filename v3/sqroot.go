@@ -337,6 +337,13 @@ func (n *FiniteNumber) All() iter.Seq2[int, int] {
 	}
 }
 
+// Values comes from the Sequence interface.
+func (n *FiniteNumber) Values() iter.Seq[int] {
+	return func(yield func(value int) bool) {
+		n.mantissa.ScanValues(0, yield)
+	}
+}
+
 // Reverse comes from the FiniteSequence interface.
 func (n *FiniteNumber) Reverse() func() (Digit, bool) {
 	return n.mantissa.ReverseTo(0)
@@ -454,6 +461,13 @@ func (m mantissa) Scan(index int, yield func(index, value int) bool) {
 		return
 	}
 	m.spec.Scan(index, math.MaxInt, yield)
+}
+
+func (m mantissa) ScanValues(index int, yield func(value int) bool) {
+	if m.spec == nil {
+		return
+	}
+	m.spec.ScanValues(index, math.MaxInt, yield)
 }
 
 func (m mantissa) WithLimit(limit int) mantissa {
@@ -579,6 +593,12 @@ func (m *mantissaWithStart) Iterator() func() (Digit, bool) {
 func (m *mantissaWithStart) All() iter.Seq2[int, int] {
 	return func(yield func(index, value int) bool) {
 		m.mantissa.Scan(m.start, yield)
+	}
+}
+
+func (m *mantissaWithStart) Values() iter.Seq[int] {
+	return func(yield func(value int) bool) {
+		m.mantissa.ScanValues(m.start, yield)
 	}
 }
 

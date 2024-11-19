@@ -23,6 +23,7 @@ type Digit struct {
 type numberSpec interface {
 	IteratorAt(index, limit int) func() (Digit, bool)
 	Scan(index, limit int, yield func(index, value int) bool)
+	ScanValues(index, limit int, yield func(value int) bool)
 	At(index int) int
 	FirstN(n int) []int8
 }
@@ -97,6 +98,22 @@ func (m *memoizer) Scan(index, limit int, yield func(index, value int) bool) {
 	data, ok := m.wait(index)
 	for ok && index < limit {
 		if !yield(index, int(data[index])) {
+			return
+		}
+		index++
+		if index == len(data) {
+			data, ok = m.wait(index)
+		}
+	}
+}
+
+func (m *memoizer) ScanValues(index, limit int, yield func(value int) bool) {
+	if index < 0 {
+		panic("index must be non-negative")
+	}
+	data, ok := m.wait(index)
+	for ok && index < limit {
+		if !yield(int(data[index])) {
 			return
 		}
 		index++
@@ -195,6 +212,12 @@ func (l *limitSpec) Scan(index, limit int, yield func(index, value int) bool) {
 	index = min(index, l.limit)
 	limit = min(limit, l.limit)
 	l.delegate.Scan(index, limit, yield)
+}
+
+func (l *limitSpec) ScanValues(index, limit int, yield func(value int) bool) {
+	index = min(index, l.limit)
+	limit = min(limit, l.limit)
+	l.delegate.ScanValues(index, limit, yield)
 }
 
 func (l *limitSpec) FirstN(n int) []int8 {
