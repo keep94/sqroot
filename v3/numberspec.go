@@ -164,7 +164,7 @@ func (m *memoizer) run() {
 		m.waitToGrow()
 		for j := 0; j < kMemoizerChunkSize; j++ {
 			x := m.iter()
-			if x == -1 {
+			if digitOutOfRange(x) {
 				m.setData(data, true)
 				return
 			}

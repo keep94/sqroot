@@ -216,19 +216,12 @@ func NewNumberForTesting(fixed, repeating []int, exp int) (Number, error) {
 // more mantissa digits. Also if g happens to yield 0 as the first digit
 // of the mantissa, NewNumber will return zero.
 func NewNumber(g Generator) Number {
-
-	// gen is guaranteed to follow the Generator contract. if g yields
-	// a digit outside the range of 0 and 9, gen will signal no more digits
-	// in the mantissa. However, we still have to check that the first
-	// mantissa digit yielded is not zero.
-	gen := newValidDigits(g)
-
-	digits, _ := gen.Generate()
+	digits, _ := g.Generate()
 	first := digits()
-	if first == 0 || first == -1 {
+	if first == 0 || digitOutOfRange(first) {
 		return zeroNumber
 	}
-	return newNumber(gen)
+	return newNumber(g)
 }
 
 // FiniteNumber is a Number with a finite number of digits. FiniteNumber

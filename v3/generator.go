@@ -43,28 +43,6 @@ func newRepeatingGenerator(fixed, repeating []int, exp int) Generator {
 	return &result
 }
 
-func newValidDigits(g Generator) Generator {
-	return &vDigits{delegate: g}
-}
-
-type vDigits struct {
-	delegate Generator
-}
-
-func (g *vDigits) Generate() (func() int, int) {
-	gen, exp := g.delegate.Generate()
-	digit := gen()
-	ngen := func() int {
-		if digitOutOfRange(digit) {
-			return -1
-		}
-		temp := digit
-		digit = gen()
-		return temp
-	}
-	return ngen, exp
-}
-
 type repeatingGenerator struct {
 	fixed     []int
 	repeating []int
