@@ -343,6 +343,11 @@ func TestNewNumberZeroLeadingZero(t *testing.T) {
 	assert.True(t, n.IsZero())
 }
 
+func TestNewNumberMisbehavedGenerator(t *testing.T) {
+	n := NewNumber(&badgenerator{})
+	assert.Equal(t, "1111.111111111111", n.String())
+}
+
 func TestNewNumberFromBigRat(t *testing.T) {
 	var r big.Rat
 	r.SetString("2/7")
@@ -819,4 +824,16 @@ func (g *testgenerator) Generate() (func() int, int) {
 		return g.first
 	}
 	return digits, g.exp
+}
+
+type badgenerator struct {
+	notFirst bool
+}
+
+func (g *badgenerator) Generate() (func() int, int) {
+	if g.notFirst {
+		return func() int { return 0 }, 4
+	}
+	g.notFirst = true
+	return func() int { return 1 }, 4
 }

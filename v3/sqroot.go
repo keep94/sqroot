@@ -180,7 +180,7 @@ func NewNumberFromBigRat(value *big.Rat) Number {
 	if num.Sign() == 0 {
 		return zeroNumber
 	}
-	return newNumber(newRatGenerator(num, denom))
+	return newNumber(newRatGenerator(num, denom).Generate())
 }
 
 // NewNumberForTesting creates an arbitrary Number for testing. fixed are
@@ -205,9 +205,9 @@ func NewNumberForTesting(fixed, repeating []int, exp int) (Number, error) {
 		return nil, errors.New("NewNumberForTesting: leading zeros not allowed in digits")
 	}
 	if len(repeating) == 0 {
-		return newFiniteNumber(gen), nil
+		return newFiniteNumber(gen.Generate()), nil
 	}
-	return newNumber(gen), nil
+	return newNumber(gen.Generate()), nil
 }
 
 // NewNumber returns a new Number based on g. Although g is expected to
@@ -216,12 +216,12 @@ func NewNumberForTesting(fixed, repeating []int, exp int) (Number, error) {
 // more mantissa digits. Also if g happens to yield 0 as the first digit
 // of the mantissa, NewNumber will return zero.
 func NewNumber(g Generator) Number {
-	digits, _ := g.Generate()
+	digits, exp := g.Generate()
 	first := digits()
 	if first == 0 || digitOutOfRange(first) {
 		return zeroNumber
 	}
-	return newNumber(g)
+	return newNumber(firstAndThen(first, digits), exp)
 }
 
 // FiniteNumber is a Number with a finite number of digits. FiniteNumber
@@ -375,18 +375,16 @@ func nRootFrac(
 	if num.Sign() == 0 {
 		return zeroNumber
 	}
-	return newNumber(newNRootGenerator(num, denom, newManager))
+	return newNumber(newNRootGenerator(num, denom, newManager).Generate())
 }
 
-// newNumber returns a new number based on gen. Unlike NewNumber, gen must
-// follow the contract of Generator. Also, newNumber doesn't handle empty
-// mantissas.
-func newNumber(gen Generator) Number {
-	return opaqueNumber(newFiniteNumber(gen))
+// newNumber returns a new number. The first digit that digits generates
+// must be between 1 and 9.
+func newNumber(digits func() int, exp int) Number {
+	return opaqueNumber(newFiniteNumber(digits, exp))
 }
 
-func newFiniteNumber(gen Generator) *FiniteNumber {
-	digits, exp := gen.Generate()
+func newFiniteNumber(digits func() int, exp int) *FiniteNumber {
 	mantissa := mantissa{spec: newMemoizeSpec(digits)}
 	return &FiniteNumber{exponent: exp, mantissa: mantissa}
 }
@@ -655,4 +653,15 @@ func (n *opqNumber) withExponent(e int) Number {
 		return n
 	}
 	return opaqueNumber(result)
+}
+
+func firstAndThen(first int, next func() int) func() int {
+	firstTime := true
+	return func() int {
+		if firstTime {
+			firstTime = false
+			return first
+		}
+		return next()
+	}
 }
