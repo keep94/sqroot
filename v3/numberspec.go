@@ -11,6 +11,8 @@ const (
 )
 
 // Digit represents a digit and its zero based position in a mantissa.
+//
+// Deprecated: Not needed because of golang iterators.
 type Digit struct {
 
 	// The 0 based position of the digit.
@@ -21,7 +23,7 @@ type Digit struct {
 }
 
 type numberSpec interface {
-	IteratorAt(index, limit int) func() (Digit, bool)
+	IteratorAt(index, limit int) func() (Digit, bool) // remove for v4
 	Scan(index, limit int, yield func(index, value int) bool)
 	ScanValues(index, limit int, yield func(value int) bool)
 	At(index int) int
@@ -68,6 +70,7 @@ func (m *memoizer) FirstN(n int) []int8 {
 	return data
 }
 
+// remove for v4
 func (m *memoizer) IteratorAt(index, limit int) func() (Digit, bool) {
 	if index < 0 {
 		panic("index must be non-negative")
@@ -202,6 +205,7 @@ func (l *limitSpec) At(index int) int {
 	return l.delegate.At(index)
 }
 
+// remove for v4
 func (l *limitSpec) IteratorAt(index, limit int) func() (Digit, bool) {
 	index = min(index, l.limit)
 	limit = min(limit, l.limit)
@@ -225,4 +229,8 @@ func (l *limitSpec) FirstN(n int) []int8 {
 		n = l.limit
 	}
 	return l.delegate.FirstN(n)
+}
+
+func digitOutOfRange(d int) bool {
+	return d < 0 || d > 9
 }

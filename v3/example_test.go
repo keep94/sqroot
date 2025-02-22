@@ -2,7 +2,7 @@ package sqroot_test
 
 import (
 	"fmt"
-	"math/big"
+	"slices"
 
 	"github.com/keep94/sqroot/v3"
 )
@@ -21,20 +21,6 @@ func ExampleCubeRoot() {
 	fmt.Printf("%.100g\n", sqroot.CubeRoot(3))
 	// Output:
 	// 1.442249570307408382321638310780109588391869253499350577546416194541687596829997339854755479705645256
-}
-
-func ExampleNewNumberFromBigRat() {
-	var r big.Rat
-
-	// r = 0.713124713124713124...
-	r.SetString("713124/999999")
-
-	// n = 0.713124713124713124...
-	n := sqroot.NewNumberFromBigRat(&r)
-
-	fmt.Println(n)
-	// Output
-	// 0.7131247131247131
 }
 
 func ExampleNewNumberForTesting() {
@@ -57,12 +43,12 @@ func ExampleNewFiniteNumber() {
 	// 563.5
 }
 
-func ExampleDigitsToString() {
+func ExampleAsString() {
 
 	// sqrt(3) = 0.1732050807... * 10^1
 	n := sqroot.Sqrt(3)
 
-	fmt.Println(sqroot.DigitsToString(n.WithStart(2).WithEnd(10)))
+	fmt.Println(sqroot.AsString(n.WithStart(2).WithEnd(10)))
 	// Output:
 	// 32050807
 }
@@ -87,33 +73,6 @@ func ExampleMatches() {
 	// 144
 }
 
-func ExampleFind() {
-
-	// sqrt(2) = 0.14142135... * 10^1
-	n := sqroot.Sqrt(2)
-
-	// '14' matches at index 0, 2, 144, ...
-	matches := sqroot.Find(n, []int{1, 4})
-
-	fmt.Println(matches())
-	fmt.Println(matches())
-	fmt.Println(matches())
-	// Output:
-	// 0
-	// 2
-	// 144
-}
-
-func ExampleFindAll() {
-
-	// sqrt(2) = 0.14142135... * 10^1
-	n := sqroot.Sqrt(2)
-
-	fmt.Println(sqroot.FindAll(n.WithEnd(146), []int{1, 4}))
-	// Output:
-	// [0 2 144]
-}
-
 func ExampleFindFirst() {
 
 	// sqrt(3) = 0.1732050807... * 10^1
@@ -124,28 +83,11 @@ func ExampleFindFirst() {
 	// 4
 }
 
-func ExampleFindFirstN() {
-
-	// sqrt(2) = 0.14142135... * 10^1
-	n := sqroot.Sqrt(2)
-
-	fmt.Println(sqroot.FindFirstN(n, []int{1, 4}, 3))
-	// Output:
-	// [0 2 144]
-}
-
 func ExampleFindLast() {
 	n := sqroot.Sqrt(2)
 	fmt.Println(sqroot.FindLast(n.WithEnd(1000), []int{1, 4}))
 	// Output:
 	// 945
-}
-
-func ExampleFindLastN() {
-	n := sqroot.Sqrt(2)
-	fmt.Println(sqroot.FindLastN(n.WithEnd(1000), []int{1, 4}, 3))
-	// Output:
-	// [945 916 631]
 }
 
 func ExampleBackwardMatches() {
@@ -165,18 +107,6 @@ func ExampleBackwardMatches() {
 	// 631
 }
 
-func ExampleFindR() {
-	n := sqroot.Sqrt(2)
-	matches := sqroot.FindR(n.WithEnd(1000), []int{1, 4})
-	fmt.Println(matches())
-	fmt.Println(matches())
-	fmt.Println(matches())
-	// Output:
-	// 945
-	// 916
-	// 631
-}
-
 func ExampleFiniteNumber_Exponent() {
 
 	// sqrt(50176) = 0.224 * 10^3
@@ -185,24 +115,6 @@ func ExampleFiniteNumber_Exponent() {
 	fmt.Println(n.Exponent())
 	// Output:
 	// 3
-}
-
-func ExampleFiniteNumber_Iterator() {
-
-	// sqrt(7) = 0.26457513110... * 10^1
-	n := sqroot.Sqrt(7).WithSignificant(6)
-
-	iter := n.Iterator()
-	for digit, ok := iter(); ok; digit, ok = iter() {
-		fmt.Printf("%+v\n", digit)
-	}
-	// Output:
-	// {Position:0 Value:2}
-	// {Position:1 Value:6}
-	// {Position:2 Value:4}
-	// {Position:3 Value:5}
-	// {Position:4 Value:7}
-	// {Position:5 Value:5}
 }
 
 func ExampleFiniteNumber_All() {
@@ -241,24 +153,6 @@ func ExampleFiniteNumber_Values() {
 	// 5
 }
 
-func ExampleFiniteNumber_Reverse() {
-
-	// sqrt(7) = 0.26457513110... * 10^1
-	n := sqroot.Sqrt(7).WithSignificant(6)
-
-	iter := n.Reverse()
-	for digit, ok := iter(); ok; digit, ok = iter() {
-		fmt.Printf("%+v\n", digit)
-	}
-	// Output:
-	// {Position:5 Value:5}
-	// {Position:4 Value:7}
-	// {Position:3 Value:5}
-	// {Position:2 Value:4}
-	// {Position:1 Value:6}
-	// {Position:0 Value:2}
-}
-
 func ExampleFiniteNumber_Backward() {
 
 	// sqrt(7) = 0.26457513110... * 10^1
@@ -282,11 +176,13 @@ func ExampleFiniteNumber_WithStart() {
 	n := sqroot.Sqrt(29)
 
 	// Find all occurrences of '85' in the first 1000 digits of sqrt(29)
-	fmt.Println(sqroot.FindAll(n.WithEnd(1000), []int{8, 5}))
+	matches := sqroot.Matches(n.WithEnd(1000), []int{8, 5})
+	fmt.Println(slices.Collect(matches))
 
 	// Find all occurrences of '85' in the first 1000 digits of sqrt(29)
 	// on or after position 800
-	fmt.Println(sqroot.FindAll(n.WithStart(800).WithEnd(1000), []int{8, 5}))
+	matches = sqroot.Matches(n.WithStart(800).WithEnd(1000), []int{8, 5})
+	fmt.Println(slices.Collect(matches))
 	// Output:
 	// [2 167 444 507 511 767 853 917 935 958]
 	// [853 917 935 958]

@@ -4,7 +4,6 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/keep94/consume2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,9 +29,7 @@ func TestPositionsBuilder(t *testing.T) {
 		{Start: 13, End: 19},
 		{Start: 20, End: 26},
 	}
-	var actual []PositionRange
-	consume2.FromGenerator(p.Ranges(), consume2.AppendTo(&actual))
-	assert.Equal(t, expected, actual)
+	assert.Equal(t, expected, toPositionRanges(p.Ranges()))
 	assert.Equal(t, expected, slices.Collect(p.All()))
 	assert.Equal(t, 26, p.End())
 }
@@ -55,9 +52,7 @@ func TestPositionsBuilderSorted(t *testing.T) {
 		{Start: 10, End: 17},
 		{Start: 100, End: 200},
 	}
-	var actual []PositionRange
-	consume2.FromGenerator(p.Ranges(), consume2.AppendTo(&actual))
-	assert.Equal(t, expected, actual)
+	assert.Equal(t, expected, toPositionRanges(p.Ranges()))
 	assert.Equal(t, expected, slices.Collect(p.All()))
 	assert.Equal(t, 200, p.End())
 }
@@ -83,4 +78,13 @@ func TestPositionsAllExitEarly(t *testing.T) {
 		break
 	}
 	assert.Equal(t, PositionRange{Start: 0, End: 10}, firstRange)
+}
+
+// remove for v4
+func toPositionRanges(gen func() (PositionRange, bool)) []PositionRange {
+	var result []PositionRange
+	for pr, ok := gen(); ok; pr, ok = gen() {
+		result = append(result, pr)
+	}
+	return result
 }

@@ -1,10 +1,10 @@
 module github.com/keep94/sqroot/v3
 
-go 1.23
+go 1.23.0
 
 require (
-	github.com/keep94/consume2 v0.7.0
-	github.com/stretchr/testify v1.9.0
+	github.com/keep94/itertools v0.3.0
+	github.com/stretchr/testify v1.10.0
 )
 
 require (

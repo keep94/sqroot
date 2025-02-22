@@ -5,6 +5,7 @@ import (
 	"iter"
 	"math"
 	"math/big"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -67,8 +68,8 @@ func Test100489Iterator(t *testing.T) {
 	assert.Equal(t, []int{3, 1, 7}, collect(iterator, 0))
 	assert.Equal(t, []int{3, 1, 7}, collect(iterator, 0))
 	valIter := n.Values()
-	assert.Equal(t, []int{3, 1, 7}, collectValues(valIter, 0))
-	assert.Equal(t, []int{3, 1, 7}, collectValues(valIter, 0))
+	assert.Equal(t, []int{3, 1, 7}, slices.Collect(valIter))
+	assert.Equal(t, []int{3, 1, 7}, slices.Collect(valIter))
 }
 
 func TestIteratorPersistence(t *testing.T) {
@@ -79,7 +80,7 @@ func TestIteratorPersistence(t *testing.T) {
 	n = Sqrt(11)
 	assert.Equal(t, []int{2, 6, 4, 5}, exhaust(it, 4))
 	assert.Equal(t, []int{2, 6, 4, 5}, collect(iterator, 4))
-	assert.Equal(t, []int{2, 6, 4, 5}, collectValues(valIter, 4))
+	assert.Equal(t, []int{2, 6, 4, 5}, take(valIter, 4))
 }
 
 func TestReverse(t *testing.T) {
@@ -97,11 +98,11 @@ func TestIteratorAt(t *testing.T) {
 	assert.Equal(t, []int{7}, exhaust(n.WithStart(2).Iterator(), 0))
 	assert.Equal(t, []int{3, 1, 7}, exhaust(n.WithStart(0).Iterator(), 0))
 	assert.Empty(t, collect(n.WithStart(3).All(), 0))
-	assert.Empty(t, collectValues(n.WithStart(3).Values(), 0))
+	assert.Empty(t, slices.Collect(n.WithStart(3).Values()))
 	assert.Equal(t, []int{7}, collect(n.WithStart(2).All(), 0))
-	assert.Equal(t, []int{7}, collectValues(n.WithStart(2).Values(), 0))
+	assert.Equal(t, []int{7}, slices.Collect(n.WithStart(2).Values()))
 	assert.Equal(t, []int{3, 1, 7}, collect(n.WithStart(0).All(), 0))
-	assert.Equal(t, []int{3, 1, 7}, collectValues(n.WithStart(0).Values(), 0))
+	assert.Equal(t, []int{3, 1, 7}, slices.Collect(n.WithStart(0).Values()))
 }
 
 func TestNegative(t *testing.T) {
@@ -189,7 +190,7 @@ func TestCubeRoot35223040952(t *testing.T) {
 	assert.Equal(t, 4, n.Exponent())
 	assert.Equal(t, []int{3, 2, 7, 8}, exhaust(n.Iterator(), 0))
 	assert.Equal(t, []int{3, 2, 7, 8}, collect(n.All(), 0))
-	assert.Equal(t, []int{3, 2, 7, 8}, collectValues(n.Values(), 0))
+	assert.Equal(t, []int{3, 2, 7, 8}, slices.Collect(n.Values()))
 }
 
 func TestCubeRootRat(t *testing.T) {
@@ -702,6 +703,7 @@ func assertForwardPushIterator(
 	return assert.Equal(t, end, i)
 }
 
+// remove for v4
 func assertForwardPullIterator(
 	t *testing.T, s FiniteSequence, start, end int) bool {
 	t.Helper()
@@ -747,6 +749,7 @@ func assertReversePushIterator(
 	return assert.Equal(t, start, i)
 }
 
+// remove for v4
 func assertReversePullIterator(
 	t *testing.T, s FiniteSequence, start, end int) bool {
 	t.Helper()
@@ -772,6 +775,7 @@ func assertEmpty(t *testing.T, s FiniteSequence) {
 	assertRange(t, s, 0, 0)
 }
 
+// remove for v4
 func exhaust(it func() (Digit, bool), max int) []int {
 	var result []int
 	for digit, ok := it(); ok; digit, ok = it() {
@@ -786,17 +790,6 @@ func exhaust(it func() (Digit, bool), max int) []int {
 func collect(iterator iter.Seq2[int, int], max int) []int {
 	var result []int
 	for _, value := range iterator {
-		result = append(result, value)
-		if len(result) == max {
-			break
-		}
-	}
-	return result
-}
-
-func collectValues(iterator iter.Seq[int], max int) []int {
-	var result []int
-	for value := range iterator {
 		result = append(result, value)
 		if len(result) == max {
 			break

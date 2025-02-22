@@ -28,6 +28,7 @@ func newNRootGenerator(
 	return result
 }
 
+// remove for v4
 func newRatGenerator(num, denom *big.Int) Generator {
 	var result ratGenerator
 	result.num.Set(num)
@@ -68,6 +69,7 @@ func (g *repeatingGenerator) Generate() (func() int, int) {
 	return gen, g.exp
 }
 
+// remove for v4
 type ratGenerator struct {
 	num   big.Int
 	denom big.Int
@@ -89,17 +91,4 @@ func (g *nrootGenerator) Generate() (func() int, int) {
 	groups, exp := computeGroupsFromRational(
 		&g.num, &g.denom, manager.Base(new(big.Int)))
 	return computeRootDigits(groups, manager), exp
-}
-
-func digitOutOfRange(d int) bool {
-	return d < 0 || d > 9
-}
-
-func validDigits(x []int) bool {
-	for _, d := range x {
-		if digitOutOfRange(d) {
-			return false
-		}
-	}
-	return true
 }

@@ -89,6 +89,8 @@ func Between(start, end int) Positions {
 // Ranges returns a function that generates all the non overlapping ranges
 // of positions in p. The returned function generates all the ranges in
 // increasing order and returns false when there are no more.
+//
+// Deprecated: Use All() instead.
 func (p Positions) Ranges() func() (pr PositionRange, ok bool) {
 	index := 0
 	return func() (pr PositionRange, ok bool) {

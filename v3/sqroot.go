@@ -30,8 +30,6 @@ import (
 	"math"
 	"math/big"
 	"strings"
-
-	"github.com/keep94/consume2"
 )
 
 const (
@@ -80,8 +78,8 @@ var (
 // A Number can be 0, in which case IsZero() returns true. Zero Numbers
 // have an exponent of 0 and no digits in their mantissa. This means that
 // calling At() on a zero Number always returns -1. Likewise calling
-// Iterator() or Reverse() on a zero Number returns a function that yields
-// no digits. However, calling String() on a zero Number returns "0" and
+// All() or Values() on a zero Number returns an empty iterator.
+// However, calling String() on a zero Number returns "0" and
 // printing a zero Number prints 0 according to the format specification
 // used.
 type Number interface {
@@ -173,6 +171,8 @@ func CubeRootBigRat(radican *big.Rat) Number {
 // numerator must be non-negative or else NewNumberFromBigRat panics.
 // NewNumberFromBigRat can be used to create arbitrary Number instances for
 // testing.
+//
+// Deprecated: Use NewNumberForTesting instead.
 func NewNumberFromBigRat(value *big.Rat) Number {
 	num := value.Num()
 	denom := value.Denom()
@@ -319,6 +319,8 @@ func (n *FiniteNumber) IsZero() bool {
 }
 
 // Iterator comes from the Sequence interface.
+//
+// Deprecated: Use All instead.
 func (n *FiniteNumber) Iterator() func() (Digit, bool) {
 	return n.mantissa.IteratorAt(0)
 }
@@ -338,6 +340,8 @@ func (n *FiniteNumber) Values() iter.Seq[int] {
 }
 
 // Reverse comes from the FiniteSequence interface.
+//
+// Deprecated: Use Backward instead.
 func (n *FiniteNumber) Reverse() func() (Digit, bool) {
 	return n.mantissa.ReverseTo(0)
 }
@@ -413,6 +417,7 @@ func (m mantissa) IsZero() bool {
 	return m.spec == nil
 }
 
+// remove for v4
 func (m mantissa) ReverseTo(start int) func() (Digit, bool) {
 	var initialized bool
 	var digits []int8
@@ -440,6 +445,7 @@ func (m mantissa) ReverseScan(start int, yield func(index, value int) bool) {
 	}
 }
 
+// remove for v4
 func (m mantissa) IteratorAt(index int) func() (Digit, bool) {
 	if m.spec == nil {
 		return func() (Digit, bool) { return Digit{}, false }
@@ -459,6 +465,12 @@ func (m mantissa) ScanValues(index int, yield func(value int) bool) {
 		return
 	}
 	m.spec.ScanValues(index, math.MaxInt, yield)
+}
+
+func (m mantissa) Values() iter.Seq[int] {
+	return func(yield func(int) bool) {
+		m.ScanValues(0, yield)
+	}
 }
 
 func (m mantissa) WithLimit(limit int) mantissa {
@@ -557,7 +569,7 @@ func (f formatSpec) PrintNumber(w io.Writer, n *FiniteNumber) {
 
 func (f formatSpec) printFixed(w io.Writer, m mantissa, exponent int) {
 	formatter := newFormatter(w, f.sigDigits, exponent, f.exactDigitCount)
-	consume2.FromGenerator[Digit](m.IteratorAt(0), formatter)
+	fromMantissa(m, formatter)
 	formatter.Finish()
 }
 
@@ -566,6 +578,18 @@ func (f formatSpec) printSci(
 	f.printFixed(w, m, 0)
 	fmt.Fprint(w, sep)
 	fmt.Fprintf(w, "%+03d", exponent)
+}
+
+func fromMantissa(m mantissa, formatter *formatter) {
+	if !formatter.CanConsume() {
+		return
+	}
+	for digit := range m.Values() {
+		formatter.Consume(digit)
+		if !formatter.CanConsume() {
+			return
+		}
+	}
 }
 
 func bigExponent(exponent int) bool {
@@ -577,6 +601,7 @@ type mantissaWithStart struct {
 	start    int
 }
 
+// remove for v4
 func (m *mantissaWithStart) Iterator() func() (Digit, bool) {
 	return m.mantissa.IteratorAt(m.start)
 }
@@ -593,6 +618,7 @@ func (m *mantissaWithStart) Values() iter.Seq[int] {
 	}
 }
 
+// remove for v4
 func (m *mantissaWithStart) Reverse() func() (Digit, bool) {
 	return m.mantissa.ReverseTo(m.start)
 }
@@ -664,4 +690,13 @@ func firstAndThen(first int, next func() int) func() int {
 		}
 		return next()
 	}
+}
+
+func validDigits(x []int) bool {
+	for _, d := range x {
+		if digitOutOfRange(d) {
+			return false
+		}
+	}
+	return true
 }

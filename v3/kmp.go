@@ -1,5 +1,9 @@
 package sqroot
 
+import (
+	"iter"
+)
+
 // pattern must be non-empty
 func ttable(pattern []int) []int {
 	result := make([]int, len(pattern)+1)
@@ -16,7 +20,8 @@ func ttable(pattern []int) []int {
 	return result
 }
 
-func zeroPattern(f func() (Digit, bool)) func() int {
+// remove for v4
+func zeroPatternOld(f func() (Digit, bool)) func() int {
 	return func() int {
 		d, ok := f()
 		if !ok {
@@ -26,7 +31,18 @@ func zeroPattern(f func() (Digit, bool)) func() int {
 	}
 }
 
-func kmp(f func() (Digit, bool), pattern []int, reverse bool) func() int {
+func zeroPattern(s iter.Seq2[int, int]) iter.Seq[int] {
+	return func(yield func(int) bool) {
+		for i := range s {
+			if !yield(i) {
+				return
+			}
+		}
+	}
+}
+
+// remove for v4
+func kmpOld(f func() (Digit, bool), pattern []int, reverse bool) func() int {
 	kernel := newKmpKernel(pattern)
 	return func() int {
 		for {
@@ -39,6 +55,23 @@ func kmp(f func() (Digit, bool), pattern []int, reverse bool) func() int {
 					return d.Position
 				}
 				return d.Position + 1 - len(pattern)
+			}
+		}
+	}
+}
+
+func kmp(s iter.Seq2[int, int], pattern []int, reverse bool) iter.Seq[int] {
+	return func(yield func(int) bool) {
+		kernel := newKmpKernel(pattern)
+		for posit, digit := range s {
+			if kernel.Visit(digit) {
+				if reverse {
+					if !yield(posit) {
+						return
+					}
+				} else if !yield(posit + 1 - len(pattern)) {
+					return
+				}
 			}
 		}
 	}

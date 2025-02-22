@@ -50,6 +50,7 @@ func computeGroupsFromRational(num, denom, base *big.Int) (
 	return
 }
 
+// remove for v4
 func groupsToDigits(groups func(result *big.Int) *big.Int) func() int {
 	var nextGroupHolder big.Int
 	return func() int {

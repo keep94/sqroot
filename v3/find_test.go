@@ -1,8 +1,11 @@
 package sqroot
 
 import (
+	"iter"
+	"slices"
 	"testing"
 
+	"github.com/keep94/itertools"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,11 +34,15 @@ func TestMatches(t *testing.T) {
 	iterator := Matches(s, pattern)
 	pattern[0] = 5
 	pattern[1] = 7
-	var hits []int
-	for index := range iterator {
-		hits = append(hits, index)
-	}
-	assert.Equal(t, []int{2, 12, 22, 32}, hits)
+	assert.Equal(t, []int{2, 12, 22, 32}, slices.Collect(iterator))
+	assert.Equal(t, []int{2, 12, 22, 32}, slices.Collect(iterator))
+}
+
+func TestMatchesEmptyPattern(t *testing.T) {
+	n := fakeNumber()
+	iterator := Matches(n, nil)
+	assert.Equal(t, []int{0, 1, 2, 3}, take(iterator, 4))
+	assert.Equal(t, []int{0, 1, 2, 3}, take(iterator, 4))
 }
 
 func TestBackwardMatches(t *testing.T) {
@@ -44,11 +51,15 @@ func TestBackwardMatches(t *testing.T) {
 	iterator := BackwardMatches(s, pattern)
 	pattern[0] = 5
 	pattern[1] = 7
-	var hits []int
-	for index := range iterator {
-		hits = append(hits, index)
-	}
-	assert.Equal(t, []int{32, 22, 12, 2}, hits)
+	assert.Equal(t, []int{32, 22, 12, 2}, slices.Collect(iterator))
+	assert.Equal(t, []int{32, 22, 12, 2}, slices.Collect(iterator))
+}
+
+func TestBackwardMatchesEmptyPattern(t *testing.T) {
+	n := fakeNumber()
+	iterator := BackwardMatches(n.WithEnd(5), nil)
+	assert.Equal(t, []int{4, 3, 2, 1, 0}, slices.Collect(iterator))
+	assert.Equal(t, []int{4, 3, 2, 1, 0}, slices.Collect(iterator))
 }
 
 func TestFind(t *testing.T) {
@@ -69,6 +80,15 @@ func TestFindR(t *testing.T) {
 	assert.Equal(t, 22, matches())
 	assert.Equal(t, 12, matches())
 	assert.Equal(t, 2, matches())
+	assert.Equal(t, -1, matches())
+}
+
+func TestFindRNil(t *testing.T) {
+	matches := FindR(fakeNumber().WithSignificant(4), nil)
+	assert.Equal(t, 3, matches())
+	assert.Equal(t, 2, matches())
+	assert.Equal(t, 1, matches())
+	assert.Equal(t, 0, matches())
 	assert.Equal(t, -1, matches())
 }
 
@@ -110,12 +130,11 @@ func TestFindEmptyPatternIterator(t *testing.T) {
 func TestFindFirstNTrickyPattern(t *testing.T) {
 	number, _ := NewNumberForTesting(
 		intSliceFromString("12212212122122121221221"), nil, 0)
-	hits := FindFirstN(
+	matches := Matches(
 		number,
 		[]int{1, 2, 2, 1, 2, 1, 2, 2, 1, 2, 2, 1},
-		3,
 	)
-	assert.Equal(t, []int{3, 11}, hits)
+	assert.Equal(t, []int{3, 11}, slices.Collect(matches))
 }
 
 func TestFindLast(t *testing.T) {
@@ -167,9 +186,10 @@ func TestFindOverlap(t *testing.T) {
 
 	// n = 0.4300002343000023...
 	n, _ := NewNumberForTesting(nil, intSliceFromString("43000023"), 0)
-
-	assert.Equal(t, []int{2, 3, 10}, FindFirstN(n, []int{0, 0, 0}, 3))
-	assert.Equal(t, []int{3, 2}, FindLastN(n.WithEnd(8), []int{0, 0, 0}, 3))
+	matches := Matches(n, []int{0, 0, 0})
+	assert.Equal(t, []int{2, 3, 10}, take(matches, 3))
+	matches = BackwardMatches(n.WithEnd(8), []int{0, 0, 0})
+	assert.Equal(t, []int{3, 2}, take(matches, 3))
 }
 
 func intSliceFromString(s string) []int {
@@ -178,4 +198,8 @@ func intSliceFromString(s string) []int {
 		result = append(result, int(c-'0'))
 	}
 	return result
+}
+
+func take(s iter.Seq[int], n int) []int {
+	return slices.Collect(itertools.Take(s, n))
 }

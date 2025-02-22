@@ -5,8 +5,6 @@ import (
 	"iter"
 	"os"
 	"strings"
-
-	"github.com/keep94/consume2"
 )
 
 // Option represents an option for the Print, Fprint, and Sprint methods
@@ -81,6 +79,8 @@ type Sequence interface {
 	// Iterator returns a function that generates the digits in this
 	// Sequence along with their zero based positions from beginning to end.
 	// If there are no more digits, returned function returns false.
+	//
+	// Deprecated: Use All instead.
 	Iterator() func() (Digit, bool)
 
 	// WithStart returns a view of this Sequence that only has digits with
@@ -106,6 +106,8 @@ type FiniteSequence interface {
 	// FiniteSequence along with their zero based positions from end to
 	// beginning. When there are no more digits, returned function
 	// returns false.
+	//
+	// Deprecated: Use Backward instead.
 	Reverse() func() (Digit, bool)
 
 	// FiniteWithStart works like WithStart except that it returns a
@@ -150,7 +152,7 @@ func Fwrite(w io.Writer, s FiniteSequence, options ...Option) (
 		trailingLineFeed: true,
 	}
 	printer := newPrinter(w, endOf(s), mutateSettings(options, settings))
-	consume2.FromGenerator[Digit](s.Iterator(), printer)
+	fromFiniteSequence(s, printer)
 	printer.Finish()
 	return printer.BytesWritten(), printer.Err()
 }
@@ -181,8 +183,13 @@ func Write(s FiniteSequence, options ...Option) (
 	return Fwrite(os.Stdout, s, options...)
 }
 
-// DigitsToString returns all the digits in s as a string.
+// Deprecated: Use AsString instead.
 func DigitsToString(s FiniteSequence) string {
+	return AsString(s)
+}
+
+// AsString returns all the digits in s as a string.
+func AsString(s FiniteSequence) string {
 	var sb strings.Builder
 	for digit := range s.Values() {
 		sb.WriteByte('0' + byte(digit))
@@ -197,11 +204,22 @@ func endOf(s FiniteSequence) int {
 	return 0
 }
 
-func fromSequenceWithPositions(
-	s Sequence, p Positions, consumer consume2.Consumer[Digit]) {
+func fromSequenceWithPositions(s Sequence, p Positions, printer *printer) {
 	for pr := range p.All() {
-		consume2.FromGenerator(
-			s.WithStart(pr.Start).WithEnd(pr.End).Iterator(), consumer)
+		fs := s.WithStart(pr.Start).WithEnd(pr.End)
+		fromFiniteSequence(fs, printer)
+	}
+}
+
+func fromFiniteSequence(s FiniteSequence, printer *printer) {
+	if !printer.CanConsume() {
+		return
+	}
+	for posit, digit := range s.All() {
+		printer.Consume(posit, digit)
+		if !printer.CanConsume() {
+			return
+		}
 	}
 }
 

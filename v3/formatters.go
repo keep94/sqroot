@@ -21,16 +21,16 @@ func newPrinter(
 	return &result
 }
 
-func (p *printer) Consume(d Digit) {
-	if p.index < d.Position {
+func (p *printer) Consume(posit, digit int) {
+	if p.index < posit {
 		if p.digitsPerRow > 0 && p.rowStarter.CountOn() {
-			p.skipRowsFor(d.Position)
+			p.skipRowsFor(posit)
 		}
-		for p.index < d.Position {
+		for p.index < posit {
 			p.rawPrinter.Consume(p.missingDigit)
 		}
 	}
-	p.rawPrinter.Consume('0' + rune(d.Value))
+	p.rawPrinter.Consume('0' + rune(digit))
 }
 
 func (p *printer) skipRowsFor(nextPosit int) {
@@ -245,11 +245,11 @@ func (f *formatter) CanConsume() bool {
 	return f.index < f.sigDigits
 }
 
-func (f *formatter) Consume(digit Digit) {
+func (f *formatter) Consume(digit int) {
 	if !f.CanConsume() {
 		return
 	}
-	f.add(digit.Value)
+	f.add(digit)
 }
 
 func (f *formatter) Finish() {
