@@ -300,7 +300,7 @@ func (n *FiniteNumber) Format(state fmt.State, verb rune) {
 // the exact representation of n.
 func (n *FiniteNumber) Exact() string {
 	var builder strings.Builder
-	fs := formatSpecForG(max(endOf(n), gPrecision), n.exponent, false)
+	fs := formatSpecForG(math.MaxInt, n.exponent, false)
 	fs.PrintNumber(&builder, n)
 	return builder.String()
 }
