@@ -3,7 +3,7 @@ module github.com/keep94/sqroot/v3
 go 1.23.0
 
 require (
-	github.com/keep94/itertools v0.3.0
+	github.com/keep94/itertools v0.6.0
 	github.com/stretchr/testify v1.10.0
 )
 

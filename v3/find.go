@@ -44,9 +44,9 @@ func FindFirst(s Sequence, pattern []int) int {
 
 // Deprecated: Use golang iterators with the github.com/keep94/itertools
 // library. This is equivalent to
-// slices.Collect(itertools.Take(sqroot.Matches(s, pattern), n))
+// slices.Collect(itertools.Take(n, sqroot.Matches(s, pattern)))
 func FindFirstN(s Sequence, pattern []int, n int) []int {
-	return slices.Collect(itertools.Take(Matches(s, pattern), n))
+	return slices.Collect(itertools.Take(n, Matches(s, pattern)))
 }
 
 // Deprecated: This is equivalent to
@@ -64,9 +64,9 @@ func FindLast(s FiniteSequence, pattern []int) int {
 
 // Deprecated: Use golang iterators with the github.com/keep94/itertools
 // library. This is equivalent to
-// slices.Collect(itertools.Take(sqroot.BackwardMatches(s, pattern), n))
+// slices.Collect(itertools.Take(n, sqroot.BackwardMatches(s, pattern)))
 func FindLastN(s FiniteSequence, pattern []int, n int) []int {
-	return slices.Collect(itertools.Take(BackwardMatches(s, pattern), n))
+	return slices.Collect(itertools.Take(n, BackwardMatches(s, pattern)))
 }
 
 // FindR returns a function that starts at the end of s and returns the

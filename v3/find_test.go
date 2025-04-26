@@ -201,5 +201,5 @@ func intSliceFromString(s string) []int {
 }
 
 func take(s iter.Seq[int], n int) []int {
-	return slices.Collect(itertools.Take(s, n))
+	return slices.Collect(itertools.Take(n, s))
 }
