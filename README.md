@@ -1,6 +1,11 @@
 sqroot
 ======
 
+**This repository has been archived and is no longer maintained. Please use the following repositories in its place:**
+- [github.com/sqrt](https://github.com/keep94/sqrt): ***Provides square root and cube root core functionality***
+- [github.com/numprint](https://github.com/keep94/numprint): ***Provides pretty printing functionality***
+- [github.com/numsearch](https://github.com/keep94/numsearch): ***Provides pattern searching functionality***
+
 A package to compute square roots and cube roots to arbitrary precision.
 
 This package is dedicated to my mother, who taught me how to calculate square roots by hand as a child.
