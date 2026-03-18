@@ -2,9 +2,9 @@ sqroot
 ======
 
 **This repository has been archived and is no longer maintained. Please use the following repositories in its place:**
-- [github.com/sqrt](https://github.com/keep94/sqrt): ***Provides square root and cube root core functionality***
-- [github.com/numprint](https://github.com/keep94/numprint): ***Provides pretty printing functionality***
-- [github.com/numsearch](https://github.com/keep94/numsearch): ***Provides pattern searching functionality***
+- [github.com/keep94/sqrt](https://github.com/keep94/sqrt): ***Provides square root and cube root core functionality***
+- [github.com/keep94/numprint](https://github.com/keep94/numprint): ***Provides pretty printing functionality***
+- [github.com/keep94/numsearch](https://github.com/keep94/numsearch): ***Provides pattern searching functionality***
 
 A package to compute square roots and cube roots to arbitrary precision.
 
